@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "36393126022",
+    "project_id": "hustlemuscle-940f2",
+    "storage_bucket": "hustlemuscle-940f2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:36393126022:android:331299dadbe265fbbca907",
+        "android_client_info": {
+          "package_name": "com.hustlemuscle.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAx2nzHu9zjwavPd6m4Of47XU9ijLaK7qs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
