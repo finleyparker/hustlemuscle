@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, StyleSheet, ActivityIndicator } from 'react-native';
-import { getAllExercises } from '../api/exercises';
+import { getAllExercises } from '../database/exercises';
 
 export default function ExerciseListScreen() {
   const [exercises, setExercises] = useState([]);

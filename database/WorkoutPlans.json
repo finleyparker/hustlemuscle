@@ -1,0 +1,354 @@
+[
+    {
+        "workout_plan_id": 1,
+        "physique_goals": "Lose Fat / Cut",
+        "name": "Cardio Burn Circuit",
+        "description": "A high-intensity, fat-burning circuit workout combining cardio and bodyweight movements.",
+        "goal": "Weight-Loss",
+        "difficulty_level": "Intermediate",
+        "duration": 45,
+        "exercises": [
+            101,
+            102,
+            103,
+            104
+        ],
+        "target_muscle_groups": [
+            "Full Body"
+        ],
+        "frequency": "daily",
+        "reps": [
+            20,
+            15,
+            20,
+            25
+        ],
+        "sets": [
+            3,
+            3,
+            3,
+            3
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 101,
+                "reps": 20,
+                "sets": 3
+            },
+            {
+                "exercise_id": 102,
+                "reps": 15,
+                "sets": 3
+            },
+            {
+                "exercise_id": 103,
+                "reps": 20,
+                "sets": 3
+            },
+            {
+                "exercise_id": 104,
+                "reps": 25,
+                "sets": 3
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 2,
+        "physique_goals": "Gain Muscle / Bulk",
+        "name": "Strength Training Plus",
+        "description": "A hypertrophy-focused strength program to build muscle mass.",
+        "goal": "Strength",
+        "difficulty_level": "Advanced",
+        "duration": 60,
+        "exercises": [
+            201,
+            202,
+            203,
+            204
+        ],
+        "target_muscle_groups": [
+            "Upper Body",
+            "Legs"
+        ],
+        "frequency": "weekly",
+        "reps": [
+            10,
+            8,
+            12,
+            10
+        ],
+        "sets": [
+            4,
+            5,
+            4,
+            4
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 201,
+                "reps": 10,
+                "sets": 4
+            },
+            {
+                "exercise_id": 202,
+                "reps": 8,
+                "sets": 5
+            },
+            {
+                "exercise_id": 203,
+                "reps": 12,
+                "sets": 4
+            },
+            {
+                "exercise_id": 204,
+                "reps": 10,
+                "sets": 4
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 3,
+        "physique_goals": "Maintain Current Physique",
+        "name": "PPL Maintenance Split",
+        "description": "Push, Pull, Legs split for physique maintenance and balanced fitness.",
+        "goal": "Both",
+        "difficulty_level": "Intermediate",
+        "duration": 50,
+        "exercises": [
+            301,
+            302,
+            303
+        ],
+        "target_muscle_groups": [
+            "Upper Body",
+            "Legs"
+        ],
+        "frequency": "weekly",
+        "reps": [
+            12,
+            10,
+            15
+        ],
+        "sets": [
+            3,
+            4,
+            3
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 301,
+                "reps": 12,
+                "sets": 3
+            },
+            {
+                "exercise_id": 302,
+                "reps": 10,
+                "sets": 4
+            },
+            {
+                "exercise_id": 303,
+                "reps": 15,
+                "sets": 3
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 4,
+        "physique_goals": "Athletic Ability",
+        "name": "Athletic Power Program",
+        "description": "Dynamic training with plyometrics, agility drills, and power moves.",
+        "goal": "Strength",
+        "difficulty_level": "Advanced",
+        "duration": 60,
+        "exercises": [
+            401,
+            402,
+            403,
+            404
+        ],
+        "target_muscle_groups": [
+            "Full Body",
+            "Core"
+        ],
+        "frequency": "fortnightly",
+        "reps": [
+            8,
+            10,
+            12,
+            15
+        ],
+        "sets": [
+            4,
+            3,
+            3,
+            4
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 401,
+                "reps": 8,
+                "sets": 4
+            },
+            {
+                "exercise_id": 402,
+                "reps": 10,
+                "sets": 3
+            },
+            {
+                "exercise_id": 403,
+                "reps": 12,
+                "sets": 3
+            },
+            {
+                "exercise_id": 404,
+                "reps": 15,
+                "sets": 4
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 5,
+        "physique_goals": "Gain Muscle / Bulk",
+        "name": "Max Power Lifting",
+        "description": "A low-rep, high-weight strength program focused on major lifts.",
+        "goal": "Strength",
+        "difficulty_level": "Advanced",
+        "duration": 75,
+        "exercises": [
+            501,
+            502,
+            503
+        ],
+        "target_muscle_groups": [
+            "Upper Body",
+            "Legs"
+        ],
+        "frequency": "weekly",
+        "reps": [
+            5,
+            3,
+            5
+        ],
+        "sets": [
+            5,
+            5,
+            4
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 501,
+                "reps": 5,
+                "sets": 5
+            },
+            {
+                "exercise_id": 502,
+                "reps": 3,
+                "sets": 5
+            },
+            {
+                "exercise_id": 503,
+                "reps": 5,
+                "sets": 4
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 6,
+        "physique_goals": "Lose Fat / Cut",
+        "name": "Endurance Hero",
+        "description": "Long-duration workouts mixing cardio, bodyweight, and light resistance.",
+        "goal": "Weight-Loss",
+        "difficulty_level": "Intermediate",
+        "duration": 60,
+        "exercises": [
+            601,
+            602,
+            603,
+            604
+        ],
+        "target_muscle_groups": [
+            "Full Body"
+        ],
+        "frequency": "daily",
+        "reps": [
+            30,
+            25,
+            20,
+            15
+        ],
+        "sets": [
+            3,
+            3,
+            3,
+            3
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 601,
+                "reps": 30,
+                "sets": 3
+            },
+            {
+                "exercise_id": 602,
+                "reps": 25,
+                "sets": 3
+            },
+            {
+                "exercise_id": 603,
+                "reps": 20,
+                "sets": 3
+            },
+            {
+                "exercise_id": 604,
+                "reps": 15,
+                "sets": 3
+            }
+        ]
+    },
+    {
+        "workout_plan_id": 7,
+        "physique_goals": "Athletic Ability",
+        "name": "Flexibility Flow",
+        "description": "A mobility and flexibility program combining dynamic stretching, yoga, and body control.",
+        "goal": "Both",
+        "difficulty_level": "Beginner",
+        "duration": 30,
+        "exercises": [
+            701,
+            702,
+            703
+        ],
+        "target_muscle_groups": [
+            "Full Body",
+            "Core"
+        ],
+        "frequency": "daily",
+        "reps": [
+            10,
+            10,
+            15
+        ],
+        "sets": [
+            2,
+            2,
+            2
+        ],
+        "exercise_details": [
+            {
+                "exercise_id": 701,
+                "reps": 10,
+                "sets": 2
+            },
+            {
+                "exercise_id": 702,
+                "reps": 10,
+                "sets": 2
+            },
+            {
+                "exercise_id": 703,
+                "reps": 15,
+                "sets": 2
+            }
+        ]
+    }
+]

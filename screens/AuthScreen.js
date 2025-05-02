@@ -9,7 +9,7 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { auth } from '../firebase';
+import { auth } from '../database/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 export default function AuthScreen() {
@@ -21,7 +21,7 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (loading) return;
-    
+
     setLoading(true);
     try {
       if (isLogin) {
@@ -80,8 +80,8 @@ export default function AuthScreen() {
           secureTextEntry
         />
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleAuth}
           disabled={loading}
         >
