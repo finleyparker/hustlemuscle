@@ -1,42 +1,20 @@
 import axios from 'axios';
 
-// Temporarily hardcode the API key for testing
-const API_KEY = "Nd9CE7dRGMkA1sKpPwYqIQ==nTlHhZdcbNQy5vCf"; // Replace this with your actual API key
+// API key is hardcoded for demonstration purposes, but in production it should
+// be handled using backend proxy
 const BASE_URL = 'https://api.api-ninjas.com/v1/exercises';
-
-// Create axios instance with timeout and other configurations
-const api = axios.create({
-  baseURL: BASE_URL,
-  timeout: 30000, // Increased timeout to 30 seconds
-  headers: {
-    'X-Api-Key': API_KEY,
-    'Content-Type': 'application/json',
-    'Accept': 'application/json'
-  },
-  validateStatus: function (status) {
-    return status >= 200 && status < 500; // Accept all status codes less than 500
-  }
-});
+const EXERCISE_DB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 
 // Get all exercises
 export const getAllExercises = async () => {
   console.log('Starting API request...');
-  
+
   try {
-    // Simple GET request with API key in URL
-    const url = `${BASE_URL}?X-Api-Key=${API_KEY}`;
-    console.log('Request URL:', url);
-    
-    const response = await axios.get(url);
-    console.log('Response received:', response.status);
-    
+    const response = await axios.get(EXERCISE_DB_URL);
+    console.log(response.data);
     return response.data;
   } catch (error) {
-    console.error('API Error:', {
-      message: error.message,
-      response: error.response?.data,
-      status: error.response?.status
-    });
+    console.error('Error fetching exercises:', error);
     throw error;
   }
 };
@@ -45,10 +23,7 @@ export const getAllExercises = async () => {
 export const getExercisesByName = async (name) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { name },
-      headers: {
-        'X-Api-Key': API_KEY
-      }
+      params: { name }
     });
     return response.data;
   } catch (error) {
@@ -58,13 +33,11 @@ export const getExercisesByName = async (name) => {
 };
 
 // Get exercises by muscle group
-export const getExercisesByMuscle = async (muscle) => {
+export const getExercisesByMuscle = async (primaryMuscles) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { muscle },
-      headers: {
-        'X-Api-Key': API_KEY
-      }
+      params: { primaryMuscles }
+
     });
     return response.data;
   } catch (error) {
@@ -74,13 +47,11 @@ export const getExercisesByMuscle = async (muscle) => {
 };
 
 // Get exercises by type
-export const getExercisesByType = async (type) => {
+export const getExercisesByType = async (mechanic) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { type },
-      headers: {
-        'X-Api-Key': API_KEY
-      }
+      params: { mechanic }
+
     });
     return response.data;
   } catch (error) {
@@ -90,13 +61,11 @@ export const getExercisesByType = async (type) => {
 };
 
 // Get exercises by difficulty
-export const getExercisesByDifficulty = async (difficulty) => {
+export const getExercisesByDifficulty = async (level) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { difficulty },
-      headers: {
-        'X-Api-Key': API_KEY
-      }
+      params: { level }
+
     });
     return response.data;
   } catch (error) {

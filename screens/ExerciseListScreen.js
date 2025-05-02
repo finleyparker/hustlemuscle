@@ -72,10 +72,10 @@ export default function ExerciseListScreen() {
       {exercises.map((exercise, index) => (
         <View key={index} style={styles.exerciseCard}>
           <Text style={styles.exerciseName}>{exercise.name}</Text>
-          <Text style={styles.exerciseInfo}>Muscle: {exercise.muscle}</Text>
-          <Text style={styles.exerciseInfo}>Type: {exercise.type}</Text>
+          <Text style={styles.exerciseInfo}>Muscle: {exercise.primaryMuscles}</Text>
+          <Text style={styles.exerciseInfo}>Type: {exercise.mechanic}</Text>
           <Text style={styles.exerciseInfo}>Equipment: {exercise.equipment}</Text>
-          <Text style={styles.exerciseInfo}>Difficulty: {exercise.difficulty}</Text>
+          <Text style={styles.exerciseInfo}>Difficulty: {exercise.level}</Text>
           <Text style={styles.exerciseDescription}>{exercise.instructions}</Text>
         </View>
       ))}
