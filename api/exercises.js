@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // API key is hardcoded for demonstration purposes, but in production it should
 // be handled using backend proxy
-const BASE_URL = 'https://api.api-ninjas.com/v1/exercises';
+const BASE_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const EXERCISE_DB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 
 // Get all exercises
@@ -33,10 +33,10 @@ export const getExercisesByName = async (name) => {
 };
 
 // Get exercises by muscle group
-export const getExercisesByMuscle = async (primaryMuscles) => {
+export const getExercisesByMuscle = async (primaryMuscles, secondaryMuscles) => {
   try {
     const response = await axios.get(BASE_URL, {
-      params: { primaryMuscles }
+      params: { primaryMuscles, secondaryMuscles }
 
     });
     return response.data;
