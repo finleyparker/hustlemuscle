@@ -56,24 +56,24 @@ export const generateWorkoutPlan = async (userInput) => {
     let split;
     if (daysPerWeek === 3) {
       split = {
-        push: ['chest', 'shoulders', 'triceps'],
-        pull: ['back', 'biceps'],
-        legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
+        Day_1_push: ['chest', 'shoulders', 'triceps'],
+        Day_2_pull: ['back', 'biceps'],
+        Day_3_legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
       };
     } else if (daysPerWeek === 4) {
       split = {
-        upper: ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
-        lower: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
-        push: ['chest', 'shoulders', 'triceps'],
-        pull: ['back', 'biceps'],
+        Day_1_upper: ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
+        Day_2_lower: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
+        Day_3_push: ['chest', 'shoulders', 'triceps'],
+        Day_4_pull: ['back', 'biceps'],
       };
     } else if (daysPerWeek === 5) {
       split = {
-        chest_triceps: ['chest', 'triceps'],
-        back_biceps: ['back', 'biceps'],
-        legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
-        shoulders: ['shoulders'],
-        core: ['abdominals', 'obliques'],
+        Day_1_chest_triceps: ['chest', 'triceps'],
+        Day_2_back_biceps: ['back', 'biceps'],
+        Day_3_legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
+        Day_4_shoulders: ['shoulders'],
+        Day_5_core: ['abdominals', 'obliques'],
       };
     } else {
       throw new Error(`Unsupported training days: ${daysPerWeek}`);
@@ -83,7 +83,10 @@ export const generateWorkoutPlan = async (userInput) => {
     const maxExercisesPerDay = 6;
 
     // Step 7: Assign exercises to each training day
-    const workoutPlan = Object.entries(split).map(([dayKey, muscleGroup]) => {
+    const workoutPlan = Object.entries(split)
+    .slice(0, daysPerWeek) // limit to the number of training days
+    .map(([dayKey, muscleGroup]) => {
+
       const exercisesForDay = filteredExercises.filter(ex =>
         muscleGroup.some(muscle => ex.primaryMuscles?.includes(muscle))
       );
@@ -125,7 +128,7 @@ const testGeneratePlan = async () => {
   const userInput = {
     goal: 'muscle gain',
     level: 'beginner',
-    daysPerWeek: 4,
+    daysPerWeek: 3,
     equipment: ['dumbbell', 'body only'],
   };
 

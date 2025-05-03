@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator'; // Adjust path if needed
 
-const WorkoutPlanScreen = ({ route }) => {
+const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -27,7 +27,7 @@ const WorkoutPlanScreen = ({ route }) => {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color="#007AFF" />
-        <Text>Generating your workout plan...</Text>
+        <Text style={styles.loadingText}>Generating your workout plan...</Text>
       </View>
     );
   }
@@ -50,6 +50,12 @@ const WorkoutPlanScreen = ({ route }) => {
           ))}
         </View>
       ))}
+      <TouchableOpacity
+        style={styles.backButton}
+        onPress={() => navigation.goBack()}
+      >
+        <Text style={styles.backButtonText}>Back to Home</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -57,35 +63,43 @@ const WorkoutPlanScreen = ({ route }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 16,
+    backgroundColor: '#f2f2f2',
   },
   dayContainer: {
     marginBottom: 24,
     padding: 16,
-    backgroundColor: '#F2F2F2',
+    backgroundColor: '#FFFFFF',
     borderRadius: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
   },
   dayTitle: {
-    fontSize: 20,
+    fontSize: 22,
     fontWeight: 'bold',
     color: '#007AFF',
   },
   muscleFocus: {
     marginBottom: 10,
     fontStyle: 'italic',
+    color: '#007AFF',
   },
   exerciseCard: {
     marginTop: 10,
-    padding: 10,
-    backgroundColor: '#FFFFFF',
+    padding: 12,
+    backgroundColor: '#f9f9f9',
     borderRadius: 8,
-    elevation: 2,
+    elevation: 3,
   },
   exerciseName: {
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: 18,
+    color: '#333',
   },
   instructions: {
-    marginTop: 4,
+    marginTop: 6,
     fontStyle: 'italic',
     color: '#666',
   },
@@ -93,7 +107,26 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-  }
+    backgroundColor: '#f2f2f2',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#007AFF',
+  },
+  backButton: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 10,
+    paddingHorizontal: 20,
+    borderRadius: 8,
+    marginTop: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backButtonText: {
+    color: '#fff',
+    fontSize: 18,
+  },
 });
 
 export default WorkoutPlanScreen;
