@@ -15,7 +15,16 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     const loadPlan = async () => {
       try {
         const workoutPlansCollection = collection(firestore, 'workoutPlans');
-        const q = query(workoutPlansCollection, where('userInput.goal', '==', userInput.goal));
+        
+        // Adding multiple fields to the query
+        const q = query(
+          workoutPlansCollection, 
+          where('userInput.goal', '==', userInput.goal),
+          where('userInput.level', '==', userInput.level),
+          where('userInput.daysPerWeek', '==', userInput.daysPerWeek),
+          where('userInput.equipment', 'array-contains', userInput.equipment) // assuming equipment is an array of available equipment
+        );
+
         const querySnapshot = await getDocs(q);
 
         if (!querySnapshot.empty) {
@@ -30,6 +39,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             }
           });
         } else {
+          // If no plan matches, generate a new one
           const generated = await generateWorkoutPlan(userInput);
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
