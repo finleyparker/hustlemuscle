@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator'; 
+import { firestore } from '../firebaseConfig'; // Import Firestore
+import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+
+
+
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
@@ -9,19 +14,49 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const { userInput } = route.params;
 
   useEffect(() => {
+    console.log("User Input in WorkoutPlanScreen:", userInput); 
     const loadPlan = async () => {
       try {
-        const generatedPlan = await generateWorkoutPlan(userInput);
-        setPlan(generatedPlan);
+        // Log the user input before saving to Firestore
+        console.log("Saving to Firestore with User Input:", userInput);
+    
+        // Try to fetch an existing plan for the user from Firestore
+        const workoutPlansCollection = collection(firestore, 'workoutPlans');
+        const q = query(workoutPlansCollection, where('userInput.goal', '==', userInput.goal)); // Adjust condition as needed
+        const querySnapshot = await getDocs(q);
+        
+        if (!querySnapshot.empty) {
+          // Plan found, use it
+          querySnapshot.forEach((doc) => {
+            console.log(doc.id, doc.data());
+            setPlan(doc.data().plan);  // Set the retrieved plan
+          });
+        } else {
+          // No existing plan, generate a new one
+          const generatedPlan = await generateWorkoutPlan(userInput);
+          setPlan(generatedPlan);
+          
+          // Save the generated plan to Firestore
+          await addDoc(workoutPlansCollection, {
+            userInput,               // Store the original user input too
+            plan: generatedPlan,     // Store the generated plan
+            createdAt: new Date(),
+          });
+          
+          console.log('Workout plan saved to Firestore!');
+        }
       } catch (error) {
-        console.error('Failed to generate plan:', error);
+        console.error('Failed to retrieve or generate plan:', error);
       } finally {
         setLoading(false);
       }
     };
-
+    
+  
     loadPlan();
-  }, [userInput]);
+  }, [userInput]);  // This effect will re-run if the userInput changes
+  
+  
 
   if (loading) {
     return (

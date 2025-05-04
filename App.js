@@ -41,10 +41,12 @@ function HomeScreen({ navigation }) {
   const userInput = {
     goal: 'muscle gain',
     level: 'beginner',
-    daysPerWeek: 3,
+    daysPerWeek: 4,
     equipment: ['dumbbell', 'body only'],
   };
-
+  
+  console.log("Navigating with User Input:", userInput); // Log the userInput for debugging
+  
   return (
     <View style={styles.homeContainer}>
       <Button
@@ -54,6 +56,7 @@ function HomeScreen({ navigation }) {
       />
     </View>
   );
+  
 }
 
 const styles = StyleSheet.create({

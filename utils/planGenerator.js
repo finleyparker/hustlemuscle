@@ -138,7 +138,7 @@ const testGeneratePlan = async () => {
   const userInput = {
     goal: 'muscle gain',
     level: 'beginner',
-    daysPerWeek: 3,
+    daysPerWeek: 4,
     equipment: ['dumbbell', 'body only'],
   };
 
