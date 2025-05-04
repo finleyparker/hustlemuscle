@@ -30,16 +30,10 @@ export const generateWorkoutPlan = async (userInput) => {
   };
 
   try {
-    // Step 1: Fetch all exercises
     const allExercises = await getAllExercises();
-
-    // Step 2: Determine matching categories for the user's goal
     const targetCategories = goalCategoryMap[goal.toLowerCase()] || [];
-
-    // Step 3: Normalize equipment list for comparison
     const normalizedEquipment = equipment.map(e => e.toLowerCase());
 
-    // Step 4: Filter exercises by level, equipment, and category
     const filteredExercises = allExercises.filter(ex =>
       ex.level?.toLowerCase() === level.toLowerCase() &&
       (
@@ -53,10 +47,9 @@ export const generateWorkoutPlan = async (userInput) => {
     if (filteredExercises.length === 0) {
       throw new Error('No exercises found matching your filters. Try different equipment or goal.');
     }
-    
+
     console.log(`Filtered ${filteredExercises.length} exercises for goal "${goal}", level "${level}", and equipment: ${equipment.join(', ')}`);
 
-    // Step 5: Define workout split based on training days
     let split;
     if (daysPerWeek === 3) {
       split = {
@@ -83,56 +76,55 @@ export const generateWorkoutPlan = async (userInput) => {
       throw new Error(`Unsupported training days: ${daysPerWeek}`);
     }
 
-    // Step 6: Introduce exercise limit per day (e.g., 6 exercises max per day)
     const maxExercisesPerDay = 6;
 
-    // Step 7: Assign exercises to each training day
     const workoutPlan = Object.entries(split)
-    .slice(0, daysPerWeek) // limit to the number of training days
-    .map(([dayKey, muscleGroup]) => {
+      .slice(0, daysPerWeek)
+      .map(([dayKey, muscleGroup]) => {
 
-      // Group filtered exercises by muscle
-      const muscleToExercisesMap = {};
-      muscleGroup.forEach(muscle => {
-        muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
-          ex.primaryMuscles?.includes(muscle)
-        );
+        const muscleToExercisesMap = {};
+        muscleGroup.forEach(muscle => {
+          muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
+            ex.primaryMuscles?.includes(muscle)
+          );
+        });
+
+        const selectedExercises = [];
+        const perMuscleTarget = Math.ceil(maxExercisesPerDay / muscleGroup.length);
+
+        muscleGroup.forEach(muscle => {
+          const muscleExercises = muscleToExercisesMap[muscle] || [];
+          const shuffled = muscleExercises.sort(() => 0.5 - Math.random());
+          selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
+        });
+
+        const finalExercises = selectedExercises
+          .sort(() => 0.5 - Math.random())
+          .slice(0, maxExercisesPerDay);
+
+        const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
+
+        // Add exercise_id and exercise_name arrays
+        const exerciseIds = finalExercises.map(ex => ex.id);
+        const exerciseNames = finalExercises.map(ex => ex.name);
+
+        const dayExercises = finalExercises.map(ex => ({
+          name: ex.name,
+          sets,
+          reps: Array.isArray(reps) ? reps.join(' - ') : reps,
+          restTime: rest,
+          instructions: ex.instructions || 'Follow correct form.',
+          muscles: ex.primaryMuscles || ['muscles not defined'],
+        }));
+
+        return {
+          day: dayKey.replace('_', ' ').toUpperCase(),
+          muscleFocus: muscleGroup.join(' & '),
+          exercise_id: exerciseIds,
+          exercise_name: exerciseNames,
+          exercises: dayExercises,
+        };
       });
-
-      // Pick evenly from each muscle group
-      const selectedExercises = [];
-      const perMuscleTarget = Math.ceil(maxExercisesPerDay / muscleGroup.length);
-
-      muscleGroup.forEach(muscle => {
-        const muscleExercises = muscleToExercisesMap[muscle] || [];
-        const shuffled = muscleExercises.sort(() => 0.5 - Math.random());
-        selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
-      });
-
-      // Trim in case we went over
-      const finalExercises = selectedExercises
-        .sort(() => 0.5 - Math.random())
-        .slice(0, maxExercisesPerDay);
-
-
-      const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
-
-      const dayExercises = finalExercises.map(ex => ({
-        name: ex.name,
-        sets,
-        reps: Array.isArray(reps) ? reps.join(' - ') : reps,
-        restTime: rest,
-        instructions: ex.instructions || 'Follow correct form.',
-        muscles: ex.primaryMuscles || ['muscles not defined'],
-      }));
-      
-
-      return {
-        day: dayKey.replace('_', ' ').toUpperCase(),
-        muscleFocus: muscleGroup.join(' & '),
-        exercises: dayExercises,
-      };
-    });
 
     return workoutPlan;
   } catch (error) {
@@ -141,9 +133,7 @@ export const generateWorkoutPlan = async (userInput) => {
   }
 };
 
-/**
- * Test runner to simulate usage when run directly via Node.
- */
+// Test runner
 const testGeneratePlan = async () => {
   const userInput = {
     goal: 'muscle gain',
@@ -156,7 +146,6 @@ const testGeneratePlan = async () => {
   console.log('Generated Plan Preview:', plan);
 };
 
-// Only run test if this file is executed directly (not imported)
 if (require.main === module) {
   testGeneratePlan();
 }
