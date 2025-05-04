@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { generateWorkoutPlan } from '../utils/planGenerator'; // Adjust path if needed
+import { generateWorkoutPlan } from '../utils/planGenerator'; 
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);

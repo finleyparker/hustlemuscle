@@ -2,7 +2,7 @@ import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { View, Button, StyleSheet } from 'react-native';
-import WorkoutPlanScreen from './screens/WorkoutPlanScreen'; // Make sure this path is correct
+import WorkoutPlanScreen from './screens/WorkoutPlanScreen'; 
 
 const Stack = createNativeStackNavigator();
 
@@ -10,7 +10,7 @@ export default function App() {
   return (
     <NavigationContainer>
       <Stack.Navigator initialRouteName="Home">
-        {/* Home screen just generates and navigates for now */}
+        
         <Stack.Screen
           name="Home"
           component={HomeScreen}

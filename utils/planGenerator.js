@@ -50,6 +50,10 @@ export const generateWorkoutPlan = async (userInput) => {
       targetCategories.includes(ex.category?.toLowerCase())
     );
 
+    if (filteredExercises.length === 0) {
+      throw new Error('No exercises found matching your filters. Try different equipment or goal.');
+    }
+    
     console.log(`Filtered ${filteredExercises.length} exercises for goal "${goal}", level "${level}", and equipment: ${equipment.join(', ')}`);
 
     // Step 5: Define workout split based on training days
@@ -57,20 +61,20 @@ export const generateWorkoutPlan = async (userInput) => {
     if (daysPerWeek === 3) {
       split = {
         Day_1_push: ['chest', 'shoulders', 'triceps'],
-        Day_2_pull: ['back', 'biceps'],
+        Day_2_pull: ['lats', 'lower back', 'middle back', 'traps', 'biceps'],
         Day_3_legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
       };
     } else if (daysPerWeek === 4) {
       split = {
-        Day_1_upper: ['chest', 'back', 'shoulders', 'biceps', 'triceps'],
+        Day_1_upper: ['chest', 'lats', 'lower back', 'middle back', 'traps', 'shoulders', 'biceps', 'triceps'],
         Day_2_lower: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
         Day_3_push: ['chest', 'shoulders', 'triceps'],
-        Day_4_pull: ['back', 'biceps'],
+        Day_4_pull: ['lats', 'lower back', 'middle back', 'traps', 'biceps'],
       };
     } else if (daysPerWeek === 5) {
       split = {
         Day_1_chest_triceps: ['chest', 'triceps'],
-        Day_2_back_biceps: ['back', 'biceps'],
+        Day_2_back_biceps: ['lats', 'lower back', 'middle back', 'traps', 'biceps'],
         Day_3_legs: ['quadriceps', 'hamstrings', 'glutes', 'calves'],
         Day_4_shoulders: ['shoulders'],
         Day_5_core: ['abdominals', 'obliques'],
@@ -87,18 +91,33 @@ export const generateWorkoutPlan = async (userInput) => {
     .slice(0, daysPerWeek) // limit to the number of training days
     .map(([dayKey, muscleGroup]) => {
 
-      const exercisesForDay = filteredExercises.filter(ex =>
-        muscleGroup.some(muscle => ex.primaryMuscles?.includes(muscle))
-      );
+      // Group filtered exercises by muscle
+      const muscleToExercisesMap = {};
+      muscleGroup.forEach(muscle => {
+        muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
+          ex.primaryMuscles?.includes(muscle)
+        );
+      });
 
-      // Randomly pick exercises if there are more than maxExercisesPerDay
-      const selectedExercises = exercisesForDay.length > maxExercisesPerDay 
-        ? exercisesForDay.sort(() => 0.5 - Math.random()).slice(0, maxExercisesPerDay)
-        : exercisesForDay;
+      // Pick evenly from each muscle group
+      const selectedExercises = [];
+      const perMuscleTarget = Math.ceil(maxExercisesPerDay / muscleGroup.length);
+
+      muscleGroup.forEach(muscle => {
+        const muscleExercises = muscleToExercisesMap[muscle] || [];
+        const shuffled = muscleExercises.sort(() => 0.5 - Math.random());
+        selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
+      });
+
+      // Trim in case we went over
+      const finalExercises = selectedExercises
+        .sort(() => 0.5 - Math.random())
+        .slice(0, maxExercisesPerDay);
+
 
       const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
 
-      const dayExercises = selectedExercises.map(ex => ({
+      const dayExercises = finalExercises.map(ex => ({
         name: ex.name,
         sets,
         reps: Array.isArray(reps) ? reps.join(' - ') : reps,
@@ -106,6 +125,7 @@ export const generateWorkoutPlan = async (userInput) => {
         instructions: ex.instructions || 'Follow correct form.',
         muscles: ex.primaryMuscles || ['muscles not defined'],
       }));
+      
 
       return {
         day: dayKey.replace('_', ' ').toUpperCase(),
