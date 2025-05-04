@@ -1,0 +1,44 @@
+[
+    {
+        "user_id": "user_123",
+        "workout_plan_id": "plan_push",
+        "exercise_id": [
+            "ex_001",
+            "ex_002",
+            "ex_003"
+        ],
+        "exercise_name": [
+            "Barbell Bench Press",
+            "Shoulder Press",
+            "Triceps Pushdown"
+        ]
+    },
+    {
+        "user_id": "user_123",
+        "workout_plan_id": "plan_pull",
+        "exercise_id": [
+            "ex_004",
+            "ex_005",
+            "ex_006"
+        ],
+        "exercise_name": [
+            "Deadlift",
+            "Lat Pulldown",
+            "Barbell Curl"
+        ]
+    },
+    {
+        "user_id": "user_123",
+        "workout_plan_id": "plan_legs",
+        "exercise_id": [
+            "ex_007",
+            "ex_008",
+            "ex_009"
+        ],
+        "exercise_name": [
+            "Back Squat",
+            "Leg Press",
+            "Calf Raise"
+        ]
+    }
+]

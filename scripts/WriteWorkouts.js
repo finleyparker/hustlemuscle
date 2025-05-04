@@ -11,12 +11,16 @@ const firebaseConfig = {
     appId: "1:36393126022:web:8489f6aa6aa746b2bca907"
 };
 
+//change these depending on the file and target firestore collection
+const file = "./scripts/Sessions.json";
+const target = "WorkoutSession";
+
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
-const workoutPlans = JSON.parse(readFileSync("./database/WorkoutPlans.json", "utf8"));
+const workoutPlans = JSON.parse(readFileSync(file, "utf8"));
 const batch = writeBatch(db);
-const workoutPlanCollection = collection(db, "WorkoutPlans");
+const workoutPlanCollection = collection(db, target);
 
 workoutPlans.forEach((plan) => {
     const docRef = doc(workoutPlanCollection); // auto-generated ID
@@ -25,7 +29,13 @@ workoutPlans.forEach((plan) => {
 
 // Commit batch write
 batch.commit().then(() => {
-    console.log("Workout plans added successfully!");
+    console.log("entries added successfully!");
 }).catch((error) => {
-    console.error("Error adding workout plans: ", error);
+    console.error("Error adding entries: ", error);
 });
+
+//after setting up json file and editing file and target variables
+//  run this command in terminal
+//
+//  node ./scripts/WriteWorkouts.js
+//
