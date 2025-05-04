@@ -1,49 +1,43 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { generateWorkoutPlan } from '../utils/planGenerator'; 
-import { firestore } from '../firebaseConfig'; // Import Firestore
+import { generateWorkoutPlan } from '../utils/planGenerator';
+import { firestore } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
-
-
-
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
+  const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const { userInput } = route.params;
 
   useEffect(() => {
-    console.log("User Input in WorkoutPlanScreen:", userInput); 
     const loadPlan = async () => {
       try {
-        // Log the user input before saving to Firestore
-        console.log("Saving to Firestore with User Input:", userInput);
-    
-        // Try to fetch an existing plan for the user from Firestore
         const workoutPlansCollection = collection(firestore, 'workoutPlans');
-        const q = query(workoutPlansCollection, where('userInput.goal', '==', userInput.goal)); // Adjust condition as needed
+        const q = query(workoutPlansCollection, where('userInput.goal', '==', userInput.goal));
         const querySnapshot = await getDocs(q);
-        
+
         if (!querySnapshot.empty) {
-          // Plan found, use it
           querySnapshot.forEach((doc) => {
-            console.log(doc.id, doc.data());
-            setPlan(doc.data().plan);  // Set the retrieved plan
+            const data = doc.data();
+            if (data.plan?.plan) {
+              setPlan(data.plan.plan);
+              setWarnings(data.plan.warnings || []);
+            } else {
+              setPlan(data.plan || []);
+              setWarnings([]);
+            }
           });
         } else {
-          // No existing plan, generate a new one
-          const generatedPlan = await generateWorkoutPlan(userInput);
-          setPlan(generatedPlan);
-          
-          // Save the generated plan to Firestore
+          const generated = await generateWorkoutPlan(userInput);
+          setPlan(generated.plan);
+          setWarnings(generated.warnings || []);
           await addDoc(workoutPlansCollection, {
-            userInput,               // Store the original user input too
-            plan: generatedPlan,     // Store the generated plan
+            userInput,
+            plan: generated,
             createdAt: new Date(),
           });
-          
-          console.log('Workout plan saved to Firestore!');
         }
       } catch (error) {
         console.error('Failed to retrieve or generate plan:', error);
@@ -51,12 +45,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         setLoading(false);
       }
     };
-    
-  
+
     loadPlan();
-  }, [userInput]);  // This effect will re-run if the userInput changes
-  
-  
+  }, [userInput]);
 
   if (loading) {
     return (
@@ -69,6 +60,15 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
+      {warnings.length > 0 && (
+        <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>⚠️ Suggestions to Improve Your Plan:</Text>
+          {warnings.map((warning, index) => (
+            <Text key={index} style={styles.warningText}>• {warning}</Text>
+          ))}
+        </View>
+      )}
+
       {plan.map((day, index) => (
         <View key={index} style={styles.dayContainer}>
           <Text style={styles.dayTitle}>{day.day}</Text>
@@ -85,6 +85,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           ))}
         </View>
       ))}
+
       <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
@@ -99,6 +100,25 @@ const styles = StyleSheet.create({
   container: {
     padding: 16,
     backgroundColor: '#f2f2f2',
+  },
+  warningBox: {
+    backgroundColor: '#fff3cd',
+    borderLeftWidth: 6,
+    borderLeftColor: '#ffcc00',
+    padding: 16,
+    marginBottom: 20,
+    borderRadius: 8,
+  },
+  warningTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#856404',
+    marginBottom: 8,
+  },
+  warningText: {
+    color: '#856404',
+    marginBottom: 4,
+    fontSize: 15,
   },
   dayContainer: {
     marginBottom: 24,

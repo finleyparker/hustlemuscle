@@ -40,9 +40,9 @@ export default function App() {
 function HomeScreen({ navigation }) {
   const userInput = {
     goal: 'muscle gain',
-    level: 'beginner',
+    level: 'expert',
     daysPerWeek: 4,
-    equipment: ['dumbbell', 'body only'],
+    equipment: ['body only', 'cable', 'machine', ],
   };
   
   console.log("Navigating with User Input:", userInput); // Log the userInput for debugging

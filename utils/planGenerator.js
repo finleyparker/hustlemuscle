@@ -8,7 +8,7 @@ import { getAllExercises } from '../api/exercises';
  * @param {string} userInput.level - Fitness level (e.g., "beginner").
  * @param {number} userInput.daysPerWeek - Days available to train (3, 4, or 5).
  * @param {string[]} userInput.equipment - Equipment user has access to.
- * @returns {Promise<Array>} - An array of structured workout plan days.
+ * @returns {Promise<{plan: Array, warnings: Array}>} - A workout plan and potential warnings.
  */
 export const generateWorkoutPlan = async (userInput) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
@@ -77,11 +77,11 @@ export const generateWorkoutPlan = async (userInput) => {
     }
 
     const maxExercisesPerDay = 6;
+    const warnings = [];
 
     const workoutPlan = Object.entries(split)
       .slice(0, daysPerWeek)
       .map(([dayKey, muscleGroup]) => {
-
         const muscleToExercisesMap = {};
         muscleGroup.forEach(muscle => {
           muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
@@ -104,29 +104,38 @@ export const generateWorkoutPlan = async (userInput) => {
 
         const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
 
-        // Add exercise_id and exercise_name arrays
         const exerciseIds = finalExercises.map(ex => ex.id);
         const exerciseNames = finalExercises.map(ex => ex.name);
 
-        const dayExercises = finalExercises.map(ex => ({
-          name: ex.name,
-          sets,
-          reps: Array.isArray(reps) ? reps.join(' - ') : reps,
-          restTime: rest,
-          instructions: ex.instructions || 'Follow correct form.',
-          muscles: ex.primaryMuscles || ['muscles not defined'],
-        }));
+        if (finalExercises.length === 0) {
+          warnings.push(`⚠️ No exercises found for ${dayKey.replace('_', ' ')}. Try adding more equipment or changing your fitness goal.`);
+        } else if (finalExercises.length < 3) {
+          warnings.push(`⚠️ Very few exercises for ${dayKey.replace('_', ' ')}. Consider adjusting equipment, fitness level, or training days.`);
+        }
 
         return {
           day: dayKey.replace('_', ' ').toUpperCase(),
           muscleFocus: muscleGroup.join(' & '),
           exercise_id: exerciseIds,
           exercise_name: exerciseNames,
-          exercises: dayExercises,
+          exercises: finalExercises.map(ex => ({
+            name: ex.name,
+            sets,
+            reps: Array.isArray(reps) ? reps.join(' - ') : reps,
+            restTime: rest,
+            instructions: ex.instructions || 'Follow correct form.',
+            muscles: ex.primaryMuscles || ['muscles not defined'],
+          })),
         };
       });
 
-    return workoutPlan;
+    // If too few total exercises
+    const totalExercises = workoutPlan.reduce((sum, day) => sum + day.exercises.length, 0);
+    if (totalExercises < daysPerWeek * 3) {
+      warnings.push(`⚠️ Your plan has only ${totalExercises} exercises in total. Try increasing your equipment, training days, or selecting a higher fitness level.`);
+    }
+
+    return { plan: workoutPlan, warnings };
   } catch (error) {
     console.error('Error generating workout plan:', error);
     throw error;
@@ -137,13 +146,17 @@ export const generateWorkoutPlan = async (userInput) => {
 const testGeneratePlan = async () => {
   const userInput = {
     goal: 'muscle gain',
-    level: 'beginner',
+    level: 'expert',
     daysPerWeek: 4,
-    equipment: ['dumbbell', 'body only'],
+    equipment: ['body only', 'cable', 'machine', ],
   };
 
-  const plan = await generateWorkoutPlan(userInput);
+  const { plan, warnings } = await generateWorkoutPlan(userInput);
   console.log('Generated Plan Preview:', plan);
+  if (warnings.length) {
+    console.log('Warnings:');
+    warnings.forEach(w => console.warn(w));
+  }
 };
 
 if (require.main === module) {
