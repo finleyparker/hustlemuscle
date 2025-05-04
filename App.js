@@ -1,13 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, View } from 'react-native';
-import WorkoutLogScreen from './screens/WorkoutLogScreen';
 import AuthScreen from './screens/AuthScreen';
+import WorkoutLogScreen from './screens/WorkoutLogScreen';
 
 export default function App() {
   return (
     <View style={styles.container}>
       <StatusBar style="auto" />
-      <AuthScreen />
+      <WorkoutLogScreen />
     </View>
   );
 }
