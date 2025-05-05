@@ -4,22 +4,33 @@ import {
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
 import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutLog';
+import { useNavigation, useRoute } from '@react-navigation/native';
+
 
 export default function WorkoutLogScreen() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(true);
     const [sessionName, setSessionName] = useState();
+    const route = useRoute();
+    const sessionId = route.params?.sessionId;
+    const navigation = useNavigation();
+
+
+    const currentSession = 'LJxghOMcfm6Bfd7in0fU';
 
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
-            const names = await getExerciseNamesFromSession('LJxghOMcfm6Bfd7in0fU');
+            //get each exercise name
+            const names = await getExerciseNamesFromSession(sessionId);
             const formatted = names.map(name => ({
                 name,
                 sets: [{ reps: '', weight: '' }] // start with 1 set per exercise
             }));
-            const session = await getSessionName('LJxghOMcfm6Bfd7in0fU');
+            //get session name
+            const session = await getSessionName(sessionId);
             setSessionName(session);
+            navigation.setOptions({ title: `Current Session: ${session}` });
             setExercises(formatted);
             setLoading(false);
         };
@@ -47,15 +58,19 @@ export default function WorkoutLogScreen() {
         setExercises(updated);
     };
 
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container2}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#446df6" />
+                    <Text style={{ color: '#fff', marginTop: 10 }}>Loading workout...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
+
     return (
         <SafeAreaView style={styles.container2}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => alert("Back pressed")}>
-                    <Text style={styles.backText}>← Back</Text>
-                </TouchableOpacity>
-
-                <Text style={styles.headerTitle}>Current Session: {sessionName}</Text>
-            </View>
 
             <ScrollView style={styles.container}>
                 {exercises.map((exercise, exerciseIndex) => (

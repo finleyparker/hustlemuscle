@@ -1,11 +1,45 @@
-import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from './firebase';
+import { collection, getDocs, doc, getDoc, updateDoc, query, where } from 'firebase/firestore';
+import { db, auth } from './firebase';
 
 // Fetch all workout sessions
-export const getSessionDetails = async () => {
+export const getAllSessions = async () => {
     const querySnapshot = await getDocs(collection(db, 'WorkoutSession'));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
+
+// fetch user id
+export const getSessionDetails = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        console.warn('User not logged in.');
+        return [];
+    }
+
+    console.log('Logged in user:', user.uid);
+
+    try {
+        const sessionsRef = collection(db, 'WorkoutSession');
+        const q = query(sessionsRef, where('user_id', '==', user.uid));
+        const snapshot = await getDocs(q);
+
+        console.log('Logged in user2:', user.uid);
+        console.log('Sessions found:', snapshot.size);
+
+        if (snapshot.empty) {
+            console.log('No matching sessions found for user:', user.uid);
+        }
+
+        return snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('🔥 Error fetching sessions:', error);
+        return [];
+    }
+};
+
 
 //get session and exercises in it
 export const getExerciseNamesFromSession = async (sessionId) => {

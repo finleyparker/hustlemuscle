@@ -1,14 +1,22 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, View } from 'react-native';
-import AuthScreen from './screens/AuthScreen';
+import React from 'react';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StyleSheet } from 'react-native';
+import SessionListScreen from './screens/SessionListScreen';
 import WorkoutLogScreen from './screens/WorkoutLogScreen';
+import AuthScreen from './screens/AuthScreen';
+
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <View style={styles.container}>
-      <StatusBar style="auto" />
-      <WorkoutLogScreen />
-    </View>
+    <NavigationContainer>
+      <Stack.Navigator initialRouteName="Login">
+        <Stack.Screen name="Login" component={AuthScreen} />
+        <Stack.Screen name="Sessions" component={SessionListScreen} />
+        <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
+      </Stack.Navigator>
+    </NavigationContainer>
   );
 }
 
