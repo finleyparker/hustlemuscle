@@ -12,6 +12,7 @@ export default function SessionListScreen() {
             console.log('setting session details');
             const data = await getSessionDetails();
             setSessions(data);
+            navigation.setOptions({ title: `Current Session: ${session}` });
         };
         fetchSessions();
     }, []);

@@ -35,7 +35,7 @@ export const getSessionDetails = async () => {
             ...doc.data()
         }));
     } catch (error) {
-        console.error('🔥 Error fetching sessions:', error);
+        console.error('Firebase error fetching sessions:', error);
         return [];
     }
 };
