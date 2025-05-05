@@ -1,0 +1,38 @@
+[
+    {
+        "workout_session_id": "session_001_push",
+        "exercise_id": "ex_001",
+        "sets": 4,
+        "reps": [
+            10,
+            10,
+            9,
+            8
+        ],
+        "duration": 300,
+        "isComplete": true
+    },
+    {
+        "workout_session_id": "session_001_push",
+        "exercise_id": "ex_002",
+        "sets": 3,
+        "reps": [
+            8,
+            8,
+            7
+        ],
+        "duration": 240,
+        "isComplete": true
+    },
+    {
+        "workout_session_id": "session_001_push",
+        "exercise_id": "ex_003",
+        "sets": 2,
+        "reps": [
+            12,
+            10
+        ],
+        "duration": null,
+        "isComplete": false
+    }
+]

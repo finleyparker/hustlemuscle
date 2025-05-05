@@ -37,5 +37,5 @@ batch.commit().then(() => {
 //after setting up json file and editing file and target variables
 //  run this command in terminal
 //
-//  node ./scripts/WriteWorkouts.js
+//  node ./scripts/Write.js
 //
