@@ -58,6 +58,27 @@ export default function WorkoutLogScreen() {
         setExercises(updated);
     };
 
+    const handleSave = async () => {
+        const completions = exercises.map((exercise) => ({
+            workout_session_id: sessionId,
+            exercise_id: exercise.exercise_id || exercise.name, // fallback if no ID
+            sets: exercise.sets.length,
+            reps: exercise.sets.map(set => parseInt(set.reps) || 0),
+            weights: exercise.sets.map(set => parseFloat(set.weight) || 0),
+            duration: null,
+            isComplete: exercise.sets.every(set => set.reps && set.weight)
+        }));
+
+        try {
+            await updateExerciseCompletion(completions);
+            alert('Workout saved!');
+            navigation.replace('Sessions');
+        } catch (error) {
+            console.error('Save error:', error);
+            alert('Failed to save.');
+        }
+    };
+
     if (loading) {
         return (
             <SafeAreaView style={styles.container2}>
@@ -126,7 +147,7 @@ export default function WorkoutLogScreen() {
 
                 <TouchableOpacity
                     style={styles.endWorkoutButton}
-                    onPress={() => alert("Workout ended!")}
+                    onPress={handleSave}
                 >
                     <Text style={styles.endWorkoutText}>Finish Workout</Text>
                 </TouchableOpacity>

@@ -9,6 +9,12 @@
             9,
             8
         ],
+        "weights": [
+            10,
+            10,
+            10,
+            8
+        ],
         "duration": 300,
         "isComplete": true
     },

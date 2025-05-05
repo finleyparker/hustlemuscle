@@ -1,4 +1,4 @@
-import { collection, getDocs, doc, getDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 // Fetch all workout sessions
@@ -60,6 +60,14 @@ export const getExerciseNamesFromSession = async (sessionId) => {
     }
 };
 
+// Update an exercise's completion status, reps, sets and weights
+export const updateExerciseCompletion = async (completions) => {
+    const promises = completions.map(completion =>
+        addDoc(collection(db, 'ExerciseCompletion'), completion)
+    );
+    await Promise.all(promises);
+};
+
 export const getSessionName = async (sessionId) => {
     try {
         console.log('getting session name...');
@@ -77,17 +85,6 @@ export const getSessionName = async (sessionId) => {
         console.error('Firestore error:', error);
         return [];
     }
-};
-
-
-// Update an exercise's completion status, reps and sets
-export const updateExerciseCompletion = async (completions) => {
-    const promises = completions.map((completion) => {
-        const ref = doc(db, 'exerciseCompletions', `${completion.workout_session_id}_${completion.exercise_id}`);
-        return setDoc(ref, completion);
-    });
-
-    await Promise.all(promises);
 };
 
 
