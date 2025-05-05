@@ -17,9 +17,28 @@ export const getExerciseNamesFromSession = async (sessionId) => {
             console.warn('No session found for ID:', sessionId);
             return [];
         }
-        console.log('Get successfull');
+        console.log('Get exercise name successfull');
         const data = snap.data();
         return data.exercise_name || [];
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+export const getSessionName = async (sessionId) => {
+    try {
+        console.log('getting session name...');
+        const ref = doc(db, 'WorkoutSession', sessionId);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+            console.warn('No session name found for ID:', sessionId);
+            return [];
+        }
+        console.log('Get session name successfull');
+        const data = snap.data();
+        return data.session_name || [];
     } catch (error) {
         console.error('Firestore error:', error);
         return [];

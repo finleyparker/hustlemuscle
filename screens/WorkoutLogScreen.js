@@ -3,21 +3,23 @@ import {
     View, Text, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
-import { getExerciseNamesFromSession, updateExerciseCompletion } from '../database/WorkoutLog';
+import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutLog';
 
 export default function WorkoutLogScreen() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [sessionName, setSessionName] = useState(); // default value
+    const [sessionName, setSessionName] = useState();
 
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
-            const names = await getExerciseNamesFromSession('ERb0LqXSsZPQreeQxGL3');
+            const names = await getExerciseNamesFromSession('LJxghOMcfm6Bfd7in0fU');
             const formatted = names.map(name => ({
                 name,
                 sets: [{ reps: '', weight: '' }] // start with 1 set per exercise
             }));
+            const session = await getSessionName('LJxghOMcfm6Bfd7in0fU');
+            setSessionName(session);
             setExercises(formatted);
             setLoading(false);
         };
@@ -52,7 +54,7 @@ export default function WorkoutLogScreen() {
                     <Text style={styles.backText}>← Back</Text>
                 </TouchableOpacity>
 
-                <Text style={styles.headerTitle}>{sessionName}</Text>
+                <Text style={styles.headerTitle}>Current Session: {sessionName}</Text>
             </View>
 
             <ScrollView style={styles.container}>
@@ -123,7 +125,7 @@ export default function WorkoutLogScreen() {
 
 const styles = StyleSheet.create({
     container2: {
-        paddingTop: Platform.OS == "android" ? StatusBar.currentHeight : 0,
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
         flex: 1,
         //justifyContent: "center",
         //alignItems: "center",
@@ -143,6 +145,28 @@ const styles = StyleSheet.create({
         borderColor: '#ccc',
         textAlign: 'center'
     },
+    header: {
+        backgroundColor: '#0c0f0A',
+        paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
+        paddingBottom: 10,
+        paddingHorizontal: 20,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+    },
+
+    backText: {
+        color: '#446df6',
+        fontSize: 16,
+    },
+
+    headerTitle: {
+        color: '#fff',
+        fontSize: 18,
+        fontWeight: 'bold',
+    },
+
+
     label: { fontSize: 16 },
     addSetButton: {
         marginTop: 5,
