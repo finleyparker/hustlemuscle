@@ -22,6 +22,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         // Adding multiple fields to the query
         const q = query(
           workoutPlansCollection, 
+          where('userId', '==', testUserId), // Add this
           where('userInput.goal', '==', userInput.goal),
           where('userInput.level', '==', userInput.level),
           where('userInput.daysPerWeek', '==', userInput.daysPerWeek),

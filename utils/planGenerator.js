@@ -6,17 +6,22 @@ const createWorkoutSession = async (userId, sessionName, exercises) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
     
-    // Create a new workout session document with the user_id
+    // Use original exercise IDs from API
+    const exerciseIds = exercises.map(ex => ex.id); 
+    const exerciseNames = exercises.map(ex => ex.name);
+
     const newSession = {
-      user_id: userId, // Include userId
-      session_name: sessionName,
-      exercises,
-      createdAt: new Date(),
+      user_id: userId,
+      session_id: sessionName.toLowerCase().replace('day_', '').replace('_', ''),
+      session_name: sessionName.replace('Day_', '').replace('_', ' ').toLowerCase(),
+      exercise_id: exerciseIds, 
+      exercise_name: exerciseNames,
+      workout_plan_id: `plan_${userId}`,
+      createdAt: new Date()
     };
 
-    // Add the workout session to Firestore
     await addDoc(workoutSessionsCollection, newSession);
-    console.log(`Workout session "${sessionName}" created for user ${userId}`);
+    console.log(`Created session: ${sessionName} for user ${userId}`);
   } catch (error) {
     console.error('Error creating workout session:', error);
   }
@@ -133,12 +138,18 @@ export const generateWorkoutPlan = async (userInput, userId) => {
         const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
 
         // Create a workout session for the user for each day
-        await createWorkoutSession(userId, dayKey, finalExercises);
+        await createWorkoutSession(
+          userId, 
+          dayKey, // e.g. "Day_1_push"
+          finalExercises
+        );
 
         return {
           day: dayKey.replace('_', ' ').toUpperCase(),
+          session_id: dayKey.toLowerCase().replace('day_', '').replace('_', ''),
           muscleFocus: muscleGroup.join(' & '),
           exercises: finalExercises.map(ex => ({
+            id: ex.id,
             name: ex.name,
             sets,
             reps: Array.isArray(reps) ? reps.join(' - ') : reps,
@@ -169,8 +180,8 @@ export const generateWorkoutPlan = async (userInput, userId) => {
 const testGeneratePlan = async () => {
   const userInput = {
     goal: 'muscle gain',
-    level: 'expert',
-    daysPerWeek: 4,
+    level: 'beginner',
+    daysPerWeek: 3,
     equipment: ['body only', 'cable', 'machine', ],
   };
 
