@@ -16,17 +16,20 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       try {
         const workoutPlansCollection = collection(firestore, 'workoutPlans');
         
+        // Use a test userId for now (replace with actual userId once authentication is in place)
+        const testUserId = 'testUserId123'; // Replace with actual userId when authentication is integrated
+  
         // Adding multiple fields to the query
         const q = query(
           workoutPlansCollection, 
           where('userInput.goal', '==', userInput.goal),
           where('userInput.level', '==', userInput.level),
           where('userInput.daysPerWeek', '==', userInput.daysPerWeek),
-          where('userInput.equipment', 'array-contains', userInput.equipment) // assuming equipment is an array of available equipment
+          where('userInput.equipment', 'array-contains', userInput.equipment)
         );
-
+  
         const querySnapshot = await getDocs(q);
-
+  
         if (!querySnapshot.empty) {
           querySnapshot.forEach((doc) => {
             const data = doc.data();
@@ -39,15 +42,20 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             }
           });
         } else {
-          // If no plan matches, generate a new one
-          const generated = await generateWorkoutPlan(userInput);
+          // If no plan matches, generate a new one and create workout sessions
+          const generated = await generateWorkoutPlan(userInput, testUserId); // Pass test userId
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
+          
+          // Store the workout plan in Firestore
           await addDoc(workoutPlansCollection, {
+            userId: testUserId, // Use the testUserId instead
             userInput,
             plan: generated,
             createdAt: new Date(),
           });
+          
+          
         }
       } catch (error) {
         console.error('Failed to retrieve or generate plan:', error);
@@ -55,9 +63,10 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         setLoading(false);
       }
     };
-
+  
     loadPlan();
   }, [userInput]);
+  
 
   if (loading) {
     return (

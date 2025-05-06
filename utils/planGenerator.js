@@ -1,4 +1,26 @@
 import { getAllExercises } from '../api/exercises';
+import { collection, addDoc } from 'firebase/firestore';
+import { firestore } from '../firebaseConfig';
+// Function to create workout session in Firestore
+const createWorkoutSession = async (userId, sessionName, exercises) => {
+  try {
+    const workoutSessionsCollection = collection(firestore, 'workout_sessions');
+    
+    // Create a new workout session document with the user_id
+    const newSession = {
+      user_id: userId, // Include userId
+      session_name: sessionName,
+      exercises,
+      createdAt: new Date(),
+    };
+
+    // Add the workout session to Firestore
+    await addDoc(workoutSessionsCollection, newSession);
+    console.log(`Workout session "${sessionName}" created for user ${userId}`);
+  } catch (error) {
+    console.error('Error creating workout session:', error);
+  }
+};
 
 /**
  * Generates a personalized workout plan based on user preferences.
@@ -10,7 +32,7 @@ import { getAllExercises } from '../api/exercises';
  * @param {string[]} userInput.equipment - Equipment user has access to.
  * @returns {Promise<{plan: Array, warnings: Array}>} - A workout plan and potential warnings.
  */
-export const generateWorkoutPlan = async (userInput) => {
+export const generateWorkoutPlan = async (userInput, userId) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
 
   const goalCategoryMap = {
@@ -79,9 +101,9 @@ export const generateWorkoutPlan = async (userInput) => {
     const maxExercisesPerDay = 6;
     const warnings = [];
 
-    const workoutPlan = Object.entries(split)
+    const workoutPlan = await Promise.all(Object.entries(split)
       .slice(0, daysPerWeek)
-      .map(([dayKey, muscleGroup]) => {
+      .map(async ([dayKey, muscleGroup]) => {
         const muscleToExercisesMap = {};
         muscleGroup.forEach(muscle => {
           muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
@@ -102,22 +124,20 @@ export const generateWorkoutPlan = async (userInput) => {
           .sort(() => 0.5 - Math.random())
           .slice(0, maxExercisesPerDay);
 
-        const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
-
-        const exerciseIds = finalExercises.map(ex => ex.id);
-        const exerciseNames = finalExercises.map(ex => ex.name);
-
         if (finalExercises.length === 0) {
           warnings.push(`⚠️ No exercises found for ${dayKey.replace('_', ' ')}. Try adding more equipment or changing your fitness goal.`);
         } else if (finalExercises.length < 3) {
           warnings.push(`⚠️ Very few exercises for ${dayKey.replace('_', ' ')}. Consider adjusting equipment, fitness level, or training days.`);
         }
 
+        const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
+
+        // Create a workout session for the user for each day
+        await createWorkoutSession(userId, dayKey, finalExercises);
+
         return {
           day: dayKey.replace('_', ' ').toUpperCase(),
           muscleFocus: muscleGroup.join(' & '),
-          exercise_id: exerciseIds,
-          exercise_name: exerciseNames,
           exercises: finalExercises.map(ex => ({
             name: ex.name,
             sets,
@@ -127,7 +147,8 @@ export const generateWorkoutPlan = async (userInput) => {
             muscles: ex.primaryMuscles || ['muscles not defined'],
           })),
         };
-      });
+      })
+    );
 
     // If too few total exercises
     const totalExercises = workoutPlan.reduce((sum, day) => sum + day.exercises.length, 0);
@@ -141,6 +162,8 @@ export const generateWorkoutPlan = async (userInput) => {
     throw error;
   }
 };
+
+
 
 // Test runner
 const testGeneratePlan = async () => {
