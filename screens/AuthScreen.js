@@ -9,7 +9,8 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { auth } from '../database/firebase';
+import { auth, db } from '../database/firebase';
+import { doc, setDoc } from 'firebase/firestore';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { useNavigation } from '@react-navigation/native';
 
@@ -19,6 +20,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sex, setSex] = useState('');
   const navigation = useNavigation();
 
   const handleAuth = async () => {
@@ -33,10 +35,18 @@ export default function AuthScreen() {
       } else {
         // Register
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, {
-          displayName: name,
+        await updateProfile(userCredential.user, { displayName: name });
+
+        // Save user info to Firestore
+        await setDoc(doc(db, 'users', userCredential.user.uid), {
+          name,
+          sex,
+          email,
+          user_id: userCredential.user.uid
         });
+
         navigation.replace('Home');
+
       }
     } catch (error) {
       Alert.alert(
@@ -63,12 +73,11 @@ export default function AuthScreen() {
           <>
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder="Username"
               value={name}
               onChangeText={setName}
               autoCapitalize="words"
             />
-
             <TextInput
               style={styles.input}
               placeholder="Sex"

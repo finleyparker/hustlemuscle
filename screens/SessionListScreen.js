@@ -1,18 +1,20 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, FlatList, StyleSheet } from 'react-native';
-import { getSessionDetails } from '../database/WorkoutLog';
+import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
+import { getSessionDetails } from '../database/WorkoutDB';
 import { useNavigation } from '@react-navigation/native';
 
 export default function SessionListScreen() {
     const [sessions, setSessions] = useState([]);
     const navigation = useNavigation();
+    const [loading, setLoading] = useState(true);
+
 
     useEffect(() => {
         const fetchSessions = async () => {
             console.log('setting session details');
             const data = await getSessionDetails();
             setSessions(data);
-            navigation.setOptions({ title: `Current Session: ${session}` });
+            setLoading(false);
         };
         fetchSessions();
     }, []);
@@ -25,6 +27,17 @@ export default function SessionListScreen() {
             <Text style={styles.cardTitle}>{item.session_name || item.workout_plan_id}</Text>
         </TouchableOpacity>
     );
+
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color="#446df6" />
+                    <Text style={{ color: '#fff', marginTop: -100 }}>Loading sessions...</Text>
+                </View>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <View style={styles.container}>

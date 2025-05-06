@@ -7,7 +7,7 @@ export const getAllSessions = async () => {
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
-// fetch user id
+// fetch session of currentuser
 export const getSessionDetails = async () => {
     const user = auth.currentUser;
 
@@ -23,7 +23,6 @@ export const getSessionDetails = async () => {
         const q = query(sessionsRef, where('user_id', '==', user.uid));
         const snapshot = await getDocs(q);
 
-        console.log('Logged in user2:', user.uid);
         console.log('Sessions found:', snapshot.size);
 
         if (snapshot.empty) {

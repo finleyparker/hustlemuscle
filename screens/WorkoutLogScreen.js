@@ -3,34 +3,27 @@ import {
     View, Text, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
-import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutLog';
+import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
 
 export default function WorkoutLogScreen() {
     const [exercises, setExercises] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [sessionName, setSessionName] = useState();
     const route = useRoute();
     const sessionId = route.params?.sessionId;
     const navigation = useNavigation();
-
-
-    const currentSession = 'LJxghOMcfm6Bfd7in0fU';
-
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
             //get each exercise name
             const names = await getExerciseNamesFromSession(sessionId);
+            const session_name = await getSessionName(sessionId);
             const formatted = names.map(name => ({
                 name,
                 sets: [{ reps: '', weight: '' }] // start with 1 set per exercise
             }));
-            //get session name
-            const session = await getSessionName(sessionId);
-            setSessionName(session);
-            navigation.setOptions({ title: `Current Session: ${session}` });
+            navigation.setOptions({ title: `Current Session: ${session_name}` });
             setExercises(formatted);
             setLoading(false);
         };
@@ -161,12 +154,13 @@ export default function WorkoutLogScreen() {
 
 const styles = StyleSheet.create({
     container2: {
+        backgroundColor: "0c0f0A",
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
         flex: 1,
         //justifyContent: "center",
         //alignItems: "center",
     },
-    planContainer: { padding: 20, borderBottomWidth: 1, borderColor: '#ddd' },
+    planContainer: { padding: 20, borderBottomWidth: 1, borderColor: '#ddd', backgroundColor: "0c0f0A" },
     planTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
     exerciseCard: { marginBottom: 15, backgroundColor: '#f0f0f0', borderRadius: 10, padding: 15 },
     exerciseName: { fontSize: 18, fontWeight: '600', marginBottom: 10 },

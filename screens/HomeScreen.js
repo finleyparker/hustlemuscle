@@ -1,13 +1,20 @@
 import React, { useMemo } from 'react';
+import { auth } from '../database/firebase';
+
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getUserName } from '../database/UserDB';
 
 // import LinearGradient from 'expo'
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
 
 const HomeScreen = () => {
+  //get current user name
+  const user = auth.currentUser;
+  const user_name = getUserName(user.uid);
+
   // Get current date and calculate the week
   const today = useMemo(() => new Date(), []);
   const navigation = useNavigation();
@@ -45,7 +52,7 @@ const HomeScreen = () => {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Welcome back, User</Text>
+          <Text style={styles.welcomeText}>Welcome back, {user_name}</Text>
           <Image
             source={require('../assets/profile-placeholder.png')}
             style={styles.profileImage}
