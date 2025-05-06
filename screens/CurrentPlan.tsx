@@ -115,10 +115,10 @@ if (docSnap.exists()) {
                 <Text style={styles.subtitle}>{item.type}</Text>
                 <Text style={styles.mealTitle}>{item.title}</Text>
                 <Text>
-  {Array.isArray(item.ingredient)
-    ? `- ${item.ingredient.join('\n- ')}`
-    : 'No ingredients listed.'}
-</Text>
+                  {Array.isArray(item.ingredient)
+                  ? `- ${item.ingredient.join('\n- ')}`
+                  : 'No ingredients listed.'}
+                </Text>
                 <Text>Calories: {item.calories}</Text>
                 <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />
 
