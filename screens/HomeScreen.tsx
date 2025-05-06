@@ -31,6 +31,8 @@ const HomeScreen = ({ navigation }: any) => {
   const [selectedMeals, setSelectedMeals] = useState<{ name: string; calories: number }[]>([]);
   const [manualMealName, setManualMealName] = useState('');
   const [manualCalories, setManualCalories] = useState('');
+  const [dailyTarget, setDailyTarget] = useState(2000); // Default target
+  const [dietGoal, setDietGoal] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -38,11 +40,22 @@ const HomeScreen = ({ navigation }: any) => {
         try {
           const userRef = doc(db, 'dietPlans', userId);
           const docSnap = await getDoc(userRef);
-  
+
           if (docSnap.exists()) {
             const data = docSnap.data();
             setTotalCalories(data.totalCalories || 0);
             setSelectedMeals(data.selectedMeals || []);
+
+            // Set daily target based on diet goal
+            const weightGoal = data.weightGoal || 'MaintainWeight';
+            setDietGoal(weightGoal);
+
+            let target = 2000;
+            if (weightGoal === 'LoseWeight') target = 1500;
+            else if (weightGoal === 'GainWeight') target = 2500;
+            else target = 2000;
+
+            setDailyTarget(target);
           } else {
             console.log('No such document!');
           }
@@ -50,7 +63,7 @@ const HomeScreen = ({ navigation }: any) => {
           console.error('Error fetching data:', error);
         }
       };
-  
+
       fetchData();
     }, [])
   );
@@ -103,7 +116,8 @@ const HomeScreen = ({ navigation }: any) => {
     }
   };
 
-  const fill = (totalCalories / 2000) * 100; // Assuming 2000 daily target
+  const fill = (totalCalories / dailyTarget) * 100;
+  const tintColor = fill <= 100 ? '#00e0ff' : 'red';
 
   return (
     <View style={backgroundStyle}>
@@ -131,15 +145,14 @@ const HomeScreen = ({ navigation }: any) => {
               size={250}
               width={20}
               fill={fill}
-              tintColor="#00e0ff"
+              tintColor={tintColor}
               backgroundColor="#3d5875"
-              onAnimationComplete={() => console.log('onAnimationComplete')}
             />
             <Text style={styles.calorie}>Calories:</Text>
             <Text style={styles.calorie1}>{totalCalories}</Text>
+            <Text style={styles.goalText}>Daily Target: {dailyTarget}</Text>
+            {fill > 100}
           </View>
-
-          
 
           <View style={styles.button3}>
             <Button
@@ -198,14 +211,15 @@ const HomeScreen = ({ navigation }: any) => {
           </View>
         </View>
       </Modal>
+
       <View style={styles.button2}>
-            <Button
-              color="red"
-              title="Reset Plan"
-              onPress={handleReset}
-              accessibilityLabel="Reset calorie count and meal log"
-            />
-          </View>
+        <Button
+          color="red"
+          title="Reset Plan"
+          onPress={handleReset}
+          accessibilityLabel="Reset calorie count and meal log"
+        />
+      </View>
     </View>
   );
 };
@@ -232,12 +246,22 @@ const styles = StyleSheet.create({
   calorie1: {
     fontSize: 30,
   },
+  goalText: {
+    fontSize: 16,
+    marginTop: 10,
+    color: '#333',
+  },
+  warningText: {
+    marginTop: 70,
+    color: 'red',
+    fontWeight: 'bold',
+  },
   button2: {
     marginLeft: 0,
   },
   button3: {
     marginLeft: 80,
-    marginTop: 120,
+    marginTop: 80,
     width: 200,
   },
   log: {
