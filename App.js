@@ -4,6 +4,7 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import HomeScreen from './screens/HomeScreen';
 import GenderScreen from './screens/onboarding/GenderScreen';
+import simpleGenderScreen from './screens/onboarding/simpleGender';
 import WeightScreen from './screens/onboarding/WeightScreen';
 import PhysiqueScreen from './screens/onboarding/PhysiqueScreen';
 import AthleticAbilityScreen from './screens/onboarding/AthleticAbilityScreen';
@@ -21,8 +22,9 @@ export default function App() {
           contentStyle: { backgroundColor: '#000000' }
         }}
       >
+        <Stack.Screen name="Gender" component={simpleGenderScreen} />
+        
         <Stack.Screen name="Home" component={HomeScreen} />
-        <Stack.Screen name="Gender" component={GenderScreen} />
         <Stack.Screen name="Weight" component={WeightScreen} />
         <Stack.Screen name="Physique" component={PhysiqueScreen} />
         <Stack.Screen name="AthleticAbility" component={AthleticAbilityScreen} />
@@ -30,6 +32,8 @@ export default function App() {
     </NavigationContainer>
   );
 }
+
+//<Stack.Screen name="Gender" component={GenderScreen} />
 
 const styles = StyleSheet.create({
   container: {

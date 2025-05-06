@@ -7,12 +7,13 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getFirestore, doc, setDoc } from 'firebase/firestore';
-import app from '../../firebase';
+import { db, auth } from '../../firebase';
+import { doc, setDoc } from 'firebase/firestore';
+
 
 const GenderScreen = ({ navigation }) => {
   const [selectedGender, setSelectedGender] = useState(null);
-  const db = getFirestore(app);
+  
 
   const handleGenderSelect = async (gender) => {
     setSelectedGender(gender);
