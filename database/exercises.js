@@ -1,7 +1,5 @@
 import axios from 'axios';
 
-// API key is hardcoded for demonstration purposes, but in production it should
-// be handled using backend proxy
 const BASE_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 const EXERCISE_DB_URL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/dist/exercises.json';
 

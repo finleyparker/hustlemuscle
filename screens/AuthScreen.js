@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   StyleSheet,
   Text,
@@ -9,8 +9,9 @@ import {
   Platform,
   Alert,
 } from 'react-native';
-import { auth } from '../firebase';
+import { auth } from '../database/firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
@@ -18,6 +19,7 @@ export default function AuthScreen() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [loading, setLoading] = useState(false);
+  const navigation = useNavigation();
 
   const handleAuth = async () => {
     if (loading) return;
@@ -27,12 +29,14 @@ export default function AuthScreen() {
       if (isLogin) {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
+        navigation.replace('Sessions');
       } else {
         // Register
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, {
           displayName: name,
         });
+        navigation.replace('Sessions');
       }
     } catch (error) {
       Alert.alert(
