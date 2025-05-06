@@ -1,6 +1,8 @@
 import React, { useMemo } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import { useNavigation, useRoute } from '@react-navigation/native';
+
 // import LinearGradient from 'expo'
 import { useFonts } from 'expo-font';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,14 +10,17 @@ import { Ionicons } from '@expo/vector-icons';
 const HomeScreen = () => {
   // Get current date and calculate the week
   const today = useMemo(() => new Date(), []);
+  const navigation = useNavigation();
+
   const weekDays = useMemo(() => {
     const days = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    
+
+
     // Get Sunday of current week
     const sunday = new Date(today);
     sunday.setDate(today.getDate() - today.getDay());
-    
+
     // Generate array of dates for the week
     for (let i = 0; i < 7; i++) {
       const date = new Date(sunday);
@@ -31,8 +36,8 @@ const HomeScreen = () => {
 
   const isToday = (date) => {
     return date.getDate() === today.getDate() &&
-           date.getMonth() === today.getMonth() &&
-           date.getFullYear() === today.getFullYear();
+      date.getMonth() === today.getMonth() &&
+      date.getFullYear() === today.getFullYear();
   };
 
   return (
@@ -51,8 +56,8 @@ const HomeScreen = () => {
       {/* Calendar Strip */}
       <View style={styles.calendarStrip}>
         {weekDays.map((item, index) => (
-          <View 
-            key={index} 
+          <View
+            key={index}
             style={[
               styles.dayContainer,
               isToday(item.fullDate) && styles.selectedDayContainer
@@ -75,7 +80,9 @@ const HomeScreen = () => {
       </View>
 
       {/* Main Cards */}
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('Sessions')}>
         <Image
           source={require('../assets/workout-bg.png')}
           style={styles.cardBackground}
@@ -122,7 +129,7 @@ const HomeScreen = () => {
           <Text style={styles.statLabel}>Calorie Tracker</Text>
         </View>
       </View>
-    </ScrollView>
+    </ScrollView >
   );
 };
 

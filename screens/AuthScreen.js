@@ -29,14 +29,14 @@ export default function AuthScreen() {
       if (isLogin) {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
-        navigation.replace('Sessions');
+        navigation.replace('Home');
       } else {
         // Register
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         await updateProfile(userCredential.user, {
           displayName: name,
         });
-        navigation.replace('Sessions');
+        navigation.replace('Home');
       }
     } catch (error) {
       Alert.alert(
