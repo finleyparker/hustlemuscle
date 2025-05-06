@@ -12,6 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 
 const HomeScreen = () => {
   //get current user name
+  if (!auth.currentUser) return;
   const user = auth.currentUser;
   const user_name = getUserName(user.uid);
 
@@ -105,7 +106,9 @@ const HomeScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      <TouchableOpacity style={styles.card}>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('DietScreen')}>
         <Image
           source={require('../assets/meal-bg.png')}
           style={styles.cardBackground}

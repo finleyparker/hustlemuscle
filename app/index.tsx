@@ -1,28 +1,41 @@
-// App.tsx
 import React from 'react';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { NavigationContainer } from '@react-navigation/native';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
-import HomeScreen from '../screens/HomeScreen'; // adjust the path if needed
-import NewDiet from '../screens/NewDiet'; 
-import CurrentPlan from '../screens/CurrentPlan'; 
-import { enableScreens } from 'react-native-screens';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { StyleSheet } from 'react-native';
 
-; // boost performance and fix the component error
+//workout screens
+import SessionListScreen from '../screens/SessionListScreen';
+import WorkoutLogScreen from '../screens/WorkoutLogScreen';
 
-enableScreens()
+//main app screens
+import AuthScreen from '../screens/AuthScreen';
+import HomeScreen from '../screens/HomeScreen';
+
+//diet screens
+import DietScreen from '../screens/DietScreen'; //main diet page
+import NewDiet from '../screens/NewDiet';
+import CurrentPlan from '../screens/CurrentPlan';
+
+
 const Stack = createNativeStackNavigator();
- 
-const AppNavigator = () => {
+
+export default function App() {
   return (
-    <Stack.Navigator initialRouteName="Home">
-      <Stack.Screen name="Home" component={HomeScreen} />
-      <Stack.Screen name="New" component={NewDiet} />
+    <Stack.Navigator initialRouteName="Login">
+      <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Sessions" component={SessionListScreen} />
+      <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
+      <Stack.Screen name="DietScreen" component={DietScreen} />
+      <Stack.Screen name="NewDiet" component={NewDiet} />
       <Stack.Screen name="Current" component={CurrentPlan} />
     </Stack.Navigator>
   );
-};
+}
 
-
-
-export default AppNavigator;
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#0c0f0A',
+  },
+});
