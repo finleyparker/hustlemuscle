@@ -2,14 +2,16 @@ import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 
 // Your web app's Firebase configuration
+
 const firebaseConfig = {
-  apiKey: "AIzaSyBD61luNcXCzwDoRnMzAlFVTIUgpeCp5U4",
+  apiKey: "AIzaSyAx2nzHu9zjwavPd6m4Of47XU9ijLaK7qs",
   authDomain: "hustlemuscle-940f2.firebaseapp.com",
   projectId: "hustlemuscle-940f2",
-  storageBucket: "hustlemuscle-940f2.firebasestorage.app",
+  storageBucket: "hustlemuscle-940f2.appspot.com",
   messagingSenderId: "36393126022",
-  appId: "1:36393126022:web:8489f6aa6aa746b2bca907"
+  appId: "1:36393126022:android:331299dadbe265fbbca907"
 };
+
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);

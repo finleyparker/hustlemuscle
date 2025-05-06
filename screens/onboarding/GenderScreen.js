@@ -7,16 +7,28 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { getFirestore, doc, setDoc } from 'firebase/firestore';
+import app from '../../firebase';
 
 const GenderScreen = ({ navigation }) => {
   const [selectedGender, setSelectedGender] = useState(null);
+  const db = getFirestore(app);
 
-  const handleGenderSelect = (gender) => {
+  const handleGenderSelect = async (gender) => {
     setSelectedGender(gender);
-    // Navigate to weight screen after a short delay
-    setTimeout(() => {
-      navigation.navigate('Weight');
-    }, 300);
+    try {
+      // Update the Gender field in the user's document
+      await setDoc(doc(db, 'UserDetails', '07QDnA7D3QOrcZNS3Dfe'), {
+        Gender: gender
+      }, { merge: true });
+      
+      // Navigate to weight screen after a short delay
+      setTimeout(() => {
+        navigation.navigate('Weight');
+      }, 300);
+    } catch (error) {
+      console.error('Error saving gender:', error);
+    }
   };
 
   const GenderButton = ({ gender, isSelected }) => (
