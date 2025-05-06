@@ -21,7 +21,7 @@ export default function AuthScreen() {
 
   const handleAuth = async () => {
     if (loading) return;
-    
+
     setLoading(true);
     try {
       if (isLogin) {
@@ -56,13 +56,23 @@ export default function AuthScreen() {
 
       <View style={styles.formContainer}>
         {!isLogin && (
-          <TextInput
-            style={styles.input}
-            placeholder="Full Name"
-            value={name}
-            onChangeText={setName}
-            autoCapitalize="words"
-          />
+          <>
+            <TextInput
+              style={styles.input}
+              placeholder="Full Name"
+              value={name}
+              onChangeText={setName}
+              autoCapitalize="words"
+            />
+
+            <TextInput
+              style={styles.input}
+              placeholder="Sex"
+              value={sex}
+              onChangeText={setSex}
+              autoCapitalize="none"
+            />
+          </>
         )}
         <TextInput
           style={styles.input}
@@ -80,8 +90,8 @@ export default function AuthScreen() {
           secureTextEntry
         />
 
-        <TouchableOpacity 
-          style={[styles.button, loading && styles.buttonDisabled]} 
+        <TouchableOpacity
+          style={[styles.button, loading && styles.buttonDisabled]}
           onPress={handleAuth}
           disabled={loading}
         >
