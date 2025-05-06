@@ -102,7 +102,7 @@ if (docSnap.exists()) {
         <Text>Loading...</Text>
       ) : (
         <>
-          <Text style={styles.title}>Your Diet Plan: {userDietRestriction}</Text>
+          <Text style={styles.title}>Dietary Restrictions: {userDietRestriction}</Text>
           <Text style={styles.totalCalories}>
             Total Calories Consumed: {totalCalories}
           </Text>

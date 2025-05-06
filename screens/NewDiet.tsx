@@ -37,8 +37,7 @@ export default function App() {
     { label: 'Not Active (little to no exercise)', value: 'NotActive' },
   ]);
 
-  // Input for foods user cannot eat
-  const [foodsNotEat, setFoodsNotEat] = useState('');
+
 
   // Hardcoded user ID for testing purposes
   const userId = '1212'; // Replace this with actual user ID from Firebase Auth or any other method
@@ -58,7 +57,6 @@ export default function App() {
         dietRestriction: value1,
         weightGoal: value2,
         activityLevel: value3,
-        foodsNotEat: foodsNotEat,
         userId: userId,
       };
 
@@ -80,7 +78,6 @@ export default function App() {
           setValue1(null);
           setValue2(null);
           setValue3(null);
-          setFoodsNotEat('');
     } catch (error) {
       console.error('Error saving diet plan: ', error);
     }
@@ -127,14 +124,6 @@ export default function App() {
           zIndex={1000}
           zIndexInverse={1000}
         />
-        <Text>What foods do/can you not eat?</Text>
-        <View style={styles.input}>
-          <TextInput
-            value={foodsNotEat}
-            onChangeText={setFoodsNotEat}
-            placeholder="Enter foods you can't eat..."
-          />
-        </View>
         <View style={styles.buttonContainer}>
           <Button color="white" title="Create Plan" onPress={saveDietPlan} />
         </View>
