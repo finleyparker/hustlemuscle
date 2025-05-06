@@ -33,6 +33,7 @@ const HomeScreen = ({ navigation }: any) => {
   const [manualCalories, setManualCalories] = useState('');
   const [dailyTarget, setDailyTarget] = useState(2000); // Default target
   const [dietGoal, setDietGoal] = useState('');
+  const [activityLevel, setActivityLevel] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -50,9 +51,25 @@ const HomeScreen = ({ navigation }: any) => {
             const weightGoal = data.weightGoal || 'MaintainWeight';
             setDietGoal(weightGoal);
 
+            const activityLevel = data.activityLevel || 'MildlyActive';
+            setActivityLevel(activityLevel);
+
             let target = 2000;
-            if (weightGoal === 'LoseWeight') target = 1500;
-            else if (weightGoal === 'GainWeight') target = 2500;
+            if (weightGoal === 'LoseWeight' && activityLevel === 'NotActive') target = 1500;
+            else if (weightGoal === 'LoseWeight' && activityLevel === 'MildlyActive') target = 1700;
+            else if (weightGoal === 'LoseWeight' && activityLevel === 'Moderate') target = 1900;
+            else if (weightGoal === 'LoseWeight' && activityLevel === 'Active') target = 2100;
+            else if (weightGoal === 'LoseWeight' && activityLevel === 'ExtremelyActive') target = 2300;
+            else if (weightGoal === 'MaintainWeight' && activityLevel === 'NotActive') target = 1800;
+            else if (weightGoal === 'MaintainWeight' && activityLevel === 'MildlyActive') target = 2000;
+            else if (weightGoal === 'MaintainWeight' && activityLevel === 'Moderate') target = 2200;
+            else if (weightGoal === 'MaintainWeight' && activityLevel === 'Active') target = 2400;
+            else if (weightGoal === 'MaintainWeight' && activityLevel === 'ExtremelyActive') target = 2600;
+            else if (weightGoal === 'GainWeight' && activityLevel === 'NotActive') target = 2500;
+            else if (weightGoal === 'GainWeight' && activityLevel === 'MildlyActive') target = 2700;
+            else if (weightGoal === 'GainWeight' && activityLevel === 'Moderate') target = 2900;
+            else if (weightGoal === 'GainWeight' && activityLevel === 'Active') target = 3100;
+            else if (weightGoal === 'GainWeight' && activityLevel === 'ExtremelyActive') target = 3300;
             else target = 2000;
 
             setDailyTarget(target);

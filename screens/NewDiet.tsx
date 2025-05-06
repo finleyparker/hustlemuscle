@@ -52,6 +52,11 @@ export default function App() {
 
   // Function to save diet plan to Firebase under the user's collection
   const saveDietPlan = async () => {
+    if (!value1 || !value2 || !value3) {
+      Alert.alert('Missing Input', 'Please fill in all fields before saving the diet plan.');
+      return;
+    }
+  
     try {
       const dietPlanData = {
         dietRestriction: value1,
@@ -59,30 +64,26 @@ export default function App() {
         activityLevel: value3,
         userId: userId,
       };
-
-      // Create a reference to the user's document
-
-      // Reference to the diet plan document with userId as the document ID
-      const dietPlanDocRef = doc(db, 'dietPlans', userId); // This uses the userId as the document ID
-
-      // Save the diet plan document
+  
+      const dietPlanDocRef = doc(db, 'dietPlans', userId);
+  
       await setDoc(dietPlanDocRef, dietPlanData);
-
+  
       console.log('Diet plan saved successfully!');
-        // Show success message
-        Alert.alert('Success', 'Your personalized diet plan has been created!', [
-            { text: 'OK' },
-          ]);
-    
-          // Clear input fields
-          setValue1(null);
-          setValue2(null);
-          setValue3(null);
+      Alert.alert('Success', 'Your personalized diet plan has been created!', [
+        { text: 'OK' },
+      ]);
+  
+      // Clear input fields
+      setValue1(null);
+      setValue2(null);
+      setValue3(null);
     } catch (error) {
       console.error('Error saving diet plan: ', error);
+      Alert.alert('Error', 'There was a problem saving your diet plan. Please try again.');
     }
-    
   };
+  
 
   return (
     <TouchableWithoutFeedback onPress={closeDropdowns}>
