@@ -1,5 +1,5 @@
 // HomeScreen.tsx
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import { useFocusEffect } from '@react-navigation/native';
 
 const HomeScreen = ({ navigation }: any) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -31,26 +32,28 @@ const HomeScreen = ({ navigation }: any) => {
   const [manualMealName, setManualMealName] = useState('');
   const [manualCalories, setManualCalories] = useState('');
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const userRef = doc(db, 'dietPlans', userId);
-        const docSnap = await getDoc(userRef);
-
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setTotalCalories(data.totalCalories || 0);
-          setSelectedMeals(data.selectedMeals || []);
-        } else {
-          console.log('No such document!');
+  useFocusEffect(
+    useCallback(() => {
+      const fetchData = async () => {
+        try {
+          const userRef = doc(db, 'dietPlans', userId);
+          const docSnap = await getDoc(userRef);
+  
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTotalCalories(data.totalCalories || 0);
+            setSelectedMeals(data.selectedMeals || []);
+          } else {
+            console.log('No such document!');
+          }
+        } catch (error) {
+          console.error('Error fetching data:', error);
         }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      }
-    };
-
-    fetchData();
-  }, []);
+      };
+  
+      fetchData();
+    }, [])
+  );
 
   const toggleModal = (visible: boolean) => {
     setModalVisible(visible);
@@ -116,10 +119,12 @@ const HomeScreen = ({ navigation }: any) => {
             title="Create a new personalised diet"
             onPress={() => navigation.navigate('New')}
           />
-          <Button
-            title="View current plan"
-            onPress={() => navigation.navigate('Current')}
-          />
+          <View style={{ marginTop: 5 }}>
+            <Button
+              title="View current plan"
+              onPress={() => navigation.navigate('Current')}
+            />
+          </View>
 
           <View style={styles.progress}>
             <AnimatedCircularProgress
@@ -134,14 +139,7 @@ const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.calorie1}>{totalCalories}</Text>
           </View>
 
-          <View style={styles.button2}>
-            <Button
-              color="red"
-              title="Reset Plan"
-              onPress={handleReset}
-              accessibilityLabel="Reset calorie count and meal log"
-            />
-          </View>
+          
 
           <View style={styles.button3}>
             <Button
@@ -200,6 +198,14 @@ const HomeScreen = ({ navigation }: any) => {
           </View>
         </View>
       </Modal>
+      <View style={styles.button2}>
+            <Button
+              color="red"
+              title="Reset Plan"
+              onPress={handleReset}
+              accessibilityLabel="Reset calorie count and meal log"
+            />
+          </View>
     </View>
   );
 };
@@ -227,17 +233,16 @@ const styles = StyleSheet.create({
     fontSize: 30,
   },
   button2: {
-    marginTop: 120,
-    marginLeft: -200,
+    marginLeft: 0,
   },
   button3: {
-    marginLeft: 160,
-    marginTop: -38,
+    marginLeft: 80,
+    marginTop: 120,
     width: 200,
   },
   log: {
     marginLeft: 20,
-    marginTop: 40,
+    marginTop: 20,
   },
   modal1: {
     flex: 1,

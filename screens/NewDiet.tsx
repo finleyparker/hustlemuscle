@@ -9,6 +9,7 @@ export default function App() {
   const [open1, setOpen1] = useState(false);
   const [value1, setValue1] = useState(null);
   const [items1, setItems1] = useState([
+    { label: 'None', value: 'none' },
     { label: 'Vegetarian', value: 'Vegetarian' },
     { label: 'Vegan', value: 'Vegan' },
     { label: 'Dairy free', value: 'DairyFree' },

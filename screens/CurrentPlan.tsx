@@ -63,7 +63,9 @@ export default function App() {
   }, []);
 
   // Filter food items based on diet restriction
-  const filteredDiet = hello.filter(item => item.type === userDietRestriction);
+  const filteredDiet = userDietRestriction === 'none'
+  ? hello // Show all meals
+  : hello.filter(item => item.type === userDietRestriction);
 
   // Handle meal selection
   const handleSelectMeal = async (calories: number, title: string) => {
@@ -112,7 +114,11 @@ if (docSnap.exists()) {
               <View style={styles.mealCard}>
                 <Text style={styles.subtitle}>{item.type}</Text>
                 <Text style={styles.mealTitle}>{item.title}</Text>
-                <Text>- {item.ingredient.join('\n- ')}</Text>
+                <Text>
+  {Array.isArray(item.ingredient)
+    ? `- ${item.ingredient.join('\n- ')}`
+    : 'No ingredients listed.'}
+</Text>
                 <Text>Calories: {item.calories}</Text>
                 <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />
 
