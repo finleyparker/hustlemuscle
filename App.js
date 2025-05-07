@@ -6,6 +6,7 @@ import SessionListScreen from './screens/SessionListScreen';
 import WorkoutLogScreen from './screens/WorkoutLogScreen';
 import AuthScreen from './screens/AuthScreen';
 import HomeScreen from './screens/HomeScreen';
+import Gender from './screens/Gender';
 
 
 const Stack = createNativeStackNavigator();
@@ -13,8 +14,9 @@ const Stack = createNativeStackNavigator();
 export default function App() {
   return (
     <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
+      <Stack.Navigator initialRouteName="Gender">
         <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
+        <Stack.Screen name="Gender" component={Gender} options={{ headerShown: false }} />
         <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
         <Stack.Screen name="Sessions" component={SessionListScreen} />
         <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
