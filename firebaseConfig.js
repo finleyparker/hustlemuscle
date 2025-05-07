@@ -3,7 +3,7 @@ import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
 
 const firebaseConfig = {
-    apiKey: "AIzaSyBD61luNcXCzwDoRnMzAlFVTIUgpeCp5U4",
+  apiKey: "AIzaSyBD61luNcXCzwDoRnMzAlFVTIUgpeCp5U4",
   authDomain: "hustlemuscle-940f2.firebaseapp.com",
   projectId: "hustlemuscle-940f2",
   storageBucket: "hustlemuscle-940f2.firebasestorage.app",
