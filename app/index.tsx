@@ -22,7 +22,7 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <Stack.Navigator initialRouteName="WorkoutPlan">
+    <Stack.Navigator initialRouteName="Login">
       <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Sessions" component={SessionListScreen} />

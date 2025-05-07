@@ -5,16 +5,16 @@ import { firestore } from '../firebaseConfig';
 const createWorkoutSession = async (userId, sessionName, exercises) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
-    
+
     // Use original exercise IDs from API
-    const exerciseIds = exercises.map(ex => ex.id); 
+    const exerciseIds = exercises.map(ex => ex.id);
     const exerciseNames = exercises.map(ex => ex.name);
 
     const newSession = {
       user_id: userId,
       session_id: sessionName.toLowerCase().replace('day_', '').replace('_', ''),
       session_name: sessionName.replace('Day_', '').replace('_', ' ').toLowerCase(),
-      exercise_id: exerciseIds, 
+      exercise_id: exerciseIds,
       exercise_name: exerciseNames,
       workout_plan_id: `plan_${userId}`,
       createdAt: new Date()
@@ -25,6 +25,13 @@ const createWorkoutSession = async (userId, sessionName, exercises) => {
   } catch (error) {
     console.error('Error creating workout session:', error);
   }
+};
+
+export const userInput = {
+  goal: 'muscle gain',
+  level: 'beginner',
+  daysPerWeek: 3,
+  equipment: ['body only', 'cable', 'machine',],
 };
 
 /**
@@ -139,7 +146,7 @@ export const generateWorkoutPlan = async (userInput, userId) => {
 
         // Create a workout session for the user for each day
         await createWorkoutSession(
-          userId, 
+          userId,
           dayKey, // e.g. "Day_1_push"
           finalExercises
         );
@@ -182,7 +189,7 @@ const testGeneratePlan = async () => {
     goal: 'muscle gain',
     level: 'beginner',
     daysPerWeek: 3,
-    equipment: ['body only', 'cable', 'machine', ],
+    equipment: ['body only', 'cable', 'machine',],
   };
 
   const { plan, warnings } = await generateWorkoutPlan(userInput);
