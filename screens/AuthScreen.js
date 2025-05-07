@@ -45,7 +45,8 @@ export default function AuthScreen() {
           user_id: userCredential.user.uid
         });
 
-        navigation.replace('Home');
+        navigation.navigate('WorkoutPlan', { userInput });
+        //navigation.replace('Home');
 
       }
     } catch (error) {

@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StyleSheet } from 'react-native';
 
 //workout screens
+import WorkoutPlanScreen from '../screens/WorkoutPlanScreen';
 import SessionListScreen from '../screens/SessionListScreen';
 import WorkoutLogScreen from '../screens/WorkoutLogScreen';
 
@@ -21,10 +22,11 @@ const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
-    <Stack.Navigator initialRouteName="Login">
+    <Stack.Navigator initialRouteName="WorkoutPlan">
       <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
       <Stack.Screen name="Sessions" component={SessionListScreen} />
+      <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen} />
       <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
       <Stack.Screen name="DietScreen" component={DietScreen} />
       <Stack.Screen name="NewDiet" component={NewDiet} />
