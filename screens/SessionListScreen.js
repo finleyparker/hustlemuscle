@@ -47,6 +47,12 @@ export default function SessionListScreen() {
                 renderItem={renderItem}
                 ListEmptyComponent={<Text style={styles.emptyText}>No sessions found.</Text>}
             />
+            <TouchableOpacity
+                style={styles.newPlanButton}
+                onPress={() => navigation.navigate('WorkoutPlan')}
+            >
+                <Text style={styles.newPlanText}>Create New Workout Plan</Text>
+            </TouchableOpacity>
         </View>
     );
 }
@@ -61,4 +67,17 @@ const styles = StyleSheet.create({
     },
     cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
     emptyText: { color: '#fff', textAlign: 'center', marginTop: 20 },
+    newPlanButton: {
+        backgroundColor: '#e3f900', // or another suitable color
+        padding: 15,
+        borderRadius: 10,
+        alignItems: 'center',
+        marginTop: 20,
+    },
+    newPlanText: {
+        color: '#black',
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
+
 });

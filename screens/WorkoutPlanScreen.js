@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { SafeAreaView, View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator';
 import { firestore } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';

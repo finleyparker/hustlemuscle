@@ -238,7 +238,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     endWorkoutButton: {
-        backgroundColor: '#1efc1e', // Red button for end workout
+        backgroundColor: '#e3f900', // Red button for end workout
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
