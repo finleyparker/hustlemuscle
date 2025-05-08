@@ -16,14 +16,15 @@ export default function WorkoutLogScreen() {
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
+            const session_name = await getSessionName(sessionId);
+            navigation.setOptions({ title: `Current Session: ${session_name}` });
+
             //get each exercise name
             const names = await getExerciseNamesFromSession(sessionId);
-            const session_name = await getSessionName(sessionId);
             const formatted = names.map(name => ({
                 name,
                 sets: [{ reps: '', weight: '' }] // start with 1 set per exercise
             }));
-            navigation.setOptions({ title: `Current Session: ${session_name}` });
             setExercises(formatted);
             setLoading(false);
         };
@@ -65,7 +66,7 @@ export default function WorkoutLogScreen() {
         try {
             await updateExerciseCompletion(completions);
             alert('Workout saved!');
-            navigation.replace('Sessions');
+            navigation.navigate('Home');
         } catch (error) {
             console.error('Save error:', error);
             alert('Failed to save.');
@@ -84,9 +85,9 @@ export default function WorkoutLogScreen() {
     }
 
     return (
-        <SafeAreaView style={styles.container2}>
+        <SafeAreaView style={styles.container2} >
 
-            <ScrollView style={styles.container}>
+            <ScrollView style={styles.planContainer}>
                 {exercises.map((exercise, exerciseIndex) => (
                     <View key={exerciseIndex} style={styles.exerciseCard}>
                         <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -154,29 +155,45 @@ export default function WorkoutLogScreen() {
 
 const styles = StyleSheet.create({
     container2: {
-        backgroundColor: "0c0f0A",
+        backgroundColor: "#000", // Black background for the whole screen
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
         flex: 1,
-        //justifyContent: "center",
-        //alignItems: "center",
     },
-    planContainer: { padding: 20, borderBottomWidth: 1, borderColor: '#ddd', backgroundColor: "0c0f0A" },
-    planTitle: { fontSize: 22, fontWeight: 'bold', marginBottom: 10 },
-    exerciseCard: { marginBottom: 15, backgroundColor: '#f0f0f0', borderRadius: 10, padding: 15 },
-    exerciseName: { fontSize: 18, fontWeight: '600', marginBottom: 10 },
-    inputRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 10 },
+    planContainer: {
+        padding: 20,
+        borderBottomWidth: 1,
+        borderColor: '#ddd',
+        backgroundColor: "#000", // Set the background of the workout plan container to black
+    },
+    exerciseCard: {
+        marginBottom: 15,
+        backgroundColor: '#333', // Dark grey background for each exercise card
+        borderRadius: 10,
+        padding: 15,
+    },
+    exerciseName: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 10,
+        color: '#fff', // White color for the exercise name
+    },
+    inputRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 10,
+    },
     input: {
         backgroundColor: '#fff',
         borderRadius: 5,
         padding: 10,
-        width: 60,
+        width: 90,
         marginHorizontal: 5,
         borderWidth: 1,
         borderColor: '#ccc',
-        textAlign: 'center'
+        textAlign: 'center',
     },
     header: {
-        backgroundColor: '#0c0f0A',
+        backgroundColor: '#000', // Black background for header
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
         paddingBottom: 10,
         paddingHorizontal: 20,
@@ -184,45 +201,44 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'space-between',
     },
-
     backText: {
-        color: '#446df6',
+        color: '#446df6', // Text color for back button
         fontSize: 16,
     },
-
     headerTitle: {
-        color: '#fff',
+        color: '#fff', // White color for the header title
         fontSize: 18,
         fontWeight: 'bold',
     },
-
-
-    label: { fontSize: 16 },
+    label: {
+        fontSize: 16,
+        color: '#fff', // White color for labels
+    },
     addSetButton: {
         marginTop: 5,
         alignSelf: 'flex-start',
-        backgroundColor: '#ccc',
+        backgroundColor: '#666', // Dark grey button color
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 5,
     },
     addSetText: {
-        color: '#333',
-        fontWeight: 'bold'
+        color: '#fff', // White text on add set button
+        fontWeight: 'bold',
     },
     saveButton: {
         backgroundColor: '#446df6',
         padding: 10,
         marginTop: 15,
         borderRadius: 5,
-        alignItems: 'center'
+        alignItems: 'center',
     },
     saveButtonText: {
         color: '#fff',
-        fontSize: 16
+        fontSize: 16,
     },
     endWorkoutButton: {
-        backgroundColor: '#f54242',
+        backgroundColor: '#1efc1e', // Red button for end workout
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
@@ -231,24 +247,21 @@ const styles = StyleSheet.create({
     },
     removeSetButton: {
         marginLeft: 5,
-        backgroundColor: '#ff6b6b',
+        backgroundColor: '#ff6b6b', // Light red button for removing sets
         paddingHorizontal: 10,
         paddingVertical: 4,
         borderRadius: 5,
         alignItems: 'center',
-        justifyContent: 'center'
+        justifyContent: 'center',
     },
     removeSetText: {
         color: '#fff',
         fontWeight: 'bold',
-        fontSize: 16
-    },
-
-
-    endWorkoutText: {
-        color: '#fff',
         fontSize: 16,
-        fontWeight: 'bold'
     },
-
+    endWorkoutText: {
+        color: '#000', // White text on end workout button
+        fontSize: 16,
+        fontWeight: 'bold',
+    },
 });

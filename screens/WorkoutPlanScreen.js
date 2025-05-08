@@ -72,10 +72,12 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
   if (loading) {
     return (
-      <View style={styles.center}>
-        <ActivityIndicator size="large" color="#007AFF" />
-        <Text style={styles.loadingText}>Generating your workout plan...</Text>
-      </View>
+      <SafeAreaView style={styles.container}>
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color="#446df6" />
+          <Text style={{ color: '#fff', marginTop: -100 }}>Loading sessions...</Text>
+        </View>
+      </SafeAreaView>
     );
   }
 
