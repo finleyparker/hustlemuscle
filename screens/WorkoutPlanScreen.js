@@ -60,6 +60,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
         }
       } catch (error) {
+        Alert.alert(
+          "Coming Soon",
+          "This feature is not implemented yet.",
+          [{ text: "OK" }]
+        );
         console.error('Failed to retrieve or generate plan:', error);
       } finally {
         setLoading(false);
@@ -91,6 +96,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           ))}
         </View>
       )}
+
+      <Text>Coming Soon: This feature is not implemented yet.</Text>
 
       {plan.map((day, index) => (
         <View key={index} style={styles.dayContainer}>
