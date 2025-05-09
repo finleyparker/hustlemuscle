@@ -3,7 +3,7 @@ import { db, auth } from './firebase';
 
 // Fetch all workout sessions
 export const getAllSessions = async () => {
-    const querySnapshot = await getDocs(collection(db, 'WorkoutSession'));
+    const querySnapshot = await getDocs(collection(db, 'workout_sessions'));
     return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
 };
 
@@ -19,7 +19,7 @@ export const getSessionDetails = async () => {
     console.log('Logged in user:', user.uid);
 
     try {
-        const sessionsRef = collection(db, 'WorkoutSession');
+        const sessionsRef = collection(db, 'workout_sessions');
         const q = query(sessionsRef, where('user_id', '==', user.uid));
         const snapshot = await getDocs(q);
 
@@ -43,7 +43,7 @@ export const getSessionDetails = async () => {
 //get session and exercises in it
 export const getExerciseNamesFromSession = async (sessionId) => {
     try {
-        const ref = doc(db, 'WorkoutSession', sessionId);
+        const ref = doc(db, 'workout_sessions', sessionId);
         const snap = await getDoc(ref);
 
         if (!snap.exists()) {
@@ -70,7 +70,7 @@ export const updateExerciseCompletion = async (completions) => {
 export const getSessionName = async (sessionId) => {
     try {
         console.log('getting session name...');
-        const ref = doc(db, 'WorkoutSession', sessionId);
+        const ref = doc(db, 'workout_sessions', sessionId);
         const snap = await getDoc(ref);
 
         if (!snap.exists()) {
