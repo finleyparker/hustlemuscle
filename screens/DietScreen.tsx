@@ -148,7 +148,7 @@ const HomeScreen = ({ navigation }: any) => {
 
           <Button
             title="Create a new personalised diet"
-            onPress={() => navigation.navigate('New')}
+            onPress={() => navigation.navigate('NewDiet')}
           />
           <View style={{ marginTop: 5 }}>
             <Button
