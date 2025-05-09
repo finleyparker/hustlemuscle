@@ -195,7 +195,6 @@ const HomeScreen = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      {/* Manual Entry Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
