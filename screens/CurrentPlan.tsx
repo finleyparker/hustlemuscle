@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust path if needed
+import { db } from '../firebaseConfig';
 
 interface FoodItem {
   id: string;
@@ -22,8 +22,8 @@ export default function App() {
   const [totalCalories, setTotalCalories] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Hardcoded user ID for testing
-  const userId = '1212'; // Replace with Firebase Auth UID
+  // hardcoded user ID for testing
+  const userId = '1212';
 
   useEffect(() => {
     const fetchUserDiet = async () => {
@@ -62,12 +62,11 @@ export default function App() {
     fetchHello();
   }, []);
 
-  // Filter food items based on diet restriction
+  // filter food items based on diet restriction
   const filteredDiet = userDietRestriction === 'none'
   ? hello // Show all meals
   : hello.filter(item => item.type === userDietRestriction);
 
-  // Handle meal selection
   const handleSelectMeal = async (calories: number, title: string) => {
     const newTotal = totalCalories + calories;
     setTotalCalories(newTotal);
@@ -77,13 +76,13 @@ export default function App() {
     try {
       const docSnap = await getDoc(dietPlanRef);
       let updatedMeals: { name: string; calories: number }[] = [];
-if (docSnap.exists()) {
-  const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
-  const currentMeals = data.selectedMeals || [];
-  updatedMeals = [...currentMeals, { name: title, calories }];
-} else {
-  updatedMeals = [{ name: title, calories }];
-}
+        if (docSnap.exists()) {
+          const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
+          const currentMeals = data.selectedMeals || [];
+          updatedMeals = [...currentMeals, { name: title, calories }];
+        } else {
+          updatedMeals = [{ name: title, calories }];
+      }
 
   
       await updateDoc(dietPlanRef, {

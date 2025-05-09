@@ -2,10 +2,9 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, TextInput, Button, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig'; // Adjust the path to your firebase config
+import { db } from '../firebaseConfig';
 
 export default function App() {
-  // First dropdown
   const [open1, setOpen1] = useState(false);
   const [value1, setValue1] = useState(null);
   const [items1, setItems1] = useState([
@@ -17,7 +16,6 @@ export default function App() {
     { label: 'Pescatarian', value: 'Pescatarian' },
   ]);
 
-  // Second dropdown
   const [open2, setOpen2] = useState(false);
   const [value2, setValue2] = useState(null);
   const [items2, setItems2] = useState([
@@ -26,7 +24,6 @@ export default function App() {
     { label: 'Maintain weight', value: 'MaintainWeight' },
   ]);
 
-  // Third dropdown
   const [open3, setOpen3] = useState(false);
   const [value3, setValue3] = useState(null);
   const [items3, setItems3] = useState([
@@ -39,18 +36,16 @@ export default function App() {
 
 
 
-  // Hardcoded user ID for testing purposes
-  const userId = '1212'; // Replace this with actual user ID from Firebase Auth or any other method
+  // hardcoded user ID for testing purposes
+  const userId = '1212'; 
 
-  // Function to close all dropdowns and dismiss keyboard when tapping outside
   const closeDropdowns = () => {
     setOpen1(false);
     setOpen2(false);
     setOpen3(false);
-    Keyboard.dismiss();  // Dismiss keyboard if it's open
+    Keyboard.dismiss(); 
   };
 
-  // Function to save diet plan to Firebase under the user's collection
   const saveDietPlan = async () => {
     if (!value1 || !value2 || !value3) {
       Alert.alert('Missing Input', 'Please fill in all fields before saving the diet plan.');
@@ -74,7 +69,6 @@ export default function App() {
         { text: 'OK' },
       ]);
   
-      // Clear input fields
       setValue1(null);
       setValue2(null);
       setValue3(null);

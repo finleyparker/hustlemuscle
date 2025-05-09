@@ -148,7 +148,7 @@ const HomeScreen = ({ navigation }: any) => {
 
           <Button
             title="Create a new personalised diet"
-            onPress={() => navigation.navigate('New')}
+            onPress={() => navigation.navigate('NewDiet')}
           />
           <View style={{ marginTop: 5 }}>
             <Button
@@ -195,7 +195,6 @@ const HomeScreen = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      {/* Manual Entry Modal */}
       <Modal
         visible={modalVisible}
         animationType="slide"
