@@ -4,11 +4,15 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../database/firebase';  // adjust if needed
 import { updateGender } from '../database/UserDB';
 
-const Gender = () => {
+const Gender = ({ navigation }) => {
   const handleSaveGender = async () => {
     try {
       await updateGender('transfemale');  // pass whatever gender you want to save
       Alert.alert('Success', 'Gender updated successfully!');
+      // Navigate to Equipment screen after success
+      setTimeout(() => {
+        navigation.navigate('Equipment');
+      }, 300);
     } catch (error) {
       Alert.alert('Error', 'There was a problem updating gender.');
     }
