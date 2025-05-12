@@ -1,5 +1,5 @@
 
-# HustleMuscle
+# HustleMuscle v.1.0.0
 The all-in-one workout and diet app for everyone.
 
 This is a university project for COMP602 - Software Development Practice in Auckland University of Technology
