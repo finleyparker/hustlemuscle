@@ -49,7 +49,8 @@ export default function SessionListScreen() {
             />
             <TouchableOpacity
                 style={styles.newPlanButton}
-                onPress={() => navigation.navigate('WorkoutPlan')}
+                //go to onboarding screen, but skip gender
+                onPress={() => navigation.navigate('Equipment')}
             >
                 <Text style={styles.newPlanText}>Create New Workout Plan</Text>
             </TouchableOpacity>
