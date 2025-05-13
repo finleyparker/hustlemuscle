@@ -1,4 +1,4 @@
-import { collection, setDoc, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
 
 //get the details of currently logged in user
@@ -42,19 +42,6 @@ export const getUserName = async (sessionId) => {
         console.log('Get user name successfull');
         const data = snap.data();
         return data.name || [];
-    } catch (error) {
-        console.error('Firestore error:', error);
-        return [];
-    }
-};
-
-// Update gender field in the specific document
-export const updateGender = async (gender) => {
-    const genderDocRef = doc(db, 'UserDetails', '07QDnA7D3QOrcZNS3Dfe');
-
-    try {
-        await setDoc(genderDocRef, { Gender: gender }, { merge: true });
-        console.log('Gender updated successfully!');
     } catch (error) {
         console.error('Firestore error:', error);
         return [];
