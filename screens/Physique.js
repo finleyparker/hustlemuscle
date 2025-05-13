@@ -7,43 +7,18 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';  // adjust if needed
-import { doc, setDoc } from 'firebase/firestore';
+import { db, auth } from '../database/firebase';
+import { setDoc, doc } from 'firebase/firestore';
 
+const PhysiqueScreen = ({ navigation }) => {
+  const [selectedGoal, setSelectedGoal] = useState(null);
 
-
-const GenderScreen = ({ navigation }) => {
-  const [selectedGender, setSelectedGender] = useState(null);
-  
-
-  const handleGenderSelect = async (gender) => {
-    setSelectedGender(gender);
-    try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-      
-      // Update the Gender field in the user's document
-      await setDoc(doc(db, 'UserDetails', userId), {
-        Gender: gender
-      }, { merge: true });
-      
-      // Navigate to weight screen after a short delay
-      setTimeout(() => {
-        navigation.navigate('Weight');
-      }, 300);
-    } catch (error) {
-      console.error('Error saving gender:', error);
-    }
+  const handleGoalSelect = (goal) => {
+    setSelectedGoal(goal);
   };
 
   const handleNext = async () => {
-    if (!selectedGender) {
-      // Optionally show an alert or message that gender must be selected
-      return;
-    }
+    if (!selectedGoal) return;
 
     try {
       const userId = auth.currentUser?.uid;
@@ -51,31 +26,30 @@ const GenderScreen = ({ navigation }) => {
         console.error('No user is signed in');
         return;
       }
-      
-      // Update the Gender field in the user's document
+
       await setDoc(doc(db, 'UserDetails', userId), {
-        Gender: selectedGender
+        PhysiqueGoal: selectedGoal
       }, { merge: true });
-      
-      navigation.navigate('Weight');
+
+      navigation.navigate('AthleticAbility');
     } catch (error) {
-      console.error('Error saving gender:', error);
+      console.error('Error saving physique goal:', error);
     }
   };
 
-  const GenderButton = ({ gender, isSelected }) => (
+  const GoalButton = ({ goal }) => (
     <TouchableOpacity
       style={[
-        styles.genderButton,
-        isSelected && styles.selectedGenderButton,
+        styles.goalButton,
+        selectedGoal === goal && styles.selectedGoalButton,
       ]}
-      onPress={() => handleGenderSelect(gender)}
+      onPress={() => handleGoalSelect(goal)}
     >
       <Text style={[
-        styles.genderButtonText,
-        isSelected && styles.selectedGenderButtonText,
+        styles.goalButtonText,
+        selectedGoal === goal && styles.selectedGoalButtonText,
       ]}>
-        {gender}
+        {goal}
       </Text>
     </TouchableOpacity>
   );
@@ -90,28 +64,23 @@ const GenderScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #1</Text>
-        <Text style={styles.titleText}>Gender</Text>
-        <Text style={styles.subtitleText}>Please select your gender.</Text>
+        <Text style={styles.metricText}>Starting Metric #3</Text>
+        <Text style={styles.titleText}>Physique</Text>
+        <Text style={styles.subtitleText}>Select your physique goals.</Text>
 
-        <View style={styles.genderContainer}>
-          <GenderButton 
-            gender="Male" 
-            isSelected={selectedGender === 'Male'} 
-          />
-          <GenderButton 
-            gender="Female" 
-            isSelected={selectedGender === 'Female'} 
-          />
+        <View style={styles.goalsContainer}>
+          <GoalButton goal="Lose Fat / Cut" />
+          <GoalButton goal="Gain Muscle / Bulk" />
+          <GoalButton goal="Maintain Current Physique" />
         </View>
 
         <TouchableOpacity 
           style={[
             styles.nextButton,
-            !selectedGender && styles.nextButtonDisabled
+            !selectedGoal && styles.nextButtonDisabled
           ]}
           onPress={handleNext}
-          disabled={!selectedGender}
+          disabled={!selectedGoal}
         >
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
@@ -155,28 +124,28 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     opacity: 0.7,
   },
-  genderContainer: {
+  goalsContainer: {
     gap: 16,
   },
-  genderButton: {
+  goalButton: {
     backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#333333',
     borderRadius: 30,
     paddingVertical: 16,
     paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: '#333333',
     alignItems: 'center',
   },
-  selectedGenderButton: {
+  selectedGoalButton: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
-  genderButtonText: {
+  goalButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
   },
-  selectedGenderButtonText: {
+  selectedGoalButtonText: {
     color: '#000000',
   },
   nextButton: {
@@ -199,4 +168,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default GenderScreen; 
+export default PhysiqueScreen; 
