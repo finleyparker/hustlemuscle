@@ -31,7 +31,6 @@ export default function AuthScreen() {
       if (isLogin) {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
-        navigation.replace('Home');
       } else {
         // Register
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
