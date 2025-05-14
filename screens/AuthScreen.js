@@ -31,6 +31,8 @@ export default function AuthScreen() {
       if (isLogin) {
         // Login
         await signInWithEmailAndPassword(auth, email, password);
+        //go to home page (skip onboarding)
+        navigation.navigate('Home');
       } else {
         // Register
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
@@ -44,8 +46,8 @@ export default function AuthScreen() {
           user_id: userCredential.user.uid
         });
 
-        navigation.navigate('Home');
-        //navigation.replace('Home');
+        //go to onboarding steps
+        navigation.navigate('Gender');
 
       }
     } catch (error) {
