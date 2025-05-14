@@ -12,6 +12,13 @@ import WorkoutLogScreen from '../screens/WorkoutLogScreen';
 import AuthScreen from '../screens/AuthScreen';
 import HomeScreen from '../screens/HomeScreen';
 
+//onboarding screens
+import GenderScreen from '../screens/GenderScreen';
+import EquipmentScreen from '../screens/EquipmentScreen';
+import WeightScreen from '../screens/Weight';
+import PhysiqueScreen from '../screens/Physique';
+import AthleticAbilityScreen from '../screens/AthleticAbility';
+
 //diet screens
 import DietScreen from '../screens/DietScreen'; //main diet page
 import NewDiet from '../screens/NewDiet';
@@ -31,6 +38,11 @@ export default function App() {
       <Stack.Screen name="DietScreen" component={DietScreen} />
       <Stack.Screen name="NewDiet" component={NewDiet} />
       <Stack.Screen name="Current" component={CurrentPlan} />
+      <Stack.Screen name="Gender" component={GenderScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Physique" component={PhysiqueScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="AthleticAbility" component={AthleticAbilityScreen} options={{ headerShown: false }} />
+      <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
     </Stack.Navigator>
   );
 }
