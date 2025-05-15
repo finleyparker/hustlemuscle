@@ -13,12 +13,16 @@ import { db, auth } from '../database/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 const COMMON_EQUIPMENT = [
-  'Dumbbells',
-  'Resistance Bands',
-  'Yoga Mat',
-  'Pull-up Bar',
-  'Kettlebell',
-  'Bench',
+  'Dumbbell',
+  'Body Only',
+  'Bands',
+  'Kettlebells',
+  'Foam Roll',
+  'Cable',
+  'Machine',
+  'Barbell',
+  'Exercise Ball',
+  'E-Z Curl Bar',
   'None',
 ];
 
@@ -45,7 +49,7 @@ const EquipmentScreen = ({ navigation }) => {
     }
   };
 
-  const handleSave = async () => {
+  const handleNext = async () => {
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
@@ -57,10 +61,7 @@ const EquipmentScreen = ({ navigation }) => {
         Equipment: selectedEquipment
       }, { merge: true });
 
-      // Navigate to Home screen after a short delay
-      setTimeout(() => {
-        navigation.navigate('Home');
-      }, 300);
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error saving equipment:', error);
     }
@@ -103,7 +104,7 @@ const EquipmentScreen = ({ navigation }) => {
       <ScrollView style={styles.contentContainer}>
         <Text style={styles.metricText}>Starting Metric #5</Text>
         <Text style={styles.titleText}>Equipment</Text>
-        <Text style={styles.subtitleText}>What equipment do you have at home?</Text>
+        <Text style={styles.subtitleText}>What equipment do you have access to?</Text>
 
         <View style={styles.equipmentContainer}>
           {COMMON_EQUIPMENT.map((item) => (
@@ -139,14 +140,18 @@ const EquipmentScreen = ({ navigation }) => {
             <Ionicons name="add" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity 
-          style={styles.continueButton}
-          onPress={handleSave}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      <TouchableOpacity 
+        style={[
+          styles.nextButton,
+          selectedEquipment.length === 0 && styles.nextButtonDisabled
+        ]}
+        onPress={handleNext}
+        disabled={selectedEquipment.length === 0}
+      >
+        <Text style={styles.nextButtonText}>Next</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -167,6 +172,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 120,
+    paddingBottom: 80, // Add bottom padding to account for the Next button
   },
   metricText: {
     color: '#FFFFFF',
@@ -238,14 +244,22 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  continueButton: {
+  nextButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
     paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 32,
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
   },
-  continueButtonText: {
+  nextButtonDisabled: {
+    backgroundColor: '#333333',
+    opacity: 0.5,
+  },
+  nextButtonText: {
     color: '#000000',
     fontSize: 16,
     fontWeight: '600',
