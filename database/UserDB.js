@@ -1,5 +1,7 @@
 import { collection, setDoc, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { Alert } from 'react-native';
+
 
 //get the details of currently logged in user
 export const getUserDetails = async () => {
@@ -26,6 +28,18 @@ export const getUserDetails = async () => {
         console.error('Firebase error fetching user details:', error);
         return [];
     }
+}
+
+export function logout(navigation) {
+    auth.signOut()
+        .then(() => {
+            navigation.navigate('Login');
+            Alert.alert("Logged out.");
+
+        }).catch(error => {
+            console.log('error: ', error);
+            Alert.alert('Error: unable to logout.');
+        })
 }
 
 export async function getUserName(uid) {

@@ -1,10 +1,10 @@
 import React, { useEffect, useState, useMemo } from 'react';
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Alert, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../database/firebase';
-import { getUserName } from '../database/UserDB';
+import { getUserName, logout } from '../database/UserDB';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -22,6 +22,18 @@ const HomeScreen = () => {
 
     fetchUserName();
   }, []);
+
+  const askLogout = () =>
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Sign Out',
+        onPress: () => logout(navigation)
+      },
+    ]);
 
   const today = useMemo(() => new Date(), []);
 
@@ -57,10 +69,12 @@ const HomeScreen = () => {
       <View style={styles.header}>
         <View style={styles.headerContent}>
           <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
-          <Image
-            source={require('../assets/profile-placeholder.png')}
-            style={styles.profileImage}
-          />
+          <TouchableOpacity onPress={() => askLogout()}>
+            <Image
+              source={require('../assets/profile-placeholder.png')}
+              style={styles.profileImage} />
+          </TouchableOpacity>
+
         </View>
       </View>
 
