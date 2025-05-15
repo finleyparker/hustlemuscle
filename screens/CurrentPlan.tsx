@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../database/firebase';
 
 interface FoodItem {
   id: string;
@@ -16,7 +16,7 @@ interface DietPlan {
   totalCalories?: number;
 }
 
-export default function App() {
+export default function CurrentPlan() {
   const [hello, setHello] = useState<FoodItem[]>([]);
   const [userDietRestriction, setUserDietRestriction] = useState<string>('');
   const [totalCalories, setTotalCalories] = useState<number>(0);
@@ -64,27 +64,27 @@ export default function App() {
 
   // filter food items based on diet restriction
   const filteredDiet = userDietRestriction === 'none'
-  ? hello // Show all meals
-  : hello.filter(item => item.type === userDietRestriction);
+    ? hello // Show all meals
+    : hello.filter(item => item.type === userDietRestriction);
 
   const handleSelectMeal = async (calories: number, title: string) => {
     const newTotal = totalCalories + calories;
     setTotalCalories(newTotal);
-  
+
     const dietPlanRef = doc(db, 'dietPlans', userId);
-  
+
     try {
       const docSnap = await getDoc(dietPlanRef);
       let updatedMeals: { name: string; calories: number }[] = [];
-        if (docSnap.exists()) {
-          const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
-          const currentMeals = data.selectedMeals || [];
-          updatedMeals = [...currentMeals, { name: title, calories }];
-        } else {
-          updatedMeals = [{ name: title, calories }];
+      if (docSnap.exists()) {
+        const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
+        const currentMeals = data.selectedMeals || [];
+        updatedMeals = [...currentMeals, { name: title, calories }];
+      } else {
+        updatedMeals = [{ name: title, calories }];
       }
 
-  
+
       await updateDoc(dietPlanRef, {
         totalCalories: newTotal,
         selectedMeals: updatedMeals,
@@ -93,7 +93,7 @@ export default function App() {
       console.error('Error updating meal selection:', error);
     }
   };
-  
+
 
   return (
     <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
@@ -115,8 +115,8 @@ export default function App() {
                 <Text style={styles.mealTitle}>{item.title}</Text>
                 <Text>
                   {Array.isArray(item.ingredient)
-                  ? `- ${item.ingredient.join('\n- ')}`
-                  : 'No ingredients listed.'}
+                    ? `- ${item.ingredient.join('\n- ')}`
+                    : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
                 <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />

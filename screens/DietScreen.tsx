@@ -15,17 +15,18 @@ import {
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
 import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db, auth } from '../database/firebase';
 import { useFocusEffect } from '@react-navigation/native';
 
-const HomeScreen = ({ navigation }: any) => {
+const DietScreen = ({ navigation }: any) => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
     flex: 1,
   };
 
-  const userId = '1212'; // Replace with real user ID from Firebase Auth
+  const userId = auth.currentUser?.uid;
+  //const userId = '1212'; // Replace with real user ID from Firebase Auth
   const [modalVisible, setModalVisible] = useState(false);
   const [totalCalories, setTotalCalories] = useState(0);
   const [selectedMeals, setSelectedMeals] = useState<{ name: string; calories: number }[]>([]);
@@ -39,6 +40,10 @@ const HomeScreen = ({ navigation }: any) => {
     useCallback(() => {
       const fetchData = async () => {
         try {
+          if (!userId) {
+            console.error('No user is signed in');
+            return;
+          }
           const userRef = doc(db, 'dietPlans', userId);
           const docSnap = await getDoc(userRef);
 
@@ -74,7 +79,7 @@ const HomeScreen = ({ navigation }: any) => {
 
             setDailyTarget(target);
           } else {
-            console.log('No such document!');
+            console.log('DietScreen: No such document!');
           }
         } catch (error) {
           console.error('Error fetching data:', error);
@@ -101,6 +106,10 @@ const HomeScreen = ({ navigation }: any) => {
     const updatedMeals = [...selectedMeals, newMeal];
 
     try {
+      if (!userId) {
+        console.error('No user is signed in');
+        return;
+      }
       const userRef = doc(db, 'dietPlans', userId);
       await updateDoc(userRef, {
         totalCalories: updatedTotal,
@@ -122,7 +131,10 @@ const HomeScreen = ({ navigation }: any) => {
     try {
       setTotalCalories(0);
       setSelectedMeals([]);
-
+      if (!userId) {
+        console.error('No user is signed in');
+        return;
+      }
       const dietPlanRef = doc(db, 'dietPlans', userId);
       await updateDoc(dietPlanRef, {
         totalCalories: 0,
@@ -323,4 +335,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen;
+export default DietScreen;

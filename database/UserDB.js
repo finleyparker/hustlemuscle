@@ -28,25 +28,20 @@ export const getUserDetails = async () => {
     }
 }
 
-export const getUserName = async (sessionId) => {
+export async function getUserName(uid) {
     try {
-        console.log('getting user name...');
-        console.log(sessionId);
-        const ref = doc(db, 'users', sessionId);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-            console.warn('No user name found for ID:', sessionId);
-            return [];
+        const userDoc = await getDoc(doc(db, 'users', uid));
+        if (userDoc.exists()) {
+            const data = userDoc.data();
+            return data.name || 'Unknown User';
+        } else {
+            return 'Unknown User';
         }
-        console.log('Get user name successfull');
-        const data = snap.data();
-        return data.name || [];
     } catch (error) {
-        console.error('Firestore error:', error);
-        return [];
+        console.error('Error fetching username:', error);
+        return 'Unknown User';
     }
-};
+}
 
 // Update gender field in the specific document
 export const updateGender = async (gender) => {

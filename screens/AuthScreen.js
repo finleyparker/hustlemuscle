@@ -28,10 +28,14 @@ export default function AuthScreen() {
 
     setLoading(true);
     try {
+      console.log('1');
       if (isLogin) {
         // Login
+        console.log('2');
+
         await signInWithEmailAndPassword(auth, email, password);
         //go to home page (skip onboarding)
+        console.log('successful login, going to home page...');
         navigation.navigate('Home');
       } else {
         // Register

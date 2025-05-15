@@ -1,7 +1,5 @@
 import React from 'react';
 import { View, Text, Button, Alert, StyleSheet } from 'react-native';
-import { doc, setDoc } from 'firebase/firestore';
-import { db } from '../database/firebase';  // adjust if needed
 import { updateGender } from '../database/UserDB';
 
 const Gender = ({ navigation }) => {

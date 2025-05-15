@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { use, useState } from 'react';
 import {
   View,
   Text,
@@ -56,7 +56,7 @@ const AthleticAbilityScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
@@ -74,7 +74,7 @@ const AthleticAbilityScreen = ({ navigation }) => {
           <GoalButton goal="Improve Mobility / Flexibility" />
         </View>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={[
             styles.nextButton,
             !selectedGoal && styles.nextButtonDisabled

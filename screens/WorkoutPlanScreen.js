@@ -1,24 +1,26 @@
 import React, { useEffect, useState } from 'react';
 import { SafeAreaView, View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator';
-import { firestore } from '../firebaseConfig';
+import { db } from '../database/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(true);
-  //const user = auth.currentUser;
+  const userId = auth.currentUser;
   const { userInput } = route.params || {};
 
 
   useEffect(() => {
     const loadPlan = async () => {
       try {
-        const workoutPlansCollection = collection(firestore, 'workoutPlans');
-
-        // Use a test userId for now (replace with actual userId once authentication is in place)
-        const testUserId = "testUserId123"; // Replace with actual userId when authentication is integrated
+        const workoutPlansCollection = collection(db, 'workoutPlans');
+        if (!userId) {
+          console.error('No user is signed in');
+          return;
+        }
+        const testUserId = userId;
 
         // Adding multiple fields to the query
         const q = query(

@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { View, StyleSheet, Text, TextInput, Button, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db } from '../database/firebase';
 
-export default function App() {
+export default function NewDiet() {
   const [open1, setOpen1] = useState(false);
   const [value1, setValue1] = useState(null);
   const [items1, setItems1] = useState([
@@ -37,13 +37,13 @@ export default function App() {
 
 
   // hardcoded user ID for testing purposes
-  const userId = '1212'; 
+  const userId = '1212';
 
   const closeDropdowns = () => {
     setOpen1(false);
     setOpen2(false);
     setOpen3(false);
-    Keyboard.dismiss(); 
+    Keyboard.dismiss();
   };
 
   const saveDietPlan = async () => {
@@ -51,7 +51,7 @@ export default function App() {
       Alert.alert('Missing Input', 'Please fill in all fields before saving the diet plan.');
       return;
     }
-  
+
     try {
       const dietPlanData = {
         dietRestriction: value1,
@@ -59,16 +59,16 @@ export default function App() {
         activityLevel: value3,
         userId: userId,
       };
-  
+
       const dietPlanDocRef = doc(db, 'dietPlans', userId);
-  
+
       await setDoc(dietPlanDocRef, dietPlanData);
-  
+
       console.log('Diet plan saved successfully!');
       Alert.alert('Success', 'Your personalized diet plan has been created!', [
         { text: 'OK' },
       ]);
-  
+
       setValue1(null);
       setValue2(null);
       setValue3(null);
@@ -77,7 +77,7 @@ export default function App() {
       Alert.alert('Error', 'There was a problem saving your diet plan. Please try again.');
     }
   };
-  
+
 
   return (
     <TouchableWithoutFeedback onPress={closeDropdowns}>

@@ -1,35 +1,36 @@
-import React, { useMemo } from 'react';
-import { auth } from '../database/firebase';
-
+import React, { useEffect, useState, useMemo } from 'react';
 import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useRoute } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
+import { Ionicons } from '@expo/vector-icons';
+import { auth } from '../database/firebase';
 import { getUserName } from '../database/UserDB';
 
-// import LinearGradient from 'expo'
-import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
-
 const HomeScreen = () => {
-  //get current user name
-  if (!auth.currentUser) return;
-  const user = auth.currentUser;
-  const user_name = getUserName(user.uid);
-
-  // Get current date and calculate the week
-  const today = useMemo(() => new Date(), []);
+  const [userName, setUserName] = useState('');
   const navigation = useNavigation();
+
+  // Fetch user name when the component mounts
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const name = await getUserName(user.uid);
+        setUserName(name);
+      }
+    };
+
+    fetchUserName();
+  }, []);
+
+  const today = useMemo(() => new Date(), []);
 
   const weekDays = useMemo(() => {
     const days = [];
     const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-
-    // Get Sunday of current week
     const sunday = new Date(today);
     sunday.setDate(today.getDate() - today.getDay());
 
-    // Generate array of dates for the week
     for (let i = 0; i < 7; i++) {
       const date = new Date(sunday);
       date.setDate(sunday.getDate() + i);
@@ -43,9 +44,11 @@ const HomeScreen = () => {
   }, [today]);
 
   const isToday = (date) => {
-    return date.getDate() === today.getDate() &&
+    return (
+      date.getDate() === today.getDate() &&
       date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear();
+      date.getFullYear() === today.getFullYear()
+    );
   };
 
   return (
@@ -53,7 +56,7 @@ const HomeScreen = () => {
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Welcome back, {user_name}</Text>
+          <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
           <Image
             source={require('../assets/profile-placeholder.png')}
             style={styles.profileImage}
@@ -68,19 +71,23 @@ const HomeScreen = () => {
             key={index}
             style={[
               styles.dayContainer,
-              isToday(item.fullDate) && styles.selectedDayContainer
+              isToday(item.fullDate) && styles.selectedDayContainer,
             ]}
           >
-            <Text style={[
-              styles.dayText,
-              isToday(item.fullDate) && styles.selectedDayText
-            ]}>
+            <Text
+              style={[
+                styles.dayText,
+                isToday(item.fullDate) && styles.selectedDayText,
+              ]}
+            >
               {item.date}
             </Text>
-            <Text style={[
-              styles.dayLabel,
-              isToday(item.fullDate) && styles.selectedDayText
-            ]}>
+            <Text
+              style={[
+                styles.dayLabel,
+                isToday(item.fullDate) && styles.selectedDayText,
+              ]}
+            >
               {item.day}
             </Text>
           </View>
@@ -90,7 +97,8 @@ const HomeScreen = () => {
       {/* Main Cards */}
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('Sessions')}>
+        onPress={() => navigation.navigate('Sessions')}
+      >
         <Image
           source={require('../assets/workout-bg.png')}
           style={styles.cardBackground}
@@ -108,7 +116,8 @@ const HomeScreen = () => {
 
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('DietScreen')}>
+        onPress={() => navigation.navigate('DietScreen')}
+      >
         <Image
           source={require('../assets/meal-bg.png')}
           style={styles.cardBackground}
@@ -132,18 +141,21 @@ const HomeScreen = () => {
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>3</Text>
-          <Text style={styles.statLabel}>Workouts Completed{'\n'}this week</Text>
+          <Text style={styles.statLabel}>
+            Workouts Completed{'\n'}this week
+          </Text>
         </View>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>0</Text>
           <Text style={styles.statLabel}>Calorie Tracker</Text>
         </View>
       </View>
-    </ScrollView >
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
+  // (all your styles here exactly the same)
   container: {
     flex: 1,
     backgroundColor: '#000000',
@@ -258,4 +270,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default HomeScreen; 
+export default HomeScreen;

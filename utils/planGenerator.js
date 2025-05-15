@@ -1,10 +1,10 @@
 import { getAllExercises } from '../api/exercises';
 import { collection, addDoc } from 'firebase/firestore';
-import { firestore } from '../firebaseConfig';
+import { db } from '../database/firebase';
 // Function to create workout session in Firestore
 const createWorkoutSession = async (userId, sessionName, exercises) => {
   try {
-    const workoutSessionsCollection = collection(firestore, 'workout_sessions');
+    const workoutSessionsCollection = collection(db, 'workout_sessions');
 
     // Use original exercise IDs from API
     const exerciseIds = exercises.map(ex => ex.id);
