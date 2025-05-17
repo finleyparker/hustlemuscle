@@ -91,6 +91,14 @@ export default function WorkoutLogScreen() {
                 {exercises.map((exercise, exerciseIndex) => (
                     <View key={exerciseIndex} style={styles.exerciseCard}>
                         <Text style={styles.exerciseName}>{exercise.name}</Text>
+                        <TouchableOpacity
+                            //when pressed open details pop-up
+                            onPress={() => openDetails()}
+                            style={styles.detailsButton}
+                            testID="detailsButton"
+                        >
+                            <Text style={styles.detailsIcon}>i</Text>
+                        </TouchableOpacity>
 
                         {exercise.sets.map((set, setIndex) => (
                             <View key={setIndex} style={styles.inputRow}>
@@ -154,6 +162,21 @@ export default function WorkoutLogScreen() {
 
 
 const styles = StyleSheet.create({
+    detailsButton: {
+        marginLeft: 0,
+        marginRight: 332,
+        backgroundColor: '#ff6b6b', // Light red button for removing sets
+        paddingHorizontal: 10,
+        paddingVertical: 4,
+        borderRadius: 5,
+        alignItems: 'right',
+        justifyContent: 'right',
+    },
+    detailsIcon: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+    },
     container2: {
         backgroundColor: "#000", // Black background for the whole screen
         paddingTop: Platform.OS === 'android' ? StatusBar.currentHeight + 10 : 20,
