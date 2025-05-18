@@ -84,13 +84,6 @@ export default function AuthScreen() {
               onChangeText={setName}
               autoCapitalize="words"
             />
-            <TextInput
-              style={styles.input}
-              placeholder="Sex"
-              value={sex}
-              onChangeText={setSex}
-              autoCapitalize="none"
-            />
           </>
         )}
         <TextInput
