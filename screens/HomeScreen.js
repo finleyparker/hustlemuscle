@@ -114,8 +114,9 @@ const HomeScreen = () => {
         onPress={() => navigation.navigate('Sessions')}
       >
         <Image
-          source={require('../assets/workout-bg.png')}
+          source={require('../assets/weights3.jpg')}
           style={styles.cardBackground}
+          resizeMode="cover"
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
@@ -133,8 +134,9 @@ const HomeScreen = () => {
         onPress={() => navigation.navigate('DietScreen')}
       >
         <Image
-          source={require('../assets/meal-bg.png')}
+          source={require('../assets/food.jpg')}
           style={styles.cardBackground}
+          resizeMode="cover"
         />
         <LinearGradient
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
