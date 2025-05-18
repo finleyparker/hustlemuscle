@@ -64,14 +64,14 @@ const AthleticAbilityScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #3</Text>
-        <Text style={styles.titleText}>Athletic Ability</Text>
-        <Text style={styles.subtitleText}>Select your performance goals.</Text>
+        <Text style={styles.metricText}>Starting Metric #4</Text>
+        <Text style={styles.titleText}>Experience Level</Text>
+        <Text style={styles.subtitleText}>What's your current fitness experience?</Text>
 
         <View style={styles.goalsContainer}>
-          <GoalButton goal="Increase Strength" />
-          <GoalButton goal="Increase Endurance / Stamina" />
-          <GoalButton goal="Improve Mobility / Flexibility" />
+          <GoalButton goal="Beginner" />
+          <GoalButton goal="Intermediate" />
+          <GoalButton goal="Expert" />
         </View>
 
         <TouchableOpacity 

@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';
@@ -28,8 +27,6 @@ const COMMON_EQUIPMENT = [
 
 const EquipmentScreen = ({ navigation }) => {
   const [selectedEquipment, setSelectedEquipment] = useState([]);
-  const [customEquipment, setCustomEquipment] = useState('');
-  const [customEquipmentList, setCustomEquipmentList] = useState([]);
 
   const toggleEquipment = (item) => {
     setSelectedEquipment(prev => {
@@ -39,14 +36,6 @@ const EquipmentScreen = ({ navigation }) => {
         return [...prev, item];
       }
     });
-  };
-
-  const addCustomEquipment = () => {
-    if (customEquipment.trim() && !customEquipmentList.includes(customEquipment.trim())) {
-      setCustomEquipmentList(prev => [...prev, customEquipment.trim()]);
-      setSelectedEquipment(prev => [...prev, customEquipment.trim()]);
-      setCustomEquipment('');
-    }
   };
 
   const handleNext = async () => {
@@ -114,31 +103,6 @@ const EquipmentScreen = ({ navigation }) => {
               isSelected={selectedEquipment.includes(item)}
             />
           ))}
-
-          {customEquipmentList.map((item) => (
-            <EquipmentButton
-              key={item}
-              item={item}
-              isSelected={selectedEquipment.includes(item)}
-            />
-          ))}
-        </View>
-
-        <View style={styles.customEquipmentContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Add other equipment..."
-            placeholderTextColor="#666666"
-            value={customEquipment}
-            onChangeText={setCustomEquipment}
-            onSubmitEditing={addCustomEquipment}
-          />
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={addCustomEquipment}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
         </View>
       </ScrollView>
 
@@ -172,7 +136,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 120,
-    paddingBottom: 80, // Add bottom padding to account for the Next button
+    paddingBottom: 80,
   },
   metricText: {
     color: '#FFFFFF',
@@ -194,7 +158,7 @@ const styles = StyleSheet.create({
   },
   equipmentContainer: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 80,
   },
   equipmentButton: {
     backgroundColor: 'transparent',
@@ -221,28 +185,6 @@ const styles = StyleSheet.create({
   },
   checkmark: {
     marginLeft: 8,
-  },
-  customEquipmentContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#111111',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  addButton: {
-    backgroundColor: '#333333',
-    borderRadius: 30,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   nextButton: {
     backgroundColor: '#FFFFFF',

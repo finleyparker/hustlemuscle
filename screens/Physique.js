@@ -65,13 +65,15 @@ const PhysiqueScreen = ({ navigation }) => {
 
       <View style={styles.contentContainer}>
         <Text style={styles.metricText}>Starting Metric #3</Text>
-        <Text style={styles.titleText}>Physique</Text>
-        <Text style={styles.subtitleText}>Select your physique goals.</Text>
+        <Text style={styles.titleText}>Fitness Goal</Text>
+        <Text style={styles.subtitleText}>What's your primary fitness goal?</Text>
 
         <View style={styles.goalsContainer}>
-          <GoalButton goal="Lose Fat / Cut" />
-          <GoalButton goal="Gain Muscle / Bulk" />
-          <GoalButton goal="Maintain Current Physique" />
+          <GoalButton goal="Weight Loss" />
+          <GoalButton goal="Muscle Gain" />
+          <GoalButton goal="Flexibility" />
+          <GoalButton goal="Endurance" />
+          <GoalButton goal="Strength" />
         </View>
 
         <TouchableOpacity 
