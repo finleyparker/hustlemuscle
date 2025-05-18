@@ -1,62 +1,63 @@
-import React, { use, useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   StyleSheet,
   TouchableOpacity,
   SafeAreaView,
+  ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';  // adjust if needed
 import { doc, setDoc } from 'firebase/firestore';
 
-const AthleticAbilityScreen = ({ navigation }) => {
-  const [selectedGoal, setSelectedGoal] = useState(null);
+const FreeDaysPerWeekScreen = ({ navigation }) => {
+  const [selectedDays, setSelectedDays] = useState(0);
 
-  const handleGoalSelect = (goal) => {
-    setSelectedGoal(goal);
+  const handleDaySelect = (days) => {
+    setSelectedDays(days);
   };
-
+  
   const handleNext = async () => {
-    if (!selectedGoal) return;
-
+    if (selectedDays === 0) return;
+    
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
         console.error('No user is signed in');
         return;
       }
-
+      
       await setDoc(doc(db, 'UserDetails', userId), {
-        AthleticGoal: selectedGoal
+        WorkoutDaysPerWeek: selectedDays
       }, { merge: true });
-
-      navigation.navigate('FreeDays');
+      
+      navigation.navigate('Equipment');
     } catch (error) {
-      console.error('Error saving athletic goal:', error);
+      console.error('Error saving workout days:', error);
     }
   };
-
-  const GoalButton = ({ goal }) => (
+  
+  const DayButton = ({ days }) => (
     <TouchableOpacity
       style={[
-        styles.goalButton,
-        selectedGoal === goal && styles.selectedGoalButton,
+        styles.dayButton,
+        selectedDays === days && styles.selectedDayButton,
       ]}
-      onPress={() => handleGoalSelect(goal)}
+      onPress={() => handleDaySelect(days)}
     >
       <Text style={[
-        styles.goalButtonText,
-        selectedGoal === goal && styles.selectedGoalButtonText,
+        styles.dayButtonText,
+        selectedDays === days && styles.selectedDayButtonText,
       ]}>
-        {goal}
+        {days} {days === 1 ? 'Day' : 'Days'}
       </Text>
     </TouchableOpacity>
   );
-
+  
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
+      <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
@@ -65,22 +66,26 @@ const AthleticAbilityScreen = ({ navigation }) => {
 
       <View style={styles.contentContainer}>
         <Text style={styles.metricText}>Starting Metric #4</Text>
-        <Text style={styles.titleText}>Experience Level</Text>
-        <Text style={styles.subtitleText}>What's your current fitness experience?</Text>
+        <Text style={styles.titleText}>Workout Schedule</Text>
+        <Text style={styles.subtitleText}>How many days per week can you workout?</Text>
 
-        <View style={styles.goalsContainer}>
-          <GoalButton goal="Beginner" />
-          <GoalButton goal="Intermediate" />
-          <GoalButton goal="Expert" />
-        </View>
-
-        <TouchableOpacity
+        <ScrollView>
+          <View style={styles.daysContainer}>
+            <DayButton days={1} />
+            <DayButton days={2} />
+            <DayButton days={3} />
+            <DayButton days={4} />
+            <DayButton days={5} />
+          </View>
+        </ScrollView>
+        
+        <TouchableOpacity 
           style={[
             styles.nextButton,
-            !selectedGoal && styles.nextButtonDisabled
+            selectedDays === 0 && styles.nextButtonDisabled
           ]}
           onPress={handleNext}
-          disabled={!selectedGoal}
+          disabled={selectedDays === 0}
         >
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
@@ -124,28 +129,29 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     opacity: 0.7,
   },
-  goalsContainer: {
+  daysContainer: {
     gap: 16,
+    marginBottom: 20,
   },
-  goalButton: {
+  dayButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#333333',
     borderRadius: 30,
     paddingVertical: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 10,
     alignItems: 'center',
   },
-  selectedGoalButton: {
+  selectedDayButton: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
-  goalButtonText: {
+  dayButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
   },
-  selectedGoalButtonText: {
+  selectedDayButtonText: {
     color: '#000000',
   },
   nextButton: {
@@ -168,4 +174,5 @@ const styles = StyleSheet.create({
   },
 });
 
-export default AthleticAbilityScreen; 
+export default FreeDaysPerWeekScreen;  
+  
