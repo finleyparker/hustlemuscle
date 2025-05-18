@@ -21,10 +21,12 @@ export default function WorkoutLogScreen() {
 
             //get each exercise name
             const names = await getExerciseNamesFromSession(sessionId);
-            const formatted = names.map(name => ({
-                name,
-                sets: [{ reps: '', weight: '' }] // start with 1 set per exercise
+            const formatted = names.map(({ id, name }) => ({
+                exercise_id: id,
+                name, // this is now a string
+                sets: [{ reps: '', weight: '' }]
             }));
+
             setExercises(formatted);
             setLoading(false);
         };
@@ -95,7 +97,7 @@ export default function WorkoutLogScreen() {
                             //when pressed open details pop-up
                             onPress={() => openDetails()}
                             style={styles.detailsButton}
-                            testID="detailsButton"
+                            testID="detawilsButton"
                         >
                             <Text style={styles.detailsIcon}>i</Text>
                         </TouchableOpacity>
