@@ -21,7 +21,7 @@ Steps to deploy this project
 3. Open emulator of choice (e.g. Xcode for iOS, Android Studio for Android)
 4. In the terminal, press 'i' for iOS, 'a' for Android, or scan the QR code on your device.*
 
-*IMPORTANT: only works on Expo SDK 52
+*NOTE: project uses Expo SDK 53
 ## Authors
 
 - [Jacob Moneda](http://github.com/jacobmoneda "‌")
