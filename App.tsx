@@ -27,7 +27,10 @@ import DietScreen from './screens/DietScreen'; //main diet page
 import NewDiet from './screens/NewDiet';
 import CurrentPlan from './screens/CurrentPlan';
 import FreeDaysPerWeekScreen from './screens/FreeDay';
+import WorkoutCalendarScreen from './screens/WorkoutCalendarScreen';
 
+//settings screen
+import SettingsScreen from './screens/SettingsScreen';
 
 const Stack = createNativeStackNavigator();
 
@@ -69,6 +72,8 @@ export default function App() {
                 <Stack.Screen name="Physique" component={PhysiqueScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="AthleticAbility" component={AthleticAbilityScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="Settings" component={SettingsScreen} />
+                <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );
