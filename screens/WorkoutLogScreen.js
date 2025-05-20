@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import {
-    View, Text, TextInput, ScrollView,
+    View, Modal, Button, Text, Image, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
 import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
@@ -9,23 +9,30 @@ import { useNavigation, useRoute } from '@react-navigation/native';
 
 export default function WorkoutLogScreen() {
     const [exercises, setExercises] = useState([]);
+    const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [selectedExercise, setSelectedExercise] = useState(null);
     const route = useRoute();
     const sessionId = route.params?.sessionId;
     const navigation = useNavigation();
+    const exerciseURL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
+            console.log(sessionId);
             const session_name = await getSessionName(sessionId);
             navigation.setOptions({ title: `Current Session: ${session_name}` });
-
+            console.log(session_name);
             //get each exercise name
             const names = await getExerciseNamesFromSession(sessionId);
-            const formatted = names.map(({ id, name }) => ({
-                exercise_id: id,
-                name, // this is now a string
+            const formatted = names.map((name, index) => ({
+                exercise_id: index.toString(), // fallback ID based on index
+                name,
                 sets: [{ reps: '', weight: '' }]
             }));
+
+            console.log('Formatted:', formatted);
+
 
             setExercises(formatted);
             setLoading(false);
@@ -39,6 +46,12 @@ export default function WorkoutLogScreen() {
         updated[exerciseIndex].sets[setIndex][field] = value;
         setExercises(updated);
     };
+
+
+    const openDetails = (exercise) => {
+        setModalVisible(true);
+        setSelectedExercise(exercise);
+    }
 
     const handleRemoveSet = (exerciseIndex, setIndex) => {
         const updated = [...exercises];
@@ -88,20 +101,47 @@ export default function WorkoutLogScreen() {
 
     return (
         <SafeAreaView style={styles.container2} >
-
+            <Modal
+                animationType="slide"
+                transparent={true}
+                visible={modalVisible}
+                onRequestClose={() => {
+                    setModalVisible(!modalVisible);
+                }}
+            >
+                <View style={styles.container3}>
+                    <View style={styles.detailsScreen}>
+                        <Text style={styles.exerciseDetailsName}>{selectedExercise?.name || 'No Exercise Selected.'}</Text>
+                        <Image style={styles.exerciseImage}
+                            source={{
+                                //example image
+                                uri: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Air_Bike/0.jpg'
+                            }}
+                            testID="exerciseImage"
+                        ></Image>
+                        <TouchableOpacity
+                            //when pressed open details pop-up
+                            onPress={() => setModalVisible(false)}
+                            style={styles.closeDetailsButton}
+                        >
+                            <Text style={styles.closeDetailsIcon}>X</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </Modal>
             <ScrollView style={styles.planContainer}>
+
                 {exercises.map((exercise, exerciseIndex) => (
                     <View key={exerciseIndex} style={styles.exerciseCard}>
                         <Text style={styles.exerciseName}>{exercise.name}</Text>
                         <TouchableOpacity
                             //when pressed open details pop-up
-                            onPress={() => openDetails()}
+                            onPress={() => openDetails(exercise)}
                             style={styles.detailsButton}
-                            testID="detawilsButton"
+                            testID="detailsButton"
                         >
                             <Text style={styles.detailsIcon}>i</Text>
                         </TouchableOpacity>
-
                         {exercise.sets.map((set, setIndex) => (
                             <View key={setIndex} style={styles.inputRow}>
                                 <Text style={styles.label}>Set {setIndex + 1}:</Text>
@@ -164,20 +204,66 @@ export default function WorkoutLogScreen() {
 
 
 const styles = StyleSheet.create({
+    closeDetailsButton: {
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'blue',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
+    },
+    closeDetailsIcon: {
+        color: '#fff',
+        fontWeight: 'bold',
+        fontSize: 16,
+        textAlign: 'center',
+    },
+    exerciseDetailsName: {
+        fontSize: 18,
+        fontWeight: '600',
+        marginBottom: 10,
+        color: '#000', // White color for the exercise name
+    },
+    exerciseImage: {
+        height: 100,
+        width: 100,
+    },
+    container3: {
+        flex: 1,
+        justifyContent: 'center',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.5)', // 50% opacity black
+    },
+    detailsScreen: {
+        alignItems: 'center',
+        //justifyContent: 'center',
+        width: '90%',
+        height: '70%',
+        padding: 20,
+        borderRadius: 10,
+        backgroundColor: '#fff',
+    },
     detailsButton: {
-        marginLeft: 0,
-        marginRight: 332,
-        backgroundColor: '#ff6b6b', // Light red button for removing sets
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: 5,
-        alignItems: 'right',
-        justifyContent: 'right',
+        position: 'absolute',
+        top: 10,
+        right: 10,
+        backgroundColor: 'blue',
+        width: 30,
+        height: 30,
+        borderRadius: 15,
+        alignItems: 'center',
+        justifyContent: 'center',
+        zIndex: 1,
     },
     detailsIcon: {
         color: '#fff',
         fontWeight: 'bold',
         fontSize: 16,
+        textAlign: 'center',
     },
     container2: {
         backgroundColor: "#000", // Black background for the whole screen

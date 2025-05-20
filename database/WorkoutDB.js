@@ -52,6 +52,7 @@ export const getExerciseNamesFromSession = async (sessionId) => {
         }
         console.log('Get exercise name successfull');
         const data = snap.data();
+        console.log(data.exercise_name);
         return data.exercise_name || [];
     } catch (error) {
         console.error('Firestore error:', error);

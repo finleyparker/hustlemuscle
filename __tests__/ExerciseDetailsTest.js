@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, waitFor } from '@testing-library/react-native';
+import { render, waitFor, fireEvent } from '@testing-library/react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WorkoutLogScreen from '../screens/WorkoutLogScreen';
@@ -8,9 +8,7 @@ import WorkoutLogScreen from '../screens/WorkoutLogScreen';
 jest.mock('../database/WorkoutDB', () => ({
     getSessionName: jest.fn(() => Promise.resolve('Mocked Session')),
     getExerciseNamesFromSession: jest.fn(() =>
-        Promise.resolve([
-            { id: '1', name: 'Push Ups' },
-        ])
+        Promise.resolve(['Push Ups'])
     ),
 }));
 
@@ -40,4 +38,17 @@ describe('Exercise List', () => {
         //button should exist
         expect(button).toBeTruthy();
     });
+
+    it('renders exercise image', async () => {
+        //render page
+        const { getByTestId } = render(<MockNavigator />);
+        //simulate pressing button
+        const button = await waitFor(() => getByTestId('detailsButton'));
+        fireEvent.press(button); // opens modal
+        //find image in page
+        const image = await waitFor(() => getByTestId('exerciseImage'));
+        //image should exist
+        expect(image).toBeTruthy();
+
+    })
 });

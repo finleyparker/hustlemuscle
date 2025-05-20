@@ -91,3 +91,25 @@ export const getExercisesByDifficulty = async (level) => {
     throw error;
   }
 };
+
+/*
+export const getExerciseImage = async (id) => {
+  console.log('Starting API request for image...');
+
+  try {
+    const response = await axios.get(EXERCISE_DB_URL);
+    //get all exercises
+    const allExercises = response.data;
+
+    //filter only the wanted exercise
+    const filtered = allExercises.filter(exercise =>
+      exercise.id?.toLowerCase() === id.toLowerCase()
+    );
+    return filtered.
+
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching exercises:', error);
+    throw error;
+  }
+}*/
