@@ -4,6 +4,12 @@ The all-in-one workout and diet app for everyone.
 
 This is a university project for COMP602 - Software Development Practice in Auckland University of Technology
 
+## Features
+- Create personalised workout and diet plans
+- Workout tracking
+- Calorie journal
+- Cross platform
+- User authentication
 
 
 ## Deployment
@@ -20,15 +26,14 @@ Steps to deploy this project
 ```
 3. Open emulator of choice (e.g. Xcode for iOS, Android Studio for Android)
 4. In the terminal, press 'i' for iOS, 'a' for Android, or scan the QR code on your device.*
+   
+> **Note:** this project uses **Expo SDK 53**.
 
-*NOTE: project uses Expo SDK 53
 ## Authors
 
-- [Jacob Moneda](http://github.com/jacobmoneda "‌")
-
-- [Caitlin Hornigold](http://github.com/caitlinhornigold1 "‌")
-
-- [Taha Bazyar](https://github.com/tahabazyar "‌")
-
-- [Finley Parker James](https://github.com/finleyparker)
-
+| Name |  GitHub  | Role |
+|:-----|:--------:|------:|
+| Taha Bazyar   | [tahabazyar](https://github.com/tahabazyar) | Developer |
+| Finley Parker James   |  [finleyparker](https://github.com/finleyparker) | Product Manager/Developer |
+| Caitlin Hornigold   | [caitlinhornigold1](http://github.com/caitlinhornigold1) | Developer |
+| Jacob Moneda   | [jacobmoneda](http://github.com/jacobmoneda) | Scrum Master/Developer |
