@@ -52,7 +52,27 @@ export const getExerciseNamesFromSession = async (sessionId) => {
         }
         console.log('Get exercise name successfull');
         const data = snap.data();
+        console.log(data.exercise_name);
         return data.exercise_name || [];
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+export const getExerciseIDFromSession = async (sessionId) => {
+    try {
+        const ref = doc(db, 'workout_sessions', sessionId);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+            console.warn('No session found for ID:', sessionId);
+            return [];
+        }
+        console.log('Get exercise ID successfull');
+        const data = snap.data();
+        console.log("exercise IDS: ", data.exercise_id);
+        return data.exercise_id || [];
     } catch (error) {
         console.error('Firestore error:', error);
         return [];
