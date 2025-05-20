@@ -92,6 +92,30 @@ export const getExercisesByDifficulty = async (level) => {
   }
 };
 
+//get the instructions for the exercises in a session
+export const getExerciseInstructions = async (id) => {
+  console.log('Starting API request for instructions...');
+
+  try {
+    const response = await axios.get(EXERCISE_DB_URL);
+    //get all exercises
+    const allExercises = await response.data;
+
+    //filter only the wanted exercise
+    const filtered = allExercises.filter(exercise =>
+      exercise.id?.toLowerCase() === id.toLowerCase()
+    );
+
+    //return only instructions
+    const instructionsArray = filtered[0].instructions;
+    console.log('filtered: ', instructionsArray);
+    return instructionsArray;
+  } catch (error) {
+    console.error('Error fetching exercises:', error);
+    throw error;
+  }
+}
+
 /*
 export const getExerciseImage = async (id) => {
   console.log('Starting API request for image...');
@@ -105,7 +129,7 @@ export const getExerciseImage = async (id) => {
     const filtered = allExercises.filter(exercise =>
       exercise.id?.toLowerCase() === id.toLowerCase()
     );
-    return filtered.
+    return filtered
 
     return response.data;
   } catch (error) {

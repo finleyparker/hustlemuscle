@@ -3,8 +3,9 @@ import {
     View, Modal, Button, Text, Image, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
-import { getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
+import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
 import { useNavigation, useRoute } from '@react-navigation/native';
+import { getExerciseInstructions } from '../api/exercises';
 
 
 export default function WorkoutLogScreen() {
@@ -12,6 +13,7 @@ export default function WorkoutLogScreen() {
     const [modalVisible, setModalVisible] = useState(false);
     const [loading, setLoading] = useState(true);
     const [selectedExercise, setSelectedExercise] = useState(null);
+    const [instructions, setInstructions] = useState(null);
     const route = useRoute();
     const sessionId = route.params?.sessionId;
     const navigation = useNavigation();
@@ -19,20 +21,26 @@ export default function WorkoutLogScreen() {
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
-            console.log(sessionId);
+            console.log("session id: ", sessionId);
+            //set title on top
             const session_name = await getSessionName(sessionId);
             navigation.setOptions({ title: `Current Session: ${session_name}` });
-            console.log(session_name);
+            console.log("session name: ", session_name);
+
             //get each exercise name
             const names = await getExerciseNamesFromSession(sessionId);
+            //get each exercise id
+            const ids = await getExerciseIDFromSession(sessionId);
+
+            //make a map of exercises with name id and sets
             const formatted = names.map((name, index) => ({
-                exercise_id: index.toString(), // fallback ID based on index
+                exercise_id: ids[index], // fallback ID based on index
                 name,
                 sets: [{ reps: '', weight: '' }]
             }));
 
+            console.log('intructions:', instructions);
             console.log('Formatted:', formatted);
-
 
             setExercises(formatted);
             setLoading(false);
@@ -48,9 +56,20 @@ export default function WorkoutLogScreen() {
     };
 
 
-    const openDetails = (exercise) => {
+    const openDetails = async (exercise) => {
+        //make details pop up screen visible
         setModalVisible(true);
+        //current exercise 
         setSelectedExercise(exercise);
+        try {
+            //get the instructions of the selected exercise
+            const result = await getExerciseInstructions(exercise.exercise_id);
+            //set instructions
+            setInstructions(result || ['No Instructions Found.']);
+        } catch (error) {
+            console.error('Failed to fetch instructions:', error);
+            setInstructions(['Instructions unavailable.']);
+        }
     }
 
     const handleRemoveSet = (exerciseIndex, setIndex) => {
@@ -101,34 +120,62 @@ export default function WorkoutLogScreen() {
 
     return (
         <SafeAreaView style={styles.container2} >
+            {/* Exercise details modal */}
             <Modal
                 animationType="slide"
                 transparent={true}
                 visible={modalVisible}
                 onRequestClose={() => {
                     setModalVisible(!modalVisible);
-                }}
-            >
+                }}>
                 <View style={styles.container3}>
                     <View style={styles.detailsScreen}>
+
+                        {/* Exercise name */}
                         <Text style={styles.exerciseDetailsName}>{selectedExercise?.name || 'No Exercise Selected.'}</Text>
-                        <Image style={styles.exerciseImage}
-                            source={{
-                                //example image
-                                uri: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/Air_Bike/0.jpg'
-                            }}
-                            testID="exerciseImage"
-                        ></Image>
+                        {/* Exercise images */}
+                        <View style={styles.exerciseImageRow} testID="exerciseImage">
+                            <Image style={styles.exerciseImage}
+                                source={{
+                                    //example image
+                                    uri: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/' + selectedExercise?.exercise_id + '/0.jpg'
+                                }}
+
+                            ></Image>
+                            <Image style={styles.exerciseImage}
+                                source={{
+                                    //example image
+                                    uri: 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/' + selectedExercise?.exercise_id + '/1.jpg'
+                                }}
+                            ></Image>
+                        </View>
+                        {/* Exercise instructions */}
+                        <ScrollView testID="exerciseInstructions" style={styles.exerciseInstructionsContainer}>
+
+                            {instructions && instructions.length > 0 ? (
+                                instructions.map((step, index) => (
+                                    <Text key={index} style={styles.exerciseInstructionsText}>
+                                        {index + 1}. {step}
+                                    </Text>
+                                ))
+                            ) : (
+                                <Text style={styles.exerciseInstructionsText}>Loading instructions...</Text>
+                            )}
+                        </ScrollView>
+
+                        {/* close button */}
                         <TouchableOpacity
                             //when pressed open details pop-up
                             onPress={() => setModalVisible(false)}
-                            style={styles.closeDetailsButton}
-                        >
+                            style={styles.closeDetailsButton}>
                             <Text style={styles.closeDetailsIcon}>X</Text>
                         </TouchableOpacity>
                     </View>
                 </View>
             </Modal>
+
+
+            {/* main session list */}
             <ScrollView style={styles.planContainer}>
 
                 {exercises.map((exercise, exerciseIndex) => (
@@ -204,6 +251,32 @@ export default function WorkoutLogScreen() {
 
 
 const styles = StyleSheet.create({
+    exerciseImageRow: {
+        flexDirection: 'row',
+        justifyContent: 'space-between', // or 'center' / 'flex-start'
+        paddingHorizontal: 10,
+        marginTop: 10,
+    },
+
+    exerciseImage: {
+        width: 150,
+        height: 150,
+        resizeMode: 'cover', // or 'contain' if you want to preserve aspect
+        marginHorizontal: 5,
+    },
+
+
+    exerciseInstructionsContainer: {
+        marginTop: 15,
+        paddingHorizontal: 10,
+        alignSelf: 'stretch',
+    },
+    exerciseInstructionsText: {
+        fontSize: 15,
+        color: '#fff',
+        lineHeight: 22,
+        marginBottom: 8,
+    },
     closeDetailsButton: {
         position: 'absolute',
         top: 10,
@@ -226,17 +299,14 @@ const styles = StyleSheet.create({
         fontSize: 18,
         fontWeight: '600',
         marginBottom: 10,
-        color: '#000', // White color for the exercise name
+        color: '#fff'
     },
-    exerciseImage: {
-        height: 100,
-        width: 100,
-    },
+
     container3: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0, 0, 0, 0.5)', // 50% opacity black
+        backgroundColor: 'rgba(0, 0, 0, 0.7)', // 50% opacity black
     },
     detailsScreen: {
         alignItems: 'center',
@@ -245,7 +315,7 @@ const styles = StyleSheet.create({
         height: '70%',
         padding: 20,
         borderRadius: 10,
-        backgroundColor: '#fff',
+        backgroundColor: '#333',
     },
     detailsButton: {
         position: 'absolute',

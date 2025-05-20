@@ -60,6 +60,25 @@ export const getExerciseNamesFromSession = async (sessionId) => {
     }
 };
 
+export const getExerciseIDFromSession = async (sessionId) => {
+    try {
+        const ref = doc(db, 'workout_sessions', sessionId);
+        const snap = await getDoc(ref);
+
+        if (!snap.exists()) {
+            console.warn('No session found for ID:', sessionId);
+            return [];
+        }
+        console.log('Get exercise ID successfull');
+        const data = snap.data();
+        console.log("exercise IDS: ", data.exercise_id);
+        return data.exercise_id || [];
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
 // Update an exercise's completion status, reps, sets and weights
 export const updateExerciseCompletion = async (completions) => {
     const promises = completions.map(completion =>
