@@ -39,6 +39,9 @@ const HomeScreen = ({ navigation }: any) => {
   const [manualProtein, setManualProtein] = useState('');
   const [manualCarbs, setManualCarbs] = useState('');
   const [dailyTarget, setDailyTarget] = useState(2000); // Default target
+  const [carbTarget, setCarbTarget] = useState(0.3);
+  const [fatTarget, setFatTarget] = useState(0.3);  
+  const [proteinTarget, setProteinTarget] = useState(0.4);
   const [dietGoal, setDietGoal] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
 
@@ -81,8 +84,28 @@ const HomeScreen = ({ navigation }: any) => {
             else if (weightGoal === 'GainWeight' && activityLevel === 'Active') target = 3100;
             else if (weightGoal === 'GainWeight' && activityLevel === 'ExtremelyActive') target = 3300;
             else target = 2000;
+            
+            let proteinRatio = 0.3; // 30% of daily target
+            let fatRatio = 0.3; // 30% of daily target  
+            let carbRatio = 0.4; // 40% of daily target
 
+            if (weightGoal === 'LoseWeight') {
+              proteinRatio = 0.4; // higher protein
+              fatRatio = 0.3;
+              carbRatio = 0.3;
+            } else if (weightGoal === 'MaintainWeight') {
+              proteinRatio = 0.3;
+              fatRatio = 0.3;
+              carbRatio = 0.4;
+            } else if (weightGoal === 'GainWeight') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; // higher carbs
+            }
             setDailyTarget(target);
+            setCarbTarget(carbRatio);
+            setFatTarget(fatRatio);
+            setProteinTarget(proteinRatio);
           } else {
             console.log('No such document!');
           }
@@ -159,16 +182,18 @@ const HomeScreen = ({ navigation }: any) => {
       console.error('Error resetting data:', error);
     }
   };
-  const proteinTarget = (dailyTarget * 0.3) // 30% of daily target
-  const fatTarget = (dailyTarget * 0.3) // 30% of daily target
-  const carbTarget = (dailyTarget * 0.4) // 40% of daily target
+
+  const proteinTarget1 = (dailyTarget * proteinTarget) // 30% of daily target
+  const fatTarget1 = (dailyTarget * fatTarget) // 30% of daily target
+  const carbTarget1 = (dailyTarget * carbTarget) // 40% of daily target
+
 
   const fill = (totalCalories / dailyTarget) * 100;
   const tintColor = fill <= 100 ? '#00e0ff' : 'red';
 
-  const fillCarbs = (totalCarbs / carbTarget);
-  const fillFats = (totalFats / fatTarget);
-  const fillProtein = (totalProtein / proteinTarget);
+  const fillCarbs = (totalCarbs / carbTarget1);
+  const fillFats = (totalFats / fatTarget1);
+  const fillProtein = (totalProtein / proteinTarget1);
 
   return (
     <View style={backgroundStyle}>

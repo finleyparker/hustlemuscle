@@ -9,6 +9,9 @@ interface FoodItem {
   title: string;
   ingredient: string[];
   calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 }
 
 interface DietPlan {
@@ -20,6 +23,9 @@ export default function App() {
   const [hello, setHello] = useState<FoodItem[]>([]);
   const [userDietRestriction, setUserDietRestriction] = useState<string>('');
   const [totalCalories, setTotalCalories] = useState<number>(0);
+  const [totalProtein, setTotalProtein] = useState<number>(0);
+  const [totalFat, setTotalFat] = useState<number>(0);
+  const [totalCarbs, setTotalCarbs] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
   // Hardcoded user ID for testing
@@ -68,26 +74,38 @@ export default function App() {
   : hello.filter(item => item.type === userDietRestriction);
 
   // Handle meal selection
-  const handleSelectMeal = async (calories: number, title: string) => {
+  const handleSelectMeal = async (calories: number, title: string, protein: number, fat: number, carbs: number) => {
     const newTotal = totalCalories + calories;
     setTotalCalories(newTotal);
+
+    const newProtein = totalProtein + protein;
+    setTotalProtein(newProtein);
   
+    const newFat = totalFat + fat;
+    setTotalFat(newFat);
+
+    const newCarbs = totalCarbs + carbs;
+    setTotalCarbs(newCarbs);
+
     const dietPlanRef = doc(db, 'dietPlans', userId);
   
     try {
       const docSnap = await getDoc(dietPlanRef);
-      let updatedMeals: { name: string; calories: number }[] = [];
+      let updatedMeals: { name: string; calories: number; protein: number, fat: number, carbs: number }[] = [];
 if (docSnap.exists()) {
-  const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
+  const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number; protein: number, fat: number, carbs: number }[] };
   const currentMeals = data.selectedMeals || [];
-  updatedMeals = [...currentMeals, { name: title, calories }];
+  updatedMeals = [...currentMeals, { name: title, calories, protein, fat, carbs }];
 } else {
-  updatedMeals = [{ name: title, calories }];
+  updatedMeals = [{ name: title, calories, protein, fat, carbs }];
 }
 
   
       await updateDoc(dietPlanRef, {
         totalCalories: newTotal,
+        totalProtein: newProtein,
+        totalFat: newFat,
+        totalCarbs: newCarbs,
         selectedMeals: updatedMeals,
       });
     } catch (error) {
@@ -120,7 +138,7 @@ if (docSnap.exists()) {
                   : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
-                <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />
+                <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title, item.protein, item.fat, item.carbs)} />
 
                 <View style={styles.divider} />
               </View>
