@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import * as Progress from 'react-native-progress';
 import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useFocusEffect } from '@react-navigation/native';
@@ -28,9 +29,15 @@ const HomeScreen = ({ navigation }: any) => {
   const userId = '1212'; // Replace with real user ID from Firebase Auth
   const [modalVisible, setModalVisible] = useState(false);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [totalFats, setTotalFats] = useState(0);
+  const [totalProtein, setTotalProtein] = useState(0);
+  const [totalCarbs, setTotalCarbs] = useState(0);
   const [selectedMeals, setSelectedMeals] = useState<{ name: string; calories: number }[]>([]);
   const [manualMealName, setManualMealName] = useState('');
   const [manualCalories, setManualCalories] = useState('');
+  const [manualFats, setManualFats] = useState('');
+  const [manualProtein, setManualProtein] = useState('');
+  const [manualCarbs, setManualCarbs] = useState('');
   const [dailyTarget, setDailyTarget] = useState(2000); // Default target
   const [dietGoal, setDietGoal] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
@@ -46,6 +53,9 @@ const HomeScreen = ({ navigation }: any) => {
             const data = docSnap.data();
             setTotalCalories(data.totalCalories || 0);
             setSelectedMeals(data.selectedMeals || []);
+            setTotalFats(data.totalFats || 0);
+            setTotalProtein(data.totalProtein || 0);
+            setTotalCarbs(data.totalCarbs || 0);
 
             // Set daily target based on diet goal
             const weightGoal = data.weightGoal || 'MaintainWeight';
@@ -85,12 +95,17 @@ const HomeScreen = ({ navigation }: any) => {
     }, [])
   );
 
+
+
   const toggleModal = (visible: boolean) => {
     setModalVisible(visible);
   };
 
   const handleManualSubmit = async () => {
     const cal = parseInt(manualCalories);
+    const fat = parseInt(manualFats);
+    const protein = parseInt(manualProtein);
+    const carbs = parseInt(manualCarbs);
     if (!manualMealName || isNaN(cal) || cal <= 0) {
       Alert.alert('Error', 'Please enter a valid meal name and calorie number.');
       return;
@@ -98,12 +113,18 @@ const HomeScreen = ({ navigation }: any) => {
 
     const newMeal = { name: manualMealName, calories: cal };
     const updatedTotal = totalCalories + cal;
+    const updatedFats = totalFats + fat; // Replace with actual fat calculation
+    const updatedProtein = totalProtein + protein; // Replace with actual protein calculation
+    const updatedCarbs = totalCarbs + carbs; // Replace with actual carb calculation
     const updatedMeals = [...selectedMeals, newMeal];
 
     try {
       const userRef = doc(db, 'dietPlans', userId);
       await updateDoc(userRef, {
         totalCalories: updatedTotal,
+        totalFats: updatedFats,
+        totalProtein: updatedProtein,
+        totalCarbs: updatedCarbs,
         selectedMeals: updatedMeals,
       });
 
@@ -122,19 +143,32 @@ const HomeScreen = ({ navigation }: any) => {
     try {
       setTotalCalories(0);
       setSelectedMeals([]);
+      setTotalFats(0);
+      setTotalProtein(0);
+      setTotalCarbs(0);
 
       const dietPlanRef = doc(db, 'dietPlans', userId);
       await updateDoc(dietPlanRef, {
         totalCalories: 0,
+        totalFats: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
         selectedMeals: [],
       });
     } catch (error) {
       console.error('Error resetting data:', error);
     }
   };
+  const proteinTarget = (dailyTarget * 0.3) // 30% of daily target
+  const fatTarget = (dailyTarget * 0.3) // 30% of daily target
+  const carbTarget = (dailyTarget * 0.4) // 40% of daily target
 
   const fill = (totalCalories / dailyTarget) * 100;
   const tintColor = fill <= 100 ? '#00e0ff' : 'red';
+
+  const fillCarbs = (totalCarbs / carbTarget);
+  const fillFats = (totalFats / fatTarget);
+  const fillProtein = (totalProtein / proteinTarget);
 
   return (
     <View style={backgroundStyle}>
@@ -170,14 +204,24 @@ const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.goalText}>Daily Target: {dailyTarget}</Text>
             {fill > 100}
           </View>
-
           <View style={styles.button3}>
             <Button
-              title="Add Calories Manually"
+              title="Add Data Manually"
               onPress={() => toggleModal(true)}
             />
           </View>
-
+          <View style={styles.carbs}>
+            <Text>Carbs: {Math.round(fillCarbs * 100)}%   </Text>
+            <Progress.Bar progress={fillCarbs} width={200} height={15} color="#ff0000" animationType="spring" />
+          </View>
+          <View style={styles.fats}>
+          <Text>Fats: {Math.round(fillFats * 100)}%   </Text>
+            <Progress.Bar progress={fillFats} width={200} height={15} color="#00ff00"/>
+          </View>
+          <View style={styles.protein}>
+          <Text>Protein: {Math.round(fillProtein * 100)}%   </Text>
+            <Progress.Bar progress={fillProtein} width={200} height={15} color="#0000ff"/>
+          </View>
           <View style={styles.log}>
             <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>
               Meal Log:
@@ -207,7 +251,7 @@ const HomeScreen = ({ navigation }: any) => {
             <View style={styles.closeButton}>
               <Button title="X" onPress={() => toggleModal(false)} />
             </View>
-            <Text style={styles.text}>Add Calories Manually</Text>
+            <Text style={styles.text}>Add Data Manually</Text>
 
             <TextInput
               placeholder="Meal name"
@@ -222,6 +266,30 @@ const HomeScreen = ({ navigation }: any) => {
               keyboardType="numeric"
               value={manualCalories}
               onChangeText={setManualCalories}
+            />
+
+            <TextInput
+              placeholder="Carbs"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualCarbs}
+              onChangeText={setManualCarbs}
+            />
+
+            <TextInput
+              placeholder="Protein"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualProtein}
+              onChangeText={setManualProtein}
+            />
+
+            <TextInput
+              placeholder="Fats"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualFats}
+              onChangeText={setManualFats}
             />
 
             <Button title="Add" onPress={handleManualSubmit} />
@@ -321,6 +389,21 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderRadius: 8,
     fontSize: 16,
+  },
+  carbs: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fats: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  protein: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
   },
 });
 
