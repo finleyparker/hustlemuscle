@@ -18,6 +18,8 @@ import * as Progress from 'react-native-progress';
 import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../firebaseConfig';
 import { useFocusEffect } from '@react-navigation/native';
+import { setDoc, serverTimestamp } from 'firebase/firestore';
+
 
 const HomeScreen = ({ navigation }: any) => {
   const isDarkMode = useColorScheme() === 'dark';
@@ -118,7 +120,25 @@ const HomeScreen = ({ navigation }: any) => {
     }, [])
   );
 
-
+  const submitDailySummary = async () => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  
+    const dailySummaryRef = doc(db, 'dietPlans', userId, 'days', today);
+  
+    try {
+      await setDoc(dailySummaryRef, {
+        totalCalories,
+        totalProtein,
+        timestamp: serverTimestamp(),
+      });
+  
+      console.log('Daily summary saved.');
+      handleReset();
+    } catch (error) {
+      console.error('Error saving daily summary:', error);
+    }
+  };
+  
 
   const toggleModal = (visible: boolean) => {
     setModalVisible(visible);
@@ -330,7 +350,9 @@ const HomeScreen = ({ navigation }: any) => {
           accessibilityLabel="Reset calorie count and meal log"
         />
       </View>
+      <Button title="Submit Daily Summary" onPress={submitDailySummary} />
     </View>
+    
   );
 };
 
