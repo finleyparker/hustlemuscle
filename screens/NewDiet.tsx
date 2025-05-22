@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, StyleSheet, Text, TextInput, Button, TouchableWithoutFeedback, Keyboard, Alert } from 'react-native';
 import DropDownPicker from 'react-native-dropdown-picker';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
-import { db } from '../database/firebase';
+import { auth, db } from '../database/firebase';
+import { currentUserId } from '../database/UserDB';
 
 export default function NewDiet() {
   const [open1, setOpen1] = useState(false);
@@ -34,10 +35,23 @@ export default function NewDiet() {
     { label: 'Not Active (little to no exercise)', value: 'NotActive' },
   ]);
 
+  const [userId, setUserId] = useState<string | null>(null);
 
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(user => {
+      if (user) {
+        // User is signed in, set the currentUserId
+        setUserId(user.uid);
+        console.log("User ID:", user.uid);
+      } else {
+        // No user is signed in
+        setUserId(null);
+        console.log("No user is signed in.");
+      }
+    });
 
-  // hardcoded user ID for testing purposes
-  const userId = '1212';
+    return () => unsubscribe(); // Cleanup the listener on component unmount
+  }, []);
 
   const closeDropdowns = () => {
     setOpen1(false);
@@ -59,6 +73,10 @@ export default function NewDiet() {
         activityLevel: value3,
         userId: userId,
       };
+
+      if (!userId) {
+        throw new Error('User ID is required');
+      }
 
       const dietPlanDocRef = doc(db, 'dietPlans', userId);
 
