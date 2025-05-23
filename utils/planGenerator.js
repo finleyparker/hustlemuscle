@@ -72,6 +72,11 @@ const getWeeklyDates = (startDate, targetWeekday, numberOfWeeks) => {
   }
   return dates;
 };
+const generatePlanName = (goal, level, durationWeeks) => {
+  const months = Math.round(durationWeeks / 4);
+  const goalCapitalized = goal.charAt(0).toUpperCase() + goal.slice(1);
+  return `${months} Month ${goalCapitalized} Program`;
+};
 
 export const generateWorkoutPlan = async (userInput, userId, startDate = new Date()) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
@@ -157,6 +162,7 @@ export const generateWorkoutPlan = async (userInput, userId, startDate = new Dat
     const warnings = [];
 
     const assignedWeekdays = weekdayMapping[daysPerWeek] || [];
+    const planName = generatePlanName(goal, level, planDurationWeeks);
 
     const workoutPlan = await Promise.all(Object.entries(split)
       .slice(0, daysPerWeek)
@@ -204,6 +210,7 @@ export const generateWorkoutPlan = async (userInput, userId, startDate = new Dat
           dates
         );
 
+        
 
         return {
           day: `${dayKey.replace('_', ' ').toUpperCase()} (${dayOfWeek})`, // Add weekday in display string
@@ -233,10 +240,11 @@ export const generateWorkoutPlan = async (userInput, userId, startDate = new Dat
     
 
     return { 
-      plan: workoutPlan, 
-      warnings, 
-      durationWeeks: planDurationWeeks 
-    };
+    plan: workoutPlan, 
+    warnings, 
+    durationWeeks: planDurationWeeks,
+    planName,
+  };
 
   } catch (error) {
     console.error('Error generating workout plan:', error);
@@ -250,8 +258,8 @@ export const generateWorkoutPlan = async (userInput, userId, startDate = new Dat
 // Test runner
 const testGeneratePlan = async () => {
   const userInput = {
-    goal: 'muscle gain',
-    level: 'beginner',
+    goal: 'strength',
+    level: 'intermediate',
     daysPerWeek: 3,
     equipment: ['body only', 'cable', 'machine', ],
   };

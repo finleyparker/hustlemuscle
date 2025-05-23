@@ -6,6 +6,8 @@ import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
+  const [planName, setPlanName] = useState('');
+
   const [warnings, setWarnings] = useState([]);
   const [durationWeeks, setDurationWeeks] = useState(null); 
   const [loading, setLoading] = useState(true);
@@ -35,6 +37,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         if (!querySnapshot.empty) {
           querySnapshot.forEach((doc) => {
             const data = doc.data();
+            setPlanName(data.planName || '');
+
             if (data.plan?.plan) {
               setPlan(data.plan.plan);
               setWarnings(data.plan.warnings || []);
@@ -52,6 +56,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
           setDurationWeeks(generated.durationWeeks || null);
+          setPlanName(generated.planName || '');
+
 
           // Store the workout plan in Firestore with duration
           await addDoc(workoutPlansCollection, {
@@ -60,6 +66,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             plan: generated.plan,
             warnings: generated.warnings || [],
             durationWeeks: generated.durationWeeks,
+            planName: generated.planName,
             createdAt: startDate,
           });
 
@@ -93,6 +100,10 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       {/* Plan Duration */}
       <View style={styles.durationBox}>
         <Text style={styles.durationText}>📅 Plan Duration: {durationWeeks || 'N/A'} weeks</Text>
+        {planName ? (
+          <Text style={styles.planNameText}>🏋️‍♂️ Plan Name: {planName}</Text>
+          ) : null}
+
       </View>
 
       {warnings.length > 0 && (
@@ -133,6 +144,13 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 };
 
 const styles = StyleSheet.create({
+  planNameText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 8,
+  },
+
   container: {
     padding: 16,
     backgroundColor: '#f2f2f2',
