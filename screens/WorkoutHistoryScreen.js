@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, TouchableOpacity, FlatList, StyleSheet, SafeAreaView, ActivityIndicator } from 'react-native';
-import { getSessionDetails } from '../database/WorkoutDB';
+import { getCompletedSessions } from '../database/WorkoutDB';
 
 const WorkoutHistoryScreen = () => {
     const [sessions, setSessions] = useState([]);
@@ -9,11 +9,13 @@ const WorkoutHistoryScreen = () => {
     useEffect(() => {
         const fetchSessions = async () => {
             try {
-                console.log('setting session details');
-                const data = await getSessionDetails();
-                setSessions(data);
+                console.log('Fetching completed sessions...');
+                const data = await getCompletedSessions();
+                // Sort sessions by completion date, most recent first
+                const sortedData = data.sort((a, b) => b.completion_date - a.completion_date);
+                setSessions(sortedData);
             } catch (error) {
-                console.error('Error fetching sessions:', error);
+                console.error('Error fetching completed sessions:', error);
             } finally {
                 setLoading(false);
             }
@@ -21,12 +23,27 @@ const WorkoutHistoryScreen = () => {
         fetchSessions();
     }, []);
 
+    const formatDate = (date) => {
+        if (!date) return 'No date';
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    };
+
     const renderItem = ({ item }) => (
         <TouchableOpacity
             style={styles.card}
             onPress={() => console.log("workout session history details pressed.")}
         >
-            <Text style={styles.cardTitle}>{item.session_name || item.workout_plan_id} {item.completion_date || 'No date.'}</Text>
+            <Text style={styles.cardTitle}>{item.session_name}</Text>
+            <Text style={styles.cardDate}>Completed: {formatDate(item.completion_date)}</Text>
+            <Text style={styles.cardExercises}>
+                {item.exercise_completion_ids?.length || 0} exercises completed
+            </Text>
         </TouchableOpacity>
     );
 
@@ -35,47 +52,70 @@ const WorkoutHistoryScreen = () => {
             <SafeAreaView style={styles.container}>
                 <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
                     <ActivityIndicator size="large" color="#446df6" />
-                    <Text style={{ color: '#fff', marginTop: -100 }}>Loading sessions...</Text>
+                    <Text style={{ color: '#fff', marginTop: 10 }}>Loading workout history...</Text>
                 </View>
             </SafeAreaView>
         );
     }
 
     return (
-        <View style={styles.container}>
+        <SafeAreaView style={styles.container}>
             <FlatList
                 data={sessions}
                 keyExtractor={(item) => item.id}
                 renderItem={renderItem}
-                ListEmptyComponent={<Text style={styles.emptyText}>No sessions found.</Text>}
+                ListEmptyComponent={
+                    <Text style={styles.emptyText}>
+                        No completed workouts found. Complete a workout to see it here!
+                    </Text>
+                }
             />
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#0c0f0A', padding: 20 },
+    container: {
+        flex: 1,
+        backgroundColor: '#0c0f0A',
+        padding: 20
+    },
+    header: {
+        fontSize: 24,
+        fontWeight: 'bold',
+        color: '#fff',
+        marginBottom: 20,
+        textAlign: 'center'
+    },
     card: {
         backgroundColor: '#446df6',
         padding: 15,
         borderRadius: 10,
         marginBottom: 15,
     },
-    cardTitle: { color: '#fff', fontSize: 18, fontWeight: 'bold' },
-    emptyText: { color: '#fff', textAlign: 'center', marginTop: 20 },
-    newPlanButton: {
-        backgroundColor: '#e3f900', // or another suitable color
-        padding: 15,
-        borderRadius: 10,
-        alignItems: 'center',
-        marginTop: 20,
-    },
-    newPlanText: {
-        color: '#black',
-        fontSize: 16,
+    cardTitle: {
+        color: '#fff',
+        fontSize: 18,
         fontWeight: 'bold',
+        marginBottom: 5
     },
-
+    cardDate: {
+        color: '#fff',
+        fontSize: 14,
+        opacity: 0.9,
+        marginBottom: 5
+    },
+    cardExercises: {
+        color: '#fff',
+        fontSize: 14,
+        opacity: 0.8
+    },
+    emptyText: {
+        color: '#fff',
+        textAlign: 'center',
+        marginTop: 20,
+        fontSize: 16
+    }
 });
 
 export default WorkoutHistoryScreen;

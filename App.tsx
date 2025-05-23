@@ -70,7 +70,7 @@ export default function App() {
                 <Stack.Screen name="Physique" component={PhysiqueScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="AthleticAbility" component={AthleticAbilityScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} />
             </Stack.Navigator>
         </NavigationContainer>
     );

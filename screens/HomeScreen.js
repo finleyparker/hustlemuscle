@@ -152,7 +152,7 @@ const HomeScreen = () => {
       {/* Statistics Section */}
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('Sessions')}
+        onPress={() => navigation.navigate('WorkoutHistory')}
       >
         <View style={styles.statisticsHeader}>
           <Text style={styles.sectionTitle}>Statistics</Text>
