@@ -2,7 +2,7 @@ import { getAllExercises } from '../api/exercises';
 import { collection, addDoc } from 'firebase/firestore';
 import { firestore } from '../firebaseConfig';
 // Function to create workout session in Firestore
-const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek) => {
+const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
     
@@ -16,16 +16,18 @@ const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek) =
       exercise_id: exerciseIds, 
       exercise_name: exerciseNames,
       workout_plan_id: `plan_${userId}`,
-      day_of_week: dayOfWeek,   // <--- Save the assigned weekday here
+      day_of_week: dayOfWeek,
+      dates: dates || [],   
       createdAt: new Date()
     };
 
     await addDoc(workoutSessionsCollection, newSession);
-    console.log(`Created session: ${sessionName} for user ${userId} on ${dayOfWeek}`);
+    console.log(`Created session: ${sessionName} for user ${userId} on ${dayOfWeek} with ${dates.length} dates`);
   } catch (error) {
     console.error('Error creating workout session:', error);
   }
 };
+
 
 
 /**
@@ -37,8 +39,41 @@ const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek) =
  * @param {number} userInput.daysPerWeek - Days available to train (3, 4, or 5).
  * @param {string[]} userInput.equipment - Equipment user has access to.
  * @returns {Promise<{plan: Array, warnings: Array}>} - A workout plan and potential warnings.
+ * @param {Date} startDate - The date the program starts
+ * @param {string} targetWeekday - Weekday name, e.g. 'Monday'
+ * @param {number} numberOfWeeks - How many weeks to generate dates for
+ * @returns {Date[]} Array of Dates
  */
-export const generateWorkoutPlan = async (userInput, userId) => {
+
+
+const getWeeklyDates = (startDate, targetWeekday, numberOfWeeks) => {
+  const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const targetDayIndex = daysOfWeek.indexOf(targetWeekday);
+
+  if (targetDayIndex === -1) {
+    throw new Error(`Invalid weekday: ${targetWeekday}`);
+  }
+
+  // Clone startDate without time part
+  const date = new Date(startDate);
+  date.setHours(0, 0, 0, 0);
+
+  // Find the first occurrence of the target weekday on or after startDate
+  const startDayIndex = date.getDay();
+  const daysUntilTarget = (targetDayIndex + 7 - startDayIndex) % 7;
+  date.setDate(date.getDate() + daysUntilTarget);
+
+  // Generate dates for each week
+  const dates = [];
+  for (let i = 0; i < numberOfWeeks; i++) {
+    const nextDate = new Date(date);
+    nextDate.setDate(date.getDate() + i * 7);
+    dates.push(nextDate);
+  }
+  return dates;
+};
+
+export const generateWorkoutPlan = async (userInput, userId, startDate = new Date()) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
 
   const goalCategoryMap = {
@@ -63,7 +98,14 @@ export const generateWorkoutPlan = async (userInput, userId) => {
     4: ['Monday', 'Tuesday', 'Thursday', 'Friday'],
     5: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   };
-
+  const durationMap = {
+      'muscle gain': { beginner: 8, intermediate: 12, advanced: 16 },
+      'weight loss': { beginner: 4, intermediate: 8, advanced: 12 },
+      'strength': { beginner: 8, intermediate: 12, advanced: 16 },
+      'flexibility': { beginner: 4, intermediate: 6, advanced: 8 },
+      'endurance': { beginner: 4, intermediate: 8, advanced: 12 },
+    };
+    const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
   try {
     const allExercises = await getAllExercises();
     const targetCategories = goalCategoryMap[goal.toLowerCase()] || [];
@@ -150,13 +192,18 @@ export const generateWorkoutPlan = async (userInput, userId) => {
         // Get assigned weekday for this day index
         const dayOfWeek = assignedWeekdays[index] || 'Day';
 
-        // Pass weekday to createWorkoutSession
+        
+        // Calculate all session dates for this day
+        const dates = getWeeklyDates(startDate, dayOfWeek, planDurationWeeks);
+
         await createWorkoutSession(
-          userId, 
-          dayKey, // e.g. "Day_1_push"
+          userId,
+          dayKey,
           finalExercises,
-          dayOfWeek // pass weekday here
+          dayOfWeek,
+          dates
         );
+
 
         return {
           day: `${dayKey.replace('_', ' ').toUpperCase()} (${dayOfWeek})`, // Add weekday in display string
@@ -181,15 +228,9 @@ export const generateWorkoutPlan = async (userInput, userId) => {
       warnings.push(`⚠️ Your plan has only ${totalExercises} exercises in total. Try increasing your equipment, training days, or selecting a higher fitness level.`);
     }
     // Determine duration in weeks
-    const durationMap = {
-      'muscle gain': { beginner: 8, intermediate: 12, advanced: 16 },
-      'weight loss': { beginner: 4, intermediate: 8, advanced: 12 },
-      'strength': { beginner: 8, intermediate: 12, advanced: 16 },
-      'flexibility': { beginner: 4, intermediate: 6, advanced: 8 },
-      'endurance': { beginner: 4, intermediate: 8, advanced: 12 },
-    };
+    
 
-    const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
+    
 
     return { 
       plan: workoutPlan, 

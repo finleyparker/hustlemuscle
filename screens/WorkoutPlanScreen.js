@@ -46,8 +46,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             }
           });
         } else {
+          const startDate = new Date(); 
           // If no plan matches, generate a new one and create workout sessions
-          const generated = await generateWorkoutPlan(userInput, testUserId);
+          const generated = await generateWorkoutPlan(userInput, testUserId, startDate);
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
           setDurationWeeks(generated.durationWeeks || null);
@@ -59,7 +60,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             plan: generated.plan,
             warnings: generated.warnings || [],
             durationWeeks: generated.durationWeeks,
-            createdAt: new Date(),
+            createdAt: startDate,
           });
 
           
@@ -73,6 +74,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     };
   
     loadPlan();
+    
   }, [userInput]);
   
 
