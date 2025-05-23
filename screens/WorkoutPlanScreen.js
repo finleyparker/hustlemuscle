@@ -91,7 +91,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       {plan.map((day, index) => (
         <View key={index} style={styles.dayContainer}>
-          <Text style={styles.dayTitle}>{day.day}</Text>
+          <Text style={styles.dayTitle}>{day.day}</Text>  
           <Text style={styles.muscleFocus}>Muscle Focus: {day.muscleFocus}</Text>
           {day.exercises.map((exercise, exIndex) => (
             <View key={`${exercise.name}-${exIndex}`} style={styles.exerciseCard}>

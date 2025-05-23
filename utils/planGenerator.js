@@ -2,11 +2,10 @@ import { getAllExercises } from '../api/exercises';
 import { collection, addDoc } from 'firebase/firestore';
 import { firestore } from '../firebaseConfig';
 // Function to create workout session in Firestore
-const createWorkoutSession = async (userId, sessionName, exercises) => {
+const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
     
-    // Use original exercise IDs from API
     const exerciseIds = exercises.map(ex => ex.id); 
     const exerciseNames = exercises.map(ex => ex.name);
 
@@ -17,15 +16,17 @@ const createWorkoutSession = async (userId, sessionName, exercises) => {
       exercise_id: exerciseIds, 
       exercise_name: exerciseNames,
       workout_plan_id: `plan_${userId}`,
+      day_of_week: dayOfWeek,   // <--- Save the assigned weekday here
       createdAt: new Date()
     };
 
     await addDoc(workoutSessionsCollection, newSession);
-    console.log(`Created session: ${sessionName} for user ${userId}`);
+    console.log(`Created session: ${sessionName} for user ${userId} on ${dayOfWeek}`);
   } catch (error) {
     console.error('Error creating workout session:', error);
   }
 };
+
 
 /**
  * Generates a personalized workout plan based on user preferences.
@@ -54,6 +55,13 @@ export const generateWorkoutPlan = async (userInput, userId) => {
     'weight loss': { sets: 3, reps: [12, 15], rest: '30-60s' },
     'flexibility': { sets: 'N/A', reps: '10-20s hold', rest: 'N/A' },
     'endurance': { sets: 3, reps: [15, 20], rest: '30s' },
+  };
+
+  // New: Weekday mappings for each daysPerWeek option
+  const weekdayMapping = {
+    3: ['Monday', 'Wednesday', 'Friday'],
+    4: ['Monday', 'Tuesday', 'Thursday', 'Friday'],
+    5: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   };
 
   try {
@@ -106,9 +114,11 @@ export const generateWorkoutPlan = async (userInput, userId) => {
     const maxExercisesPerDay = 6;
     const warnings = [];
 
+    const assignedWeekdays = weekdayMapping[daysPerWeek] || [];
+
     const workoutPlan = await Promise.all(Object.entries(split)
       .slice(0, daysPerWeek)
-      .map(async ([dayKey, muscleGroup]) => {
+      .map(async ([dayKey, muscleGroup], index) => {
         const muscleToExercisesMap = {};
         muscleGroup.forEach(muscle => {
           muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
@@ -137,17 +147,22 @@ export const generateWorkoutPlan = async (userInput, userId) => {
 
         const { sets, reps, rest } = goalParameters[goal.toLowerCase()] || {};
 
-        // Create a workout session for the user for each day
+        // Get assigned weekday for this day index
+        const dayOfWeek = assignedWeekdays[index] || 'Day';
+
+        // Pass weekday to createWorkoutSession
         await createWorkoutSession(
           userId, 
           dayKey, // e.g. "Day_1_push"
-          finalExercises
+          finalExercises,
+          dayOfWeek // pass weekday here
         );
 
         return {
-          day: dayKey.replace('_', ' ').toUpperCase(),
+          day: `${dayKey.replace('_', ' ').toUpperCase()} (${dayOfWeek})`, // Add weekday in display string
           session_id: dayKey.toLowerCase().replace('day_', '').replace('_', ''),
           muscleFocus: muscleGroup.join(' & '),
+          dayOfWeek, // add weekday property here too
           exercises: finalExercises.map(ex => ({
             id: ex.id,
             name: ex.name,
@@ -161,7 +176,6 @@ export const generateWorkoutPlan = async (userInput, userId) => {
       })
     );
 
-    // If too few total exercises
     const totalExercises = workoutPlan.reduce((sum, day) => sum + day.exercises.length, 0);
     if (totalExercises < daysPerWeek * 3) {
       warnings.push(`⚠️ Your plan has only ${totalExercises} exercises in total. Try increasing your equipment, training days, or selecting a higher fitness level.`);
@@ -173,6 +187,7 @@ export const generateWorkoutPlan = async (userInput, userId) => {
     throw error;
   }
 };
+
 
 
 
