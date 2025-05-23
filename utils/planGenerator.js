@@ -180,8 +180,23 @@ export const generateWorkoutPlan = async (userInput, userId) => {
     if (totalExercises < daysPerWeek * 3) {
       warnings.push(`⚠️ Your plan has only ${totalExercises} exercises in total. Try increasing your equipment, training days, or selecting a higher fitness level.`);
     }
+    // Determine duration in weeks
+    const durationMap = {
+      'muscle gain': { beginner: 8, intermediate: 12, advanced: 16 },
+      'weight loss': { beginner: 4, intermediate: 8, advanced: 12 },
+      'strength': { beginner: 8, intermediate: 12, advanced: 16 },
+      'flexibility': { beginner: 4, intermediate: 6, advanced: 8 },
+      'endurance': { beginner: 4, intermediate: 8, advanced: 12 },
+    };
 
-    return { plan: workoutPlan, warnings };
+    const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
+
+    return { 
+      plan: workoutPlan, 
+      warnings, 
+      durationWeeks: planDurationWeeks 
+    };
+
   } catch (error) {
     console.error('Error generating workout plan:', error);
     throw error;

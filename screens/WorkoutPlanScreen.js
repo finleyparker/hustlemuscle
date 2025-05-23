@@ -7,6 +7,7 @@ import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [warnings, setWarnings] = useState([]);
+  const [durationWeeks, setDurationWeeks] = useState(null); 
   const [loading, setLoading] = useState(true);
 
   const { userInput } = route.params;
@@ -37,24 +38,30 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             if (data.plan?.plan) {
               setPlan(data.plan.plan);
               setWarnings(data.plan.warnings || []);
+              setDurationWeeks(data.plan.durationWeeks || null);
             } else {
               setPlan(data.plan || []);
               setWarnings([]);
+              setDurationWeeks(data.plan?.durationWeeks || null);
             }
           });
         } else {
           // If no plan matches, generate a new one and create workout sessions
-          const generated = await generateWorkoutPlan(userInput, testUserId); // Pass test userId
+          const generated = await generateWorkoutPlan(userInput, testUserId);
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
-          
-          // Store the workout plan in Firestore
+          setDurationWeeks(generated.durationWeeks || null);
+
+          // Store the workout plan in Firestore with duration
           await addDoc(workoutPlansCollection, {
-            userId: testUserId, // Use the testUserId instead
+            userId: testUserId,
             userInput,
-            plan: generated,
+            plan: generated.plan,
+            warnings: generated.warnings || [],
+            durationWeeks: generated.durationWeeks,
             createdAt: new Date(),
           });
+
           
           
         }
@@ -77,9 +84,15 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </View>
     );
   }
+    
 
   return (
     <ScrollView style={styles.container}>
+      {/* Plan Duration */}
+      <View style={styles.durationBox}>
+        <Text style={styles.durationText}>📅 Plan Duration: {durationWeeks || 'N/A'} weeks</Text>
+      </View>
+
       {warnings.length > 0 && (
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>⚠️ Suggestions to Improve Your Plan:</Text>
@@ -114,6 +127,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </TouchableOpacity>
     </ScrollView>
   );
+
 };
 
 const styles = StyleSheet.create({
@@ -202,6 +216,18 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
+  durationBox: {
+    padding: 16,
+    backgroundColor: '#e6f2ff',
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  durationText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#005bb5',
+  },
+
 });
 
 export default WorkoutPlanScreen;
