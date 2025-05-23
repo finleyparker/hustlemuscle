@@ -150,10 +150,15 @@ const HomeScreen = () => {
       </TouchableOpacity>
 
       {/* Statistics Section */}
-      <View style={styles.statisticsHeader}>
-        <Text style={styles.sectionTitle}>Statistics</Text>
-        <Ionicons name="chevron-forward" size={24} color="white" />
-      </View>
+      <TouchableOpacity
+        style={styles.card}
+        onPress={() => navigation.navigate('Sessions')}
+      >
+        <View style={styles.statisticsHeader}>
+          <Text style={styles.sectionTitle}>Statistics</Text>
+          <Ionicons name="chevron-forward" size={24} color="white" />
+        </View>
+      </TouchableOpacity>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>3</Text>
