@@ -3,6 +3,12 @@ import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity
 import { generateWorkoutPlan } from '../utils/planGenerator';
 import { firestore } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { updateDoc } from 'firebase/firestore';
+const createUserInputKey = (userInput) => {
+  const { goal, level, daysPerWeek, equipment } = userInput;
+  const sortedEquipment = [...equipment].sort(); // Ensure consistent order
+  return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
+};
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
@@ -13,66 +19,59 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const [loading, setLoading] = useState(true);
 
   const { userInput } = route.params;
-
+  const testUserId = 'testUserId123';
   useEffect(() => {
     const loadPlan = async () => {
       try {
         const workoutPlansCollection = collection(firestore, 'workoutPlans');
         
-        // Use a test userId for now (replace with actual userId once authentication is in place)
-        const testUserId = 'testUserId123'; // Replace with actual userId when authentication is integrated
+        
   
         // Adding multiple fields to the query
-        const q = query(
-          workoutPlansCollection, 
-          where('userId', '==', testUserId), // Add this
-          where('userInput.goal', '==', userInput.goal),
-          where('userInput.level', '==', userInput.level),
-          where('userInput.daysPerWeek', '==', userInput.daysPerWeek),
-          where('userInput.equipment', 'array-contains', userInput.equipment)
-        );
+        const userInputKey = createUserInputKey(userInput);
+          const q = query(
+            workoutPlansCollection, 
+            where('userId', '==', testUserId),
+            where('userInputKey', '==', userInputKey)
+          );
+
   
         const querySnapshot = await getDocs(q);
   
         if (!querySnapshot.empty) {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            setPlanName(data.planName || '');
+        const existingDoc = querySnapshot.docs[0].data();
 
-            if (data.plan?.plan) {
-              setPlan(data.plan.plan);
-              setWarnings(data.plan.warnings || []);
-              setDurationWeeks(data.plan.durationWeeks || null);
-            } else {
-              setPlan(data.plan || []);
-              setWarnings([]);
-              setDurationWeeks(data.plan?.durationWeeks || null);
-            }
-          });
-        } else {
-          const startDate = new Date(); 
-          // If no plan matches, generate a new one and create workout sessions
-          const generated = await generateWorkoutPlan(userInput, testUserId, startDate);
-          setPlan(generated.plan);
-          setWarnings(generated.warnings || []);
-          setDurationWeeks(generated.durationWeeks || null);
-          setPlanName(generated.planName || '');
+        // Just load the existing plan without regenerating
+        setPlan(existingDoc.plan);
+        setWarnings(existingDoc.warnings || []);
+        setDurationWeeks(existingDoc.durationWeeks || null);
+        setPlanName(existingDoc.planName || '');
 
 
-          // Store the workout plan in Firestore with duration
-          await addDoc(workoutPlansCollection, {
-            userId: testUserId,
-            userInput,
-            plan: generated.plan,
-            warnings: generated.warnings || [],
-            durationWeeks: generated.durationWeeks,
-            planName: generated.planName,
-            createdAt: startDate,
-          });
 
-          
-          
-        }
+      } else {
+        // No doc found - generate and create new
+        const startDate = new Date(); 
+        const generated = await generateWorkoutPlan(userInput, testUserId, startDate);
+        setPlan(generated.plan);
+        setWarnings(generated.warnings || []);
+        setDurationWeeks(generated.durationWeeks || null);
+        setPlanName(generated.planName || '');
+
+        await addDoc(workoutPlansCollection, {
+          userId: testUserId,
+          userInput,
+          userInputKey,
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          createdAt: startDate,
+          updatedAt: startDate,
+        });
+      }
+
+
       } catch (error) {
         console.error('Failed to retrieve or generate plan:', error);
       } finally {
@@ -93,7 +92,37 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </View>
     );
   }
-    
+  const regeneratePlan = async () => {
+    try {
+      setLoading(true);
+      const newStartDate = new Date();
+      const generated = await generateWorkoutPlan(userInput, testUserId, newStartDate);
+
+      setPlan(generated.plan);
+      setWarnings(generated.warnings || []);
+      setDurationWeeks(generated.durationWeeks || null);
+      setPlanName(generated.planName || '');
+
+      // Optional: overwrite existing plan
+      await addDoc(collection(firestore, 'workoutPlans'), {
+        userId: testUserId,
+        userInput,
+        userInputKey: createUserInputKey(userInput),
+        plan: generated.plan,
+        warnings: generated.warnings || [],
+        durationWeeks: generated.durationWeeks,
+        planName: generated.planName,
+        createdAt: newStartDate,
+        updatedAt: newStartDate,
+      });
+
+    } catch (error) {
+      console.error('Failed to regenerate workout plan:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
 
   return (
     <ScrollView style={styles.container}>
@@ -131,6 +160,10 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           ))}
         </View>
       ))}
+      {/* 🔁 Regenerate Button - insert it here */}
+      <TouchableOpacity style={styles.backButton} onPress={regeneratePlan}>
+        <Text style={styles.backButtonText}>🔄 Regenerate Plan</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.backButton}

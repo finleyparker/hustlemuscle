@@ -1,6 +1,12 @@
 import { getAllExercises } from '../api/exercises';
 import { collection, addDoc } from 'firebase/firestore';
 import { firestore } from '../firebaseConfig';
+const createUserInputKey = (userInput) => {
+  const { goal, level, daysPerWeek, equipment } = userInput;
+  const sortedEquipment = [...equipment].sort(); // Ensure consistent order
+  return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
+};
+
 // Function to create workout session in Firestore
 const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
   try {
@@ -260,7 +266,7 @@ const testGeneratePlan = async () => {
   const userInput = {
     goal: 'strength',
     level: 'intermediate',
-    daysPerWeek: 3,
+    daysPerWeek: 4,
     equipment: ['body only', 'cable', 'machine', ],
   };
 
