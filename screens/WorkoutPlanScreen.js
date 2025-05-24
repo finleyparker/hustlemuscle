@@ -4,6 +4,8 @@ import { generateWorkoutPlan } from '../utils/planGenerator';
 import { firestore } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { updateDoc } from 'firebase/firestore';
+import { getAllExercises } from '../api/exercises';
+
 const createUserInputKey = (userInput) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
   const sortedEquipment = [...equipment].sort(); // Ensure consistent order
@@ -92,6 +94,102 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </View>
     );
   }
+
+
+  const handleReplaceExercise = async (dayIndex, exerciseIndex) => {
+    const currentDay = plan[dayIndex];
+    const currentExercise = currentDay.exercises[exerciseIndex];
+
+    try {
+      const allExercises = await getAllExercises();
+      const targetCategories = {
+        'weight loss': ['cardio', 'plyometrics'],
+        'muscle gain': ['strength', 'powerlifting', 'strongman'],
+        'flexibility': ['stretching'],
+        'endurance': ['cardio', 'plyometrics'],
+        'strength': ['strength', 'olympic weightlifting', 'powerlifting'],
+      }[userInput.goal.toLowerCase()] || [];
+
+      const normalizedEquipment = userInput.equipment.map(e => e.toLowerCase());
+
+      const alternatives = allExercises.filter(ex =>
+        ex.id !== currentExercise.id &&
+        ex.level?.toLowerCase() === userInput.level.toLowerCase() &&
+        (
+          ex.equipment?.toLowerCase() === 'body only' ||
+          ex.equipment?.toLowerCase() === 'none' ||
+          normalizedEquipment.includes(ex.equipment?.toLowerCase())
+        ) &&
+        ex.primaryMuscles?.some(m => currentExercise.muscles.includes(m)) &&
+        targetCategories.includes(ex.category?.toLowerCase())
+      );
+
+      if (alternatives.length === 0) {
+        alert('⚠️ No more alternative exercises available for this muscle group.');
+        return;
+      }
+
+      const replacement = alternatives[Math.floor(Math.random() * alternatives.length)];
+      const updatedExercise = {
+        ...currentExercise,
+        id: replacement.id,
+        name: replacement.name,
+        instructions: replacement.instructions || 'Follow correct form.',
+        muscles: replacement.primaryMuscles || currentExercise.muscles,
+      };
+
+      const updatedDay = { ...currentDay };
+      updatedDay.exercises[exerciseIndex] = updatedExercise;
+
+      const updatedPlan = [...plan];
+      updatedPlan[dayIndex] = updatedDay;
+
+      setPlan(updatedPlan);
+
+      // Update Firestore (for workout_sessions, based on session_id)
+      const workoutSessionsRef = collection(firestore, 'workout_sessions');
+      const sessionQuery = query(
+        workoutSessionsRef,
+        where('user_id', '==', testUserId),
+        where('session_id', '==', updatedDay.session_id)
+      );
+      const sessionSnap = await getDocs(sessionQuery);
+      if (!sessionSnap.empty) {
+        const sessionDoc = sessionSnap.docs[0];
+        await updateDoc(sessionDoc.ref, {
+          exercise_id: updatedDay.exercises.map(ex => ex.id),
+          exercise_name: updatedDay.exercises.map(ex => ex.name),
+          updatedAt: new Date(),
+        });
+
+        // Update workoutPlans document too
+        const workoutPlansRef = collection(firestore, 'workoutPlans');
+        const planQuery = query(
+          workoutPlansRef,
+          where('userId', '==', testUserId),
+          where('userInputKey', '==', createUserInputKey(userInput))
+        );
+        const planSnap = await getDocs(planQuery);
+        if (!planSnap.empty) {
+          const planDoc = planSnap.docs[0];
+          await updateDoc(planDoc.ref, {
+            plan: updatedPlan,
+            updatedAt: new Date(),
+          });
+        }
+
+        
+
+      }
+
+    } catch (err) {
+      console.error('Failed to replace exercise:', err);
+      alert('❌ Failed to replace exercise. Try again.');
+    }
+  };
+
+
+
   const regeneratePlan = async () => {
     try {
       setLoading(true);
@@ -156,6 +254,13 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
               <Text>Rest: {exercise.restTime}</Text>
               <Text>Muscles: {exercise.muscles.join(', ')}</Text>
               <Text style={styles.instructions}>{exercise.instructions}</Text>
+              <TouchableOpacity
+                onPress={() => handleReplaceExercise(index, exIndex)}
+                style={styles.replaceButton}
+              >
+                <Text style={{ color: 'blue' }}>🔁 Replace Exercise</Text>
+              </TouchableOpacity>
+
             </View>
           ))}
         </View>
@@ -280,6 +385,11 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#005bb5',
   },
+  replaceButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+
 
 });
 

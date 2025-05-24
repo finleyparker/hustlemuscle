@@ -265,8 +265,8 @@ export const generateWorkoutPlan = async (userInput, userId, startDate = new Dat
 const testGeneratePlan = async () => {
   const userInput = {
     goal: 'strength',
-    level: 'intermediate',
-    daysPerWeek: 4,
+    level: 'beginner',
+    daysPerWeek: 3,
     equipment: ['body only', 'cable', 'machine', ],
   };
 
