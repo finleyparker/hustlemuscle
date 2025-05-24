@@ -150,15 +150,10 @@ const HomeScreen = () => {
       </TouchableOpacity>
 
       {/* Statistics Section */}
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('WorkoutHistory')}
-      >
-        <View style={styles.statisticsHeader}>
-          <Text style={styles.sectionTitle}>Statistics</Text>
-          <Ionicons name="chevron-forward" size={24} color="white" />
-        </View>
-      </TouchableOpacity>
+      <View style={styles.statisticsHeader}>
+        <Text style={styles.sectionTitle}>Statistics</Text>
+        <Ionicons name="chevron-forward" size={24} color="white" />
+      </View>
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>3</Text>
