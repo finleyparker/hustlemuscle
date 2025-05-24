@@ -129,6 +129,8 @@ const HomeScreen = ({ navigation }: any) => {
       await setDoc(dailySummaryRef, {
         totalCalories,
         totalProtein,
+        totalCarbs,
+        totalFats,
         timestamp: serverTimestamp(),
       });
   
