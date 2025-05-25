@@ -1,95 +1,317 @@
 import React, { useEffect, useState } from 'react';
-import { SafeAreaView, View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator';
 import { db } from '../database/firebase';
-import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, query, where, doc} from 'firebase/firestore';
+import { updateDoc } from 'firebase/firestore';
+import { getAllExercises } from '../api/exercises';
+import { getAuth } from 'firebase/auth';
+
+
+
+const createUserInputKey = (userInput) => {
+  if (!userInput) return 'default-key';
+  const { goal = '', level = '', daysPerWeek = 0, equipment = [] } = userInput;
+  const sortedEquipment = [...equipment].sort();
+  return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
+};
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
+  const [planName, setPlanName] = useState('');
+
   const [warnings, setWarnings] = useState([]);
+  const [durationWeeks, setDurationWeeks] = useState(null); 
   const [loading, setLoading] = useState(true);
-  const userId = auth.currentUser;
-  const { userInput } = route.params || {};
+
+  const [userInput, setUserInput] = useState(null);
+  const [userInputReady, setUserInputReady] = useState(false);
+
+  const auth = getAuth();
+  const currentUser = auth.currentUser;
+  const userId = currentUser?.uid;
+  useEffect(() => {
+    const fetchUserInput = async () => {
+      const auth = getAuth();
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        console.error('User not authenticated');
+        return;
+      }
+      const userId = currentUser.uid;
+
+      try {
+        const userDetailsDoc = await getDoc(doc(db, 'UserDetails', userId));
+        if (userDetailsDoc.exists()) {
+          const data = userDetailsDoc.data();
+          // Construct userInput to match your expected structure
+          const constructedInput = {
+            goal: data.PhysiqueGoal || '',
+            level: data.ExperienceLevel || '',
+            daysPerWeek: data.WorkoutDaysPerWeek || 0,
+            equipment: data.Equipment || [],
+            // add more fields if needed
+          };
+          setUserInput(constructedInput);
+          setUserInputReady(true);
+        } else {
+          console.error('No user details found for user:', userId);
+          setUserInputReady(true); 
+        }
+      } catch (err) {
+        console.error('Failed to fetch user input:', err);
+        setUserInputReady(true);
+      }
+    };
+
+    fetchUserInput();
+  }, []);
 
 
   useEffect(() => {
+    if (!userInputReady || !userInput) return;
     const loadPlan = async () => {
       try {
         const workoutPlansCollection = collection(db, 'workoutPlans');
-        if (!userId) {
-          console.error('No user is signed in');
-          return;
-        }
-        const testUserId = userId;
-
+        
+        
+  
         // Adding multiple fields to the query
-        const q = query(
-          workoutPlansCollection,
-          where('userId', '==', testUserId), // Add this
-          where('userInput.goal', '==', userInput.goal),
-          where('userInput.level', '==', userInput.level),
-          where('userInput.daysPerWeek', '==', userInput.daysPerWeek),
-          where('userInput.equipment', 'array-contains', userInput.equipment)
-        );
+        const userInputKey = createUserInputKey(userInput);
+          const q = query(
+            workoutPlansCollection, 
+            where('userId', '==', userId),
+            where('userInputKey', '==', userInputKey)
+          );
 
+  
         const querySnapshot = await getDocs(q);
-
+  
         if (!querySnapshot.empty) {
-          querySnapshot.forEach((doc) => {
-            const data = doc.data();
-            if (data.plan?.plan) {
-              setPlan(data.plan.plan);
-              setWarnings(data.plan.warnings || []);
-            } else {
-              setPlan(data.plan || []);
-              setWarnings([]);
-            }
-          });
-        } else {
-          // If no plan matches, generate a new one and create workout sessions
-          const generated = await generateWorkoutPlan(userInput, testUserId); // Pass test userId
-          setPlan(generated.plan);
-          setWarnings(generated.warnings || []);
+        const existingDoc = querySnapshot.docs[0].data();
 
-          // Store the workout plan in Firestore
-          await addDoc(workoutPlansCollection, {
-            userId: testUserId, // Use the testUserId instead
-            userInput,
-            plan: generated,
-            createdAt: new Date(),
-          });
+        // Just load the existing plan without regenerating
+        setPlan(existingDoc.plan);
+        setWarnings(existingDoc.warnings || []);
+        setDurationWeeks(existingDoc.durationWeeks || null);
+        setPlanName(existingDoc.planName || '');
 
 
-        }
+
+      } else {
+        // No doc found - generate and create new
+        const startDate = new Date(); 
+        const generated = await generateWorkoutPlan(userInput, userId, startDate);
+        setPlan(generated.plan);
+        setWarnings(generated.warnings || []);
+        setDurationWeeks(generated.durationWeeks || null);
+        setPlanName(generated.planName || '');
+
+        await addDoc(workoutPlansCollection, {
+          userId: userId,
+          userInput,
+          userInputKey,
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          createdAt: startDate,
+          updatedAt: startDate,
+        });
+      }
+
+
       } catch (error) {
-        Alert.alert(
-          "Coming Soon",
-          "This feature is not implemented yet.",
-          [{ text: "OK" }]
-        );
         console.error('Failed to retrieve or generate plan:', error);
       } finally {
         setLoading(false);
       }
     };
-
+  
     loadPlan();
-  }, [userInput]);
-
+    
+  }, [userInput, userInputReady, userId]);
+  
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-          <ActivityIndicator size="large" color="#446df6" />
-          <Text style={{ color: '#fff', marginTop: -100 }}>Loading sessions...</Text>
-        </View>
-      </SafeAreaView>
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#007AFF" />
+        <Text style={styles.loadingText}>Generating your workout plan...</Text>
+      </View>
     );
   }
 
+
+  const handleReplaceExercise = async (dayIndex, exerciseIndex) => {
+    const currentDay = plan[dayIndex];
+    const currentExercise = currentDay.exercises[exerciseIndex];
+
+    try {
+      const allExercises = await getAllExercises();
+      const targetCategories = {
+        'weight loss': ['cardio', 'plyometrics'],
+        'muscle gain': ['strength', 'powerlifting', 'strongman'],
+        'flexibility': ['stretching'],
+        'endurance': ['cardio', 'plyometrics'],
+        'strength': ['strength', 'olympic weightlifting', 'powerlifting'],
+      }[userInput.goal.toLowerCase()] || [];
+
+      const normalizedEquipment = userInput.equipment.map(e => e.toLowerCase());
+
+      const alternatives = allExercises.filter(ex =>
+        ex.id !== currentExercise.id &&
+        ex.level?.toLowerCase() === userInput.level.toLowerCase() &&
+        (
+          ex.equipment?.toLowerCase() === 'body only' ||
+          ex.equipment?.toLowerCase() === 'none' ||
+          normalizedEquipment.includes(ex.equipment?.toLowerCase())
+        ) &&
+        ex.primaryMuscles?.some(m => currentExercise.muscles.includes(m)) &&
+        targetCategories.includes(ex.category?.toLowerCase())
+      );
+
+      if (alternatives.length === 0) {
+        alert('⚠️ No more alternative exercises available for this muscle group.');
+        return;
+      }
+
+      const replacement = alternatives[Math.floor(Math.random() * alternatives.length)];
+      const updatedExercise = {
+        ...currentExercise,
+        id: replacement.id,
+        name: replacement.name,
+        instructions: replacement.instructions || 'Follow correct form.',
+        muscles: replacement.primaryMuscles || currentExercise.muscles,
+      };
+
+      const updatedDay = { ...currentDay };
+      updatedDay.exercises[exerciseIndex] = updatedExercise;
+
+      const updatedPlan = [...plan];
+      updatedPlan[dayIndex] = updatedDay;
+
+      setPlan(updatedPlan);
+
+      // 1. First update the workout plan document
+      const workoutPlansRef = collection(db, 'workoutPlans');
+      const planQuery = query(
+        workoutPlansRef,
+        where('userId', '==', userId),
+        where('userInputKey', '==', createUserInputKey(userInput))
+      );
+      
+      const planSnap = await getDocs(planQuery);
+      
+      if (!planSnap.empty) {
+        const planDoc = planSnap.docs[0];
+        await updateDoc(planDoc.ref, {
+          plan: updatedPlan,
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        console.warn('No workout plan document found to update');
+      }
+
+      // 2. Then update the workout session document
+      const workoutSessionsRef = collection(db, 'workout_sessions');
+      const sessionQuery = query(
+        workoutSessionsRef,
+        where('user_id', '==', userId),
+        where('session_id', '==', updatedDay.session_id)
+      );
+      
+      const sessionSnap = await getDocs(sessionQuery);
+      
+      if (!sessionSnap.empty) {
+        const sessionDoc = sessionSnap.docs[0];
+        await updateDoc(sessionDoc.ref, {
+          exercise_id: updatedDay.exercises.map(ex => ex.id),
+          exercise_name: updatedDay.exercises.map(ex => ex.name),
+          updatedAt: new Date().toISOString(),
+        });
+      } else {
+        console.warn('No workout session document found to update');
+      }
+
+      alert('✅ Exercise replaced successfully!');
+    } catch (err) {
+      console.error('Failed to replace exercise:', err);
+      alert('❌ Failed to replace exercise. Please try again.');
+    }
+  };
+
+
+
+  const regeneratePlan = async () => {
+    try {
+      setLoading(true);
+      const newStartDate = new Date();
+      const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
+      
+
+      setPlan(generated.plan);
+      setWarnings(generated.warnings || []);
+      setDurationWeeks(generated.durationWeeks || null);
+      setPlanName(generated.planName || '');
+
+      const workoutPlansRef = collection(db, 'workoutPlans');
+      const userInputKey = createUserInputKey(userInput);
+
+      // Query existing document
+      const planQuery = query(
+        workoutPlansRef,
+        where('userId', '==', userId),
+        where('userInputKey', '==', userInputKey)
+      );
+      const planSnap = await getDocs(planQuery);
+
+      if (!planSnap.empty) {
+        // Update existing document
+        const planDoc = planSnap.docs[0];
+        await updateDoc(planDoc.ref, {
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          updatedAt: newStartDate,
+        });
+      } else {
+        // Create new document if none exists (fallback)
+        await addDoc(workoutPlansRef, {
+          userId: userId,
+          userInput,
+          userInputKey,
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          createdAt: newStartDate,
+          updatedAt: newStartDate,
+        });
+      }
+    } catch (error) {
+    console.error('Failed to regenerate workout plan:', error);
+    Alert.alert('Error', 'Failed to regenerate workout plan. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+
+
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}
+    contentContainerStyle={{ paddingBottom: 80 }}>
+      {/* Plan Duration */}
+      <View style={styles.durationBox}>
+        <Text style={styles.durationText}>📅 Plan Duration: {durationWeeks || 'N/A'} weeks</Text>
+        {planName ? (
+          <Text style={styles.planNameText}>🏋️‍♂️ Plan Name: {planName}</Text>
+          ) : null}
+
+      </View>
+
       {warnings.length > 0 && (
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>⚠️ Suggestions to Improve Your Plan:</Text>
@@ -99,11 +321,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         </View>
       )}
 
-      <Text>Coming Soon: This feature is not implemented yet.</Text>
-
       {plan.map((day, index) => (
         <View key={index} style={styles.dayContainer}>
-          <Text style={styles.dayTitle}>{day.day}</Text>
+          <Text style={styles.dayTitle}>{day.day}</Text>  
           <Text style={styles.muscleFocus}>Muscle Focus: {day.muscleFocus}</Text>
           {day.exercises.map((exercise, exIndex) => (
             <View key={`${exercise.name}-${exIndex}`} style={styles.exerciseCard}>
@@ -113,10 +333,21 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
               <Text>Rest: {exercise.restTime}</Text>
               <Text>Muscles: {exercise.muscles.join(', ')}</Text>
               <Text style={styles.instructions}>{exercise.instructions}</Text>
+              <TouchableOpacity
+                onPress={() => handleReplaceExercise(index, exIndex)}
+                style={styles.replaceButton}
+              >
+                <Text style={{ color: 'blue' }}>🔁 Replace Exercise</Text>
+              </TouchableOpacity>
+
             </View>
           ))}
         </View>
       ))}
+      {/* 🔁 Regenerate Button - insert it here */}
+      <TouchableOpacity style={styles.backButton} onPress={regeneratePlan}>
+        <Text style={styles.backButtonText}>🔄 Regenerate Plan</Text>
+      </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.backButton}
@@ -126,9 +357,17 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </TouchableOpacity>
     </ScrollView>
   );
+
 };
 
 const styles = StyleSheet.create({
+  planNameText: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#444',
+    marginTop: 8,
+  },
+
   container: {
     padding: 16,
     backgroundColor: '#f2f2f2',
@@ -214,6 +453,23 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
   },
+  durationBox: {
+    padding: 16,
+    backgroundColor: '#e6f2ff',
+    borderRadius: 8,
+    marginBottom: 20,
+  },
+  durationText: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#005bb5',
+  },
+  replaceButton: {
+    marginTop: 8,
+    alignSelf: 'flex-start',
+  },
+
+
 });
 
 export default WorkoutPlanScreen;

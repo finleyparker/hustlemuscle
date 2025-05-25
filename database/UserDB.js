@@ -3,27 +3,50 @@ import { db, auth } from './firebase';
 import { Alert } from 'react-native';
 
 
+export const getUserDetailsFromUserDetailsCollection = async (userId) => {
+  try {
+    const docRef = doc(db, 'UserDetails', userId); // or 'user_details' if that's your actual collection name
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      // Ensure all required fields exist
+      if (!data.PhysiqueGoal || !data.ExperienceLevel || !data.WorkoutDaysPerWeek || !data.Equipment) {
+        throw new Error('Missing required user preference fields');
+      }
+      return {
+        goal: data.PhysiqueGoal,
+        level: data.ExperienceLevel,
+        daysPerWeek: data.WorkoutDaysPerWeek,
+        equipment: data.Equipment,
+        // Add any other fields you need
+      };
+    } else {
+      throw new Error('User details document does not exist');
+    }
+  } catch (error) {
+    console.error('Error in getUserDetailsFromUserDetailsCollection:', error);
+    throw error; // Re-throw to handle in calling function
+  }
+};
+
 //get the details of currently logged in user
 export const getUserDetails = async () => {
     const user = auth.currentUser;
-
     if (!user) {
         console.warn('User not logged in.');
         return [];
     }
     try {
-        const ref = collection(db, 'users');
-        const q = query(ref, where('user_id', '==', user.uid));
-        const snap = await getDocs(q);
+        const docRef = doc(db, 'UserDetails', user.uid);
+        const docSnap = await getDoc(docRef);
 
-        if (snap.empty) {
+        if (!docSnap.exists()) {
             console.log('No details found for user:', user.uid);
+            return [];
         }
 
-        return snap.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-        }));
+        return [docSnap.data()]; // Return as array to maintain compatibility
     } catch (error) {
         console.error('Firebase error fetching user details:', error);
         return [];
