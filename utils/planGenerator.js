@@ -8,7 +8,7 @@ const createUserInputKey = (userInput) => {
 };
 
 // Function to create workout session in Firestore
-export const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
+const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
     
