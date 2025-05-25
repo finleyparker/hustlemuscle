@@ -201,19 +201,41 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       setDurationWeeks(generated.durationWeeks || null);
       setPlanName(generated.planName || '');
 
-      // Optional: overwrite existing plan
-      await addDoc(collection(firestore, 'workoutPlans'), {
-        userId: testUserId,
-        userInput,
-        userInputKey: createUserInputKey(userInput),
-        plan: generated.plan,
-        warnings: generated.warnings || [],
-        durationWeeks: generated.durationWeeks,
-        planName: generated.planName,
-        createdAt: newStartDate,
-        updatedAt: newStartDate,
-      });
+      const workoutPlansRef = collection(firestore, 'workoutPlans');
+      const userInputKey = createUserInputKey(userInput);
 
+      // Query existing document
+      const planQuery = query(
+        workoutPlansRef,
+        where('userId', '==', testUserId),
+        where('userInputKey', '==', userInputKey)
+      );
+      const planSnap = await getDocs(planQuery);
+
+      if (!planSnap.empty) {
+        // Update existing document
+        const planDoc = planSnap.docs[0];
+        await updateDoc(planDoc.ref, {
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          updatedAt: newStartDate,
+        });
+      } else {
+        // Create new document if none exists (fallback)
+        await addDoc(workoutPlansRef, {
+          userId: testUserId,
+          userInput,
+          userInputKey,
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          createdAt: newStartDate,
+          updatedAt: newStartDate,
+        });
+      }
     } catch (error) {
       console.error('Failed to regenerate workout plan:', error);
     } finally {
@@ -222,8 +244,10 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   };
 
 
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container}
+    contentContainerStyle={{ paddingBottom: 80 }}>
       {/* Plan Duration */}
       <View style={styles.durationBox}>
         <Text style={styles.durationText}>📅 Plan Duration: {durationWeeks || 'N/A'} weeks</Text>

@@ -1,6 +1,7 @@
 import { getAllExercises } from '../api/exercises';
-import { collection, addDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, query, where, doc, updateDoc } from 'firebase/firestore';
 import { firestore } from '../firebaseConfig';
+
 const createUserInputKey = (userInput) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
   const sortedEquipment = [...equipment].sort(); // Ensure consistent order
@@ -11,26 +12,43 @@ const createUserInputKey = (userInput) => {
 const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
   try {
     const workoutSessionsCollection = collection(firestore, 'workout_sessions');
-    
-    const exerciseIds = exercises.map(ex => ex.id); 
+
+    const sessionId = sessionName.toLowerCase().replace('day_', '').replace('_', '');
+
+    const existingQuery = query(
+      workoutSessionsCollection,
+      where('user_id', '==', userId),
+      where('session_id', '==', sessionId)
+    );
+    const existingSnapshot = await getDocs(existingQuery);
+
+    const exerciseIds = exercises.map(ex => ex.id);
     const exerciseNames = exercises.map(ex => ex.name);
 
-    const newSession = {
+    const sessionData = {
       user_id: userId,
-      session_id: sessionName.toLowerCase().replace('day_', '').replace('_', ''),
+      session_id: sessionId,
       session_name: sessionName.replace('Day_', '').replace('_', ' ').toLowerCase(),
-      exercise_id: exerciseIds, 
+      exercise_id: exerciseIds,
       exercise_name: exerciseNames,
       workout_plan_id: `plan_${userId}`,
       day_of_week: dayOfWeek,
-      dates: dates || [],   
+      dates: dates || [],
       createdAt: new Date()
     };
 
-    await addDoc(workoutSessionsCollection, newSession);
-    console.log(`Created session: ${sessionName} for user ${userId} on ${dayOfWeek} with ${dates.length} dates`);
+    if (!existingSnapshot.empty) {
+      // ✅ Update existing document
+      const docRef = existingSnapshot.docs[0].ref;
+      await updateDoc(docRef, sessionData);
+      console.log(`📝 Updated existing session "${sessionName}" for user ${userId}`);
+    } else {
+      // ✅ Create new document
+      await addDoc(workoutSessionsCollection, sessionData);
+      console.log(`✅ Created session: ${sessionName} for user ${userId} on ${dayOfWeek}`);
+    }
   } catch (error) {
-    console.error('Error creating workout session:', error);
+    console.error('❌ Error creating/updating workout session:', error);
   }
 };
 
@@ -266,7 +284,7 @@ const testGeneratePlan = async () => {
   const userInput = {
     goal: 'strength',
     level: 'beginner',
-    daysPerWeek: 3,
+    daysPerWeek: 4,
     equipment: ['body only', 'cable', 'machine', ],
   };
 
