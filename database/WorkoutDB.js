@@ -1,5 +1,6 @@
-import { collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
+import { Timestamp, collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
 import { db, auth } from './firebase';
+import { getUserID } from './UserDB';
 
 // Fetch all workout sessions
 export const getAllSessions = async () => {
@@ -105,8 +106,21 @@ export const updateSessionCompletion = async (sessionId) => {
         const sessionData = sessionSnap.data();
 
         // Create completed session document
+
+        //date
+        const completion_date = new Date();
+        completion_date.setSeconds(0, 0);
+        console.log('session_completion date: ', completion_date);
+
+        //get exercise_completion_ids
+        //get all exercisecompletion documents with the same:
+        //workout_session_id, user_id, completion_date
+
+        const exercise_completion_ids = await getExerciseCompletions(user.uid, completion_date, sessionId);
+
+
         const completedSession = {
-            completion_date: new Date(),
+            completion_date: completion_date,
             session_name: sessionData.session_name,
             exercise_completion_ids: [], // This will be populated when exercises are completed
             user_id: user.uid,
@@ -141,6 +155,37 @@ export const getSessionName = async (sessionId) => {
         return [];
     }
 };
+
+
+export const getExerciseCompletions = async (user_id, completion_date, sessionId) => {
+    try {
+        // Convert JS Date to Firestore Timestamp if needed
+        const dateTimestamp = Timestamp.fromDate(new Date(completion_date)); // assumes completion_date is a valid JS Date or ISO string
+
+        const sessionsRef = collection(db, 'ExerciseCompletion');
+        const q = query(
+            sessionsRef,
+            where('user_id', '==', user_id),
+            where('completion_date', '==', dateTimestamp),
+            where('workout_session_id', '==', sessionId)
+        );
+
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            console.log('No matching exercise completions found.');
+            return [];
+        }
+
+        // Return only the document IDs
+        return snapshot.docs.map((doc) => doc.id);
+
+    } catch (error) {
+        console.error('Firebase error fetching completed sessions:', error);
+        return [];
+    }
+};
+
 
 export const getCompletedSessions = async () => {
     const user = auth.currentUser;

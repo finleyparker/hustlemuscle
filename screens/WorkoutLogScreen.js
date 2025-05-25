@@ -6,6 +6,7 @@ import {
 import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion, updateSessionCompletion } from '../database/WorkoutDB';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getExerciseInstructions } from '../api/exercises';
+import { getUserID } from '../database/UserDB';
 
 
 export default function WorkoutLogScreen() {
@@ -86,38 +87,27 @@ export default function WorkoutLogScreen() {
         setExercises(updated);
     };
 
-    const handleSave = async () => {
-        const completions = exercises.map((exercise) => ({
-            workout_session_id: sessionId,
-            exercise_id: exercise.exercise_id || exercise.name, // fallback if no ID
-            sets: exercise.sets.length,
-            reps: exercise.sets.map(set => parseInt(set.reps) || 0),
-            weights: exercise.sets.map(set => parseFloat(set.weight) || 0),
-            duration: null,
-            //isComplete: exercise.sets.every(set => set.reps && set.weight)
-        }));
-
-        try {
-            await updateExerciseCompletion(completions);
-            await handleSaveSession();
-            alert('Workout saved!');
-            navigation.navigate('Home');
-        } catch (error) {
-            console.error('Save error:', error);
-            alert('Failed to save.');
-        }
-    };
-
     const handleSaveSession = async () => {
         try {
-            // First save all exercise completions
+
+            //get user id
+            const user_id = await getUserID();
+            console.log('user id: ', user_id);
+
+            //date
+            const completion_date = new Date();
+            completion_date.setSeconds(0, 0);
+            console.log('exercise_completion date: ', completion_date);
+
+            //save exercise completion details
             const completions = exercises.map((exercise) => ({
                 workout_session_id: sessionId,
                 exercise_id: exercise.exercise_id || exercise.name,
                 sets: exercise.sets.length,
                 reps: exercise.sets.map(set => parseInt(set.reps) || 0),
                 weights: exercise.sets.map(set => parseFloat(set.weight) || 0),
-                duration: null,
+                completion_date: completion_date,
+                user_id: user_id,
             }));
 
             // Save exercise completions first
