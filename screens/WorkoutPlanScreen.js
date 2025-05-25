@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
-import { generateWorkoutPlan } from '../utils/planGenerator';
+
 import { firestore } from '../firebaseConfig';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
 import { updateDoc } from 'firebase/firestore';
 import { getAllExercises } from '../api/exercises';
+import { deleteDoc } from 'firebase/firestore';
+import { generateWorkoutPlan, createWorkoutSession } from '../utils/planGenerator';
+
 
 const createUserInputKey = (userInput) => {
   const { goal, level, daysPerWeek, equipment } = userInput;
@@ -201,18 +204,51 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       setDurationWeeks(generated.durationWeeks || null);
       setPlanName(generated.planName || '');
 
-      // Optional: overwrite existing plan
-      await addDoc(collection(firestore, 'workoutPlans'), {
-        userId: testUserId,
-        userInput,
-        userInputKey: createUserInputKey(userInput),
-        plan: generated.plan,
-        warnings: generated.warnings || [],
-        durationWeeks: generated.durationWeeks,
-        planName: generated.planName,
-        createdAt: newStartDate,
-        updatedAt: newStartDate,
-      });
+      const workoutPlansRef = collection(firestore, 'workoutPlans');
+      const planQuery = query(
+        workoutPlansRef,
+        where('userId', '==', testUserId),
+        where('userInputKey', '==', createUserInputKey(userInput))
+      );
+      const planSnap = await getDocs(planQuery);
+
+      if (!planSnap.empty) {
+        const existingDocRef = planSnap.docs[0].ref;
+        await updateDoc(existingDocRef, {
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          updatedAt: newStartDate,
+        });
+      } else {
+        await addDoc(workoutPlansRef, {
+          userId: testUserId,
+          userInput,
+          userInputKey: createUserInputKey(userInput),
+          plan: generated.plan,
+          warnings: generated.warnings || [],
+          durationWeeks: generated.durationWeeks,
+          planName: generated.planName,
+          createdAt: newStartDate,
+          updatedAt: newStartDate,
+        });
+      }
+
+      // 🔄 Update or replace workout_sessions (delete old + insert new)
+      const sessionsRef = collection(firestore, 'workout_sessions');
+      const sessionQuery = query(sessionsRef, where('user_id', '==', testUserId));
+      const sessionSnap = await getDocs(sessionQuery);
+
+      // Delete old sessions
+      const deletePromises = sessionSnap.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      // Recreate sessions using updated plan
+      for (const day of generated.plan) {
+        const exercises = day.exercises;
+        await createWorkoutSession(testUserId, day.day, exercises, day.muscleFocus, []);
+      }
 
     } catch (error) {
       console.error('Failed to regenerate workout plan:', error);
@@ -220,6 +256,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       setLoading(false);
     }
   };
+
 
 
   return (
