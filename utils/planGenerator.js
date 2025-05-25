@@ -1,6 +1,11 @@
 import { getAllExercises } from '../api/exercises';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../database/firebase';
+
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../database/firebase';
+
+
+
 // Function to create workout session in Firestore
 const createWorkoutSession = async (userId, sessionName, exercises) => {
   try {
@@ -27,12 +32,44 @@ const createWorkoutSession = async (userId, sessionName, exercises) => {
   }
 };
 
-export const userInput = {
-  goal: 'muscle gain',
-  level: 'beginner',
-  daysPerWeek: 3,
-  equipment: ['body only', 'cable', 'machine',],
+const fetchUserInputFromFirestore = async () => {
+  const user = auth.currentUser;
+  if (!user) {
+    console.warn("No authenticated user found");
+    return null;
+  }
+
+  const userId = user.uid;
+  try {
+    const userDetailsRef = doc(db, 'UserDetails', userId);
+    const userSnap = await getDoc(userDetailsRef);
+
+    if (!userSnap.exists()) {
+      console.warn("No user details found for:", userId);
+      return null;
+    }
+
+    const userData = userSnap.data();
+
+    const { PhysiqueGoal, ExperienceLevel, WorkoutDaysPerWeek, Equipment } = userData;
+
+    if (!PhysiqueGoal || !ExperienceLevel || !WorkoutDaysPerWeek || !Equipment) {
+      console.warn("Incomplete user data");
+      return null;
+    }
+
+    return {
+      goal: PhysiqueGoal,
+      level: ExperienceLevel,
+      daysPerWeek: WorkoutDaysPerWeek,
+      equipment: Equipment,
+    };
+  } catch (error) {
+    console.error("Error fetching user workout inputs:", error);
+    return null;
+  }
 };
+
 
 /**
  * Generates a personalized workout plan based on user preferences.
@@ -183,16 +220,19 @@ export const generateWorkoutPlan = async (userInput, userId) => {
 
 
 
-// Test runner
-const testGeneratePlan = async () => {
-  const userInput = {
-    goal: 'muscle gain',
-    level: 'beginner',
-    daysPerWeek: 3,
-    equipment: ['body only', 'cable', 'machine',],
-  };
 
-  const { plan, warnings } = await generateWorkoutPlan(userInput);
+const testGeneratePlan = async () => {
+  const userInput = await fetchUserInputFromFirestore();
+
+  if (!userInput) {
+    console.warn("Skipping plan generation due to missing user input.");
+    return;
+  }
+
+  const user = auth.currentUser;
+  const userId = user.uid;
+
+  const { plan, warnings } = await generateWorkoutPlan(userInput, userId);
   console.log('Generated Plan Preview:', plan);
   if (warnings.length) {
     console.log('Warnings:');
@@ -200,6 +240,12 @@ const testGeneratePlan = async () => {
   }
 };
 
+
+
+
+
 if (require.main === module) {
   testGeneratePlan();
 }
+
+export { fetchUserInputFromFirestore };

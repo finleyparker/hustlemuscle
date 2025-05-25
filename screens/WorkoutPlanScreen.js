@@ -3,33 +3,48 @@ import { SafeAreaView, View, Text, ScrollView, ActivityIndicator, StyleSheet, To
 import { generateWorkoutPlan } from '../utils/planGenerator';
 import { db } from '../database/firebase';
 import { collection, addDoc, getDocs, query, where } from 'firebase/firestore';
+import { auth } from '../database/firebase';
+import { fetchUserInputFromFirestore } from '../utils/planGenerator';  
+
+
 
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [warnings, setWarnings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const userId = auth.currentUser;
-  const { userInput } = route.params || {};
+  const user = auth.currentUser;
+  const userId = user ? user.uid : null;
+
+  
 
 
   useEffect(() => {
     const loadPlan = async () => {
+      if (!userId) {
+        console.error('No user is signed in');
+        setLoading(false);
+        return;
+      }
+
+      // fetch userInput from Firestore (your new function)
+      const userInput = await fetchUserInputFromFirestore();
+      if (!userInput) {
+        console.error('Failed to fetch user input');
+        setLoading(false);
+        return;
+      }
+
       try {
         const workoutPlansCollection = collection(db, 'workoutPlans');
-        if (!userId) {
-          console.error('No user is signed in');
-          return;
-        }
-        const testUserId = userId;
 
-        // Adding multiple fields to the query
+        // Query for existing plans matching userId and input
         const q = query(
           workoutPlansCollection,
-          where('userId', '==', testUserId), // Add this
+          where('userId', '==', userId),
           where('userInput.goal', '==', userInput.goal),
           where('userInput.level', '==', userInput.level),
           where('userInput.daysPerWeek', '==', userInput.daysPerWeek),
-          where('userInput.equipment', 'array-contains', userInput.equipment)
+          where('userInput.equipment', 'array-contains-any', userInput.equipment)
         );
 
         const querySnapshot = await getDocs(q);
@@ -46,27 +61,19 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
             }
           });
         } else {
-          // If no plan matches, generate a new one and create workout sessions
-          const generated = await generateWorkoutPlan(userInput, testUserId); // Pass test userId
+          // Generate new plan and save to Firestore
+          const generated = await generateWorkoutPlan(userInput, userId);
           setPlan(generated.plan);
           setWarnings(generated.warnings || []);
 
-          // Store the workout plan in Firestore
           await addDoc(workoutPlansCollection, {
-            userId: testUserId, // Use the testUserId instead
+            userId,
             userInput,
             plan: generated,
             createdAt: new Date(),
           });
-
-
         }
       } catch (error) {
-        Alert.alert(
-          "Coming Soon",
-          "This feature is not implemented yet.",
-          [{ text: "OK" }]
-        );
         console.error('Failed to retrieve or generate plan:', error);
       } finally {
         setLoading(false);
@@ -74,7 +81,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     };
 
     loadPlan();
-  }, [userInput]);
+  }, [userId]);
+
 
 
   if (loading) {
