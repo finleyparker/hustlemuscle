@@ -2,11 +2,13 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { useNavigation } from '@react-navigation/native';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const navigation = useNavigation();
 
   const showCalendar = () => setCalendarVisible(true);
   const hideCalendar = () => setCalendarVisible(false);
@@ -25,7 +27,7 @@ const SettingsScreen = () => {
           <Text style={styles.label}>Update details</Text>
           <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.row}>
+        <TouchableOpacity style={styles.row} onPress={() => navigation.navigate('UpdateMetrics')}>
           <MaterialIcons name="fitness-center" size={22} color="#fff" style={styles.icon} />
           <Text style={styles.label}>Update metrics</Text>
           <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
