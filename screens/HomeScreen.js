@@ -3,15 +3,17 @@ import { View, Alert, Text, Image, ScrollView, StyleSheet, TouchableOpacity } fr
 import { LinearGradient } from 'expo-linear-gradient';
 import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
-import { auth } from '../database/firebase';
+import { db, auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
+import { doc, getDoc } from 'firebase/firestore';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
   const navigation = useNavigation();
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [totalCalories, setTotalCalories] = useState(0);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -25,6 +27,23 @@ const HomeScreen = () => {
 
     fetchUserName();
   }, []);
+
+  useEffect(() => {
+    const fetchCalories = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userRef = doc(db, 'UserDetails', user.uid);
+        const docSnap = await getDoc(userRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setTotalCalories(data.totalCalories || 0);
+        }
+      }
+    };
+  
+    fetchCalories();
+  }, []);
+  
 
   const askLogout = () =>
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -183,7 +202,7 @@ const HomeScreen = () => {
           </Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
+          <Text style={styles.statNumber}>{totalCalories}</Text>
           <Text style={styles.statLabel}>Calorie Tracker</Text>
         </View>
       </View>
