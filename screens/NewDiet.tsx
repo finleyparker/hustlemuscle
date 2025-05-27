@@ -3,7 +3,7 @@ import { View, StyleSheet, Text, TextInput, Button, TouchableWithoutFeedback, Ke
 import DropDownPicker from 'react-native-dropdown-picker';
 import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../database/firebase';
-import { currentUserId } from '../database/UserDB';
+
 
 export default function NewDiet() {
   const [open1, setOpen1] = useState(false);
@@ -98,50 +98,15 @@ export default function NewDiet() {
 
 
   return (
-    <TouchableWithoutFeedback onPress={closeDropdowns}>
+    
       <View style={styles.container}>
-        <Text style={styles.title}>Create personalised Diet Plan</Text>
-        <Text>Any Dietary restrictions?</Text>
-        <DropDownPicker
-          open={open1}
-          value={value1}
-          items={items1}
-          setOpen={(val) => setOpen1(val)}
-          setValue={setValue1}
-          setItems={setItems1}
-          placeholder="Select..."
-          zIndex={3000}
-          zIndexInverse={1000}
-        />
-        <Text>What are your weight goals?</Text>
-        <DropDownPicker
-          open={open2}
-          value={value2}
-          items={items2}
-          setOpen={(val) => setOpen2(val)}
-          setValue={setValue2}
-          setItems={setItems2}
-          placeholder="Select..."
-          zIndex={2000}
-          zIndexInverse={2000}
-        />
-        <Text>How physically active are you?</Text>
-        <DropDownPicker
-          open={open3}
-          value={value3}
-          items={items3}
-          setOpen={(val) => setOpen3(val)}
-          setValue={setValue3}
-          setItems={setItems3}
-          placeholder="Select..."
-          zIndex={1000}
-          zIndexInverse={1000}
-        />
-        <View style={styles.buttonContainer}>
-          <Button color="white" title="Create Plan" onPress={saveDietPlan} />
-        </View>
+        <Text style={styles.title}>Calorie Consumption History</Text>
+        
+        
+        
+      
       </View>
-    </TouchableWithoutFeedback>
+   
   );
 }
 

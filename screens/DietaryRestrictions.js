@@ -45,7 +45,7 @@ const DietaryRestrictionsScreen = ({ navigation }) => {
     setSelectedRestrictions(prev => {
       // If "None" is selected, clear all other selections
       if (restriction === 'None') {
-        return ['None'];
+        return 'None';
       }
       
       // If selecting something else, remove "None"
