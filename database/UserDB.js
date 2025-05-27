@@ -91,7 +91,13 @@ export async function getUserName(uid) {
 
 // Update gender field in the specific document
 export const updateGender = async (gender) => {
-    const genderDocRef = doc(db, 'UserDetails', '07QDnA7D3QOrcZNS3Dfe');
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const genderDocRef = doc(db, 'UserDetails', user.uid);
 
     try {
         await setDoc(genderDocRef, { Gender: gender }, { merge: true });
@@ -101,3 +107,105 @@ export const updateGender = async (gender) => {
         return [];
     }
 };
+
+// Update fitness goal field in the specific document
+export const updateFitnessGoal = async (goal) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const goalDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(goalDocRef, { PhysiqueGoal: goal }, { merge: true });
+        console.log('Fitness goal updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+// Update experience level field in the specific document
+export const updateExperienceLevel = async (level) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const levelDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(levelDocRef, { ExperienceLevel: level }, { merge: true });
+        console.log('Experience level updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+// Update free days field in the specific document
+export const updateFreeDays = async (days) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const daysDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(daysDocRef, { WorkoutDaysPerWeek: days }, { merge: true });
+        console.log('Free days updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+// Update weight field in the specific document
+export const updateWeight = async (weight, unit) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const weightDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(weightDocRef, { 
+            Weight: parseFloat(weight),
+            WeightUnit: unit 
+        }, { merge: true });
+        console.log('Weight updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+// Update diet restrictions field in the specific document
+export const updateDietRestrictions = async (restriction) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const restrictionsDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(restrictionsDocRef, { 
+            DietaryRestrictions: restriction 
+        }, { merge: true });
+        console.log('Diet restriction updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
+
