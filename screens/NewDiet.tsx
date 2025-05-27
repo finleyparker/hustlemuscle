@@ -37,7 +37,7 @@ export default function NewDiet() {
     loadMeals();
   }, []);
     return (
-        <><View style={styles.container}>
+        <View style={styles.container}>
           <View>
         <Text style={styles.title1}>Macro History</Text>
       </View>
@@ -58,7 +58,7 @@ export default function NewDiet() {
                 </View>
               )} />
           )}
-        </View></>
+        </View>
     );
 }
 
