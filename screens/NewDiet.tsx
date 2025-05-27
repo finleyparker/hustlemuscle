@@ -12,7 +12,7 @@ export default function NewDiet() {
 
       const fetchMeals = async () => {
         try {
-          const snapshot = await getDocs(collection(db, 'UserDetails', userId, 'days')); // or subcollection path
+          const snapshot = await getDocs(collection(db, 'UserDetails', userId, 'days'));
           const meals = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data()

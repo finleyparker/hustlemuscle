@@ -322,7 +322,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
       </ScrollView>
 
      
-      <Modal  // Modal for manual data entry
+      <Modal  // modal for manual data entry
         visible={modalVisible}
         animationType="slide"
         transparent={true}
