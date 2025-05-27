@@ -136,13 +136,17 @@ const HomeScreen = ({ navigation }: any) => {
   );
 
   const submitDailySummary = async () => {
-    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+const dd = String(today.getDate()).padStart(2, '0');
+const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
   
     if (!userId) {
       console.error('User ID is undefined');
       return;
     }
-    const dailySummaryRef = doc(db, 'UserDetails', userId, 'days', today);
+    const dailySummaryRef = doc(db, 'UserDetails', userId, 'days', localDateString);
   
     try {
       await setDoc(dailySummaryRef, {
