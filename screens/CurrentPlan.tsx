@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
 import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../database/firebase';
+import { db } from '../database/firebase'; // Adjust path if needed
 
 interface FoodItem {
   id: string;
@@ -9,6 +9,9 @@ interface FoodItem {
   title: string;
   ingredient: string[];
   calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 }
 
 interface DietPlan {
@@ -16,14 +19,17 @@ interface DietPlan {
   totalCalories?: number;
 }
 
-export default function CurrentPlan() {
+export default function App() {
   const [hello, setHello] = useState<FoodItem[]>([]);
   const [userDietRestriction, setUserDietRestriction] = useState<string>('');
   const [totalCalories, setTotalCalories] = useState<number>(0);
+  const [totalProtein, setTotalProtein] = useState<number>(0);
+  const [totalFat, setTotalFat] = useState<number>(0);
+  const [totalCarbs, setTotalCarbs] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // hardcoded user ID for testing
-  const userId = '1212';
+  // Hardcoded user ID for testing
+  const userId = '1212'; // Replace with Firebase Auth UID
 
   useEffect(() => {
     const fetchUserDiet = async () => {
@@ -62,38 +68,51 @@ export default function CurrentPlan() {
     fetchHello();
   }, []);
 
-  // filter food items based on diet restriction
+  // Filter food items based on diet restriction
   const filteredDiet = userDietRestriction === 'none'
-    ? hello // Show all meals
-    : hello.filter(item => item.type === userDietRestriction);
+  ? hello // Show all meals
+  : hello.filter(item => item.type === userDietRestriction);
 
-  const handleSelectMeal = async (calories: number, title: string) => {
+  // Handle meal selection
+  const handleSelectMeal = async (calories: number, title: string, protein: number, fat: number, carbs: number) => {
     const newTotal = totalCalories + calories;
     setTotalCalories(newTotal);
 
-    const dietPlanRef = doc(db, 'dietPlans', userId);
+    const newProtein = totalProtein + protein;
+    setTotalProtein(newProtein);
+  
+    const newFat = totalFat + fat;
+    setTotalFat(newFat);
 
+    const newCarbs = totalCarbs + carbs;
+    setTotalCarbs(newCarbs);
+
+    const dietPlanRef = doc(db, 'dietPlans', userId);
+  
     try {
       const docSnap = await getDoc(dietPlanRef);
-      let updatedMeals: { name: string; calories: number }[] = [];
-      if (docSnap.exists()) {
-        const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
-        const currentMeals = data.selectedMeals || [];
-        updatedMeals = [...currentMeals, { name: title, calories }];
-      } else {
-        updatedMeals = [{ name: title, calories }];
-      }
+      let updatedMeals: { name: string; calories: number; protein: number, fat: number, carbs: number }[] = [];
+if (docSnap.exists()) {
+  const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number; protein: number, fat: number, carbs: number }[] };
+  const currentMeals = data.selectedMeals || [];
+  updatedMeals = [...currentMeals, { name: title, calories, protein, fat, carbs }];
+} else {
+  updatedMeals = [{ name: title, calories, protein, fat, carbs }];
+}
 
-
+  
       await updateDoc(dietPlanRef, {
         totalCalories: newTotal,
+        totalProtein: newProtein,
+        totalFat: newFat,
+        totalCarbs: newCarbs,
         selectedMeals: updatedMeals,
       });
     } catch (error) {
       console.error('Error updating meal selection:', error);
     }
   };
-
+  
 
   return (
     <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
@@ -115,11 +134,11 @@ export default function CurrentPlan() {
                 <Text style={styles.mealTitle}>{item.title}</Text>
                 <Text>
                   {Array.isArray(item.ingredient)
-                    ? `- ${item.ingredient.join('\n- ')}`
-                    : 'No ingredients listed.'}
+                  ? `- ${item.ingredient.join('\n- ')}`
+                  : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
-                <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />
+                <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title, item.protein, item.fat, item.carbs)} />
 
                 <View style={styles.divider} />
               </View>
