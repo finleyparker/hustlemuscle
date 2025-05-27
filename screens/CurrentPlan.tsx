@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
-import { collection, getDocs, doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '../database/firebase';
+import { collection, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../database/firebase';
+import { onAuthStateChanged } from 'firebase/auth';
 
 interface FoodItem {
   id: string;
@@ -9,26 +10,51 @@ interface FoodItem {
   title: string;
   ingredient: string[];
   calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 }
 
 interface DietPlan {
   dietRestriction: string;
   totalCalories?: number;
+  selectedMeals?: {
+    name: string;
+    calories: number;
+    protein: number;
+    fat: number;
+    carbs: number;
+  }[];
 }
 
-export default function CurrentPlan() {
+export default function App() {
   const [hello, setHello] = useState<FoodItem[]>([]);
+  const [userId, setUserId] = useState<string | null>(null);
   const [userDietRestriction, setUserDietRestriction] = useState<string>('');
   const [totalCalories, setTotalCalories] = useState<number>(0);
+  const [totalProtein, setTotalProtein] = useState<number>(0);
+  const [totalFat, setTotalFat] = useState<number>(0);
+  const [totalCarbs, setTotalCarbs] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // hardcoded user ID for testing
-  const userId = '1212';
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUserId(user.uid);
+      } else {
+        console.warn('User not signed in');
+        setUserId(null);
+      }
+    });
+    return unsubscribe;
+  }, []);
 
   useEffect(() => {
+    if (!userId) return;
+
     const fetchUserDiet = async () => {
       try {
-        const dietPlanDocRef = doc(db, 'dietPlans', userId);
+        const dietPlanDocRef = doc(db, 'UserDetails', userId);
         const dietPlanDoc = await getDoc(dietPlanDocRef);
 
         if (dietPlanDoc.exists()) {
@@ -60,40 +86,65 @@ export default function CurrentPlan() {
 
     fetchUserDiet();
     fetchHello();
-  }, []);
+  }, [userId]);
 
-  // filter food items based on diet restriction
-  const filteredDiet = userDietRestriction === 'none'
-    ? hello // Show all meals
+  const filteredDiet = userDietRestriction === 'None'
+    ? hello
     : hello.filter(item => item.type === userDietRestriction);
 
-  const handleSelectMeal = async (calories: number, title: string) => {
-    const newTotal = totalCalories + calories;
-    setTotalCalories(newTotal);
+  const handleSelectMeal = async (
+    calories: number,
+    title: string,
+    protein: number,
+    fat: number,
+    carbs: number
+  ) => {
+    if (!userId) {
+      console.error('User ID is undefined');
+      return;
+    }
 
-    const dietPlanRef = doc(db, 'dietPlans', userId);
+    const newTotal = totalCalories + calories;
+    const newProtein = totalProtein + protein;
+    const newFat = totalFat + fat;
+    const newCarbs = totalCarbs + carbs;
+
+    setTotalCalories(newTotal);
+    setTotalProtein(newProtein);
+    setTotalFat(newFat);
+    setTotalCarbs(newCarbs);
+
+    const dietPlanRef = doc(db, 'UserDetails', userId);
 
     try {
       const docSnap = await getDoc(dietPlanRef);
-      let updatedMeals: { name: string; calories: number }[] = [];
+      let updatedMeals: {
+        name: string;
+        calories: number;
+        protein: number;
+        fat: number;
+        carbs: number;
+      }[] = [];
+
       if (docSnap.exists()) {
-        const data = docSnap.data() as DietPlan & { selectedMeals?: { name: string; calories: number }[] };
+        const data = docSnap.data() as DietPlan;
         const currentMeals = data.selectedMeals || [];
-        updatedMeals = [...currentMeals, { name: title, calories }];
+        updatedMeals = [...currentMeals, { name: title, calories, protein, fat, carbs }];
       } else {
-        updatedMeals = [{ name: title, calories }];
+        updatedMeals = [{ name: title, calories, protein, fat, carbs }];
       }
 
-
-      await updateDoc(dietPlanRef, {
+      await setDoc(dietPlanRef, {
         totalCalories: newTotal,
+        totalProtein: newProtein,
+        totalFat: newFat,
+        totalCarbs: newCarbs,
         selectedMeals: updatedMeals,
-      });
+      }, { merge: true });
     } catch (error) {
       console.error('Error updating meal selection:', error);
     }
   };
-
 
   return (
     <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
@@ -119,8 +170,18 @@ export default function CurrentPlan() {
                     : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
-                <Button title="Select" onPress={() => handleSelectMeal(item.calories, item.title)} />
-
+                <Button
+                  title="Select"
+                  onPress={() =>
+                    handleSelectMeal(
+                      item.calories,
+                      item.title,
+                      item.protein,
+                      item.fat,
+                      item.carbs
+                    )
+                  }
+                />
                 <View style={styles.divider} />
               </View>
             )}
