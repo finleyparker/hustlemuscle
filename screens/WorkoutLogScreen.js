@@ -255,7 +255,7 @@ export default function WorkoutLogScreen() {
 
                 <TouchableOpacity
                     style={styles.endWorkoutButton}
-                    onPress={handleSaveSession()}
+                    onPress={handleSaveSession}
                 >
                     <Text style={styles.endWorkoutText}>Finish Workout</Text>
                 </TouchableOpacity>

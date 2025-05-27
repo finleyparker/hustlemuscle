@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
+import { logout } from '../database/UserDB';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -16,6 +17,17 @@ const SettingsScreen = () => {
     setSelectedDate(date);
     hideCalendar();
   };
+  const askLogout = () =>
+    Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {
+        text: 'Sign Out',
+        onPress: () => logout(navigation)
+      },
+    ]);
 
   return (
     <View style={styles.container}>
@@ -46,7 +58,7 @@ const SettingsScreen = () => {
           onCancel={hideCalendar}
           display="inline"
         />
-        <TouchableOpacity style={[styles.row, styles.logoutRow]}>
+        <TouchableOpacity style={[styles.row, styles.logoutRow]} onPress={askLogout}>
           <Feather name="log-out" size={22} color="#ff5e69" style={styles.icon} />
           <Text style={[styles.label, { color: '#ff5e69' }]}>Log Out</Text>
         </TouchableOpacity>
