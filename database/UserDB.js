@@ -188,7 +188,7 @@ export const updateWeight = async (weight, unit) => {
 };
 
 // Update diet restrictions field in the specific document
-export const updateDietRestrictions = async (restrictions) => {
+export const updateDietRestrictions = async (restriction) => {
     const user = auth.currentUser;
     if (!user) {
         console.error('No user is signed in');
@@ -199,9 +199,9 @@ export const updateDietRestrictions = async (restrictions) => {
 
     try {
         await setDoc(restrictionsDocRef, { 
-            DietaryRestrictions: restrictions 
+            DietaryRestrictions: restriction 
         }, { merge: true });
-        console.log('Diet restrictions updated successfully!');
+        console.log('Diet restriction updated successfully!');
     } catch (error) {
         console.error('Firestore error:', error);
         return [];

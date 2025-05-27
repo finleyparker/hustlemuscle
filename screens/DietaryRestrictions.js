@@ -11,28 +11,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { updateDietRestrictions } from '../database/UserDB';
 
 const DietaryRestrictionsScreen = ({ navigation }) => {
-  const [selectedRestrictions, setSelectedRestrictions] = useState([]);
+  const [selectedRestriction, setSelectedRestriction] = useState('');
 
   const handleRestrictionSelect = (restriction) => {
-    if (restriction === 'None') {
-      setSelectedRestrictions(['None']);
-    } else {
-      setSelectedRestrictions(prev => {
-        let newRestrictions = prev.filter(r => r !== 'None');
-        
-        if (newRestrictions.includes(restriction)) {
-          newRestrictions = newRestrictions.filter(r => r !== restriction);
-        } else {
-          newRestrictions = [...newRestrictions, restriction];
-        }
-        return newRestrictions;
-      });
-    }
+    setSelectedRestriction(restriction);
   };
 
   const handleNext = async () => {
     try {
-      await updateDietRestrictions(selectedRestrictions);
+      await updateDietRestrictions(selectedRestriction);
       navigation.navigate('Equipment');
     } catch (error) {
       console.error('Error saving diet restrictions:', error);
@@ -43,13 +30,13 @@ const DietaryRestrictionsScreen = ({ navigation }) => {
     <TouchableOpacity
       style={[
         styles.restrictionButton,
-        selectedRestrictions.includes(value) && styles.selectedRestrictionButton,
+        selectedRestriction === value && styles.selectedRestrictionButton,
       ]}
       onPress={() => handleRestrictionSelect(value)}
     >
       <Text style={[
         styles.restrictionButtonText,
-        selectedRestrictions.includes(value) && styles.selectedRestrictionButtonText,
+        selectedRestriction === value && styles.selectedRestrictionButtonText,
       ]}>
         {label}
       </Text>
@@ -68,7 +55,7 @@ const DietaryRestrictionsScreen = ({ navigation }) => {
       <View style={styles.contentContainer}>
         <Text style={styles.metricText}>Starting Metric #7</Text>
         <Text style={styles.titleText}>Dietary Restrictions</Text>
-        <Text style={styles.subtitleText}>Select any dietary restrictions you have.</Text>
+        <Text style={styles.subtitleText}>Select your dietary restriction.</Text>
 
         <ScrollView>
           <View style={styles.restrictionsContainer}>

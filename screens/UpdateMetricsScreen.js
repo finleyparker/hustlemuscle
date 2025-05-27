@@ -18,7 +18,7 @@ const UpdateMetricsScreen = () => {
   const [workoutDays, setWorkoutDays] = useState('');
   const [fitnessGoalModalVisible, setFitnessGoalModalVisible] = useState(false);
   const [workoutDaysModalVisible, setWorkoutDaysModalVisible] = useState(false);
-  const [dietRestrictions, setDietRestrictions] = useState([]);
+  const [dietRestrictions, setDietRestrictions] = useState('');
   const [dietRestrictionsModalVisible, setDietRestrictionsModalVisible] = useState(false);
 
   const loadDetails = async () => {
@@ -33,7 +33,7 @@ const UpdateMetricsScreen = () => {
       setExperienceLevel(details.ExperienceLevel || '');
       setWorkoutDays(details.WorkoutDaysPerWeek ? details.WorkoutDaysPerWeek.toString() : '');
       console.log('Setting diet restrictions:', details.DietaryRestrictions);
-      setDietRestrictions(Array.isArray(details.DietaryRestrictions) ? details.DietaryRestrictions : []);
+      setDietRestrictions(details.DietaryRestrictions || '');
     } catch (e) {
       console.error('Error loading details:', e);
     }
@@ -155,11 +155,7 @@ const UpdateMetricsScreen = () => {
       {/* Diet Restrictions Card */}
       <TouchableOpacity style={styles.card} onPress={() => setDietRestrictionsModalVisible(true)} activeOpacity={0.7}>
         <Text style={styles.label}>Your Diet Restrictions</Text>
-        <Text style={styles.value}>
-          {Array.isArray(dietRestrictions) && dietRestrictions.length > 0 
-            ? dietRestrictions.join(', ') 
-            : 'No restrictions'}
-        </Text>
+        <Text style={styles.value}>{dietRestrictions || 'No restrictions'}</Text>
       </TouchableOpacity>
       {/* Gender Modal */}
       <OptionModal
@@ -305,21 +301,13 @@ const UpdateMetricsScreen = () => {
                 key={option.value}
                 style={[styles.modalOption, dietRestrictions.includes(option.value) && styles.selectedOption]}
                 onPress={() => {
-                  let newRestrictions;
+                  let newRestriction;
                   if (option.value === 'None') {
-                    newRestrictions = [];
+                    newRestriction = '';
                   } else {
-                    // If selecting a restriction, remove 'None' if it exists
-                    newRestrictions = dietRestrictions.filter(r => r !== 'None');
-                    
-                    // Toggle the selected restriction
-                    if (newRestrictions.includes(option.value)) {
-                      newRestrictions = newRestrictions.filter(r => r !== option.value);
-                    } else {
-                      newRestrictions = [...newRestrictions, option.value];
-                    }
+                    newRestriction = option.value;
                   }
-                  setDietRestrictions(newRestrictions);
+                  setDietRestrictions(newRestriction);
                 }}
               >
                 <Text style={[styles.modalOptionText, dietRestrictions.includes(option.value) && { color: '#222' }]}>
