@@ -170,6 +170,7 @@ export default function App() {
                     : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
+                <View style={styles.selectbutton}>
                 <Button
                   title="Select"
                   onPress={() =>
@@ -182,6 +183,7 @@ export default function App() {
                     )
                   }
                 />
+                </View>
               
               </View>
             )}
@@ -193,6 +195,12 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
+  selectbutton: {
+    marginTop: 10,
+    borderRadius: 5,
+    padding: 5,
+    marginLeft: 250,
+  },
   title: {
     fontSize: 22,
     textAlign: 'center',
