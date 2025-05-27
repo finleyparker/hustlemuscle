@@ -79,7 +79,7 @@ export default function App() {
                 <Stack.Screen name="DietaryRestrictions" component={DietaryRestrictionsScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="FitnessGoal" component={FitnessGoal} options={{ headerShown: false }} />
-                
+                <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} />
                 <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Settings" component={SettingsScreen} />
                 <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
