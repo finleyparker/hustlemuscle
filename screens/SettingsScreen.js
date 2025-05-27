@@ -4,6 +4,9 @@ import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { useNavigation } from '@react-navigation/native';
 import { logout } from '../database/UserDB';
+import AuthScreen from './AuthScreen';
+import { auth } from '../database/firebase';
+import { signOut } from 'firebase/auth';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
@@ -25,7 +28,19 @@ const SettingsScreen = () => {
       },
       {
         text: 'Sign Out',
-        onPress: () => logout(navigation)
+        onPress: async () => {
+          try {
+            await logout();
+            await signOut(auth);
+            navigation.reset({
+              index: 0,
+              routes: [{ name: 'AuthScreen' }],
+            });
+          } catch (error) {
+            console.error('Error signing out:', error);
+            Alert.alert('Error', 'Failed to sign out. Please try again.');
+          }
+        }
       },
     ]);
 

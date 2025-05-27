@@ -15,17 +15,19 @@ const DietaryRestrictionsScreen = ({ navigation }) => {
 
   const handleRestrictionSelect = (restriction) => {
     if (restriction === 'None') {
-      setSelectedRestrictions([]);
-      return;
+      setSelectedRestrictions(['None']);
+    } else {
+      setSelectedRestrictions(prev => {
+        let newRestrictions = prev.filter(r => r !== 'None');
+        
+        if (newRestrictions.includes(restriction)) {
+          newRestrictions = newRestrictions.filter(r => r !== restriction);
+        } else {
+          newRestrictions = [...newRestrictions, restriction];
+        }
+        return newRestrictions;
+      });
     }
-
-    setSelectedRestrictions(prev => {
-      if (prev.includes(restriction)) {
-        return prev.filter(r => r !== restriction);
-      } else {
-        return [...prev, restriction];
-      }
-    });
   };
 
   const handleNext = async () => {
