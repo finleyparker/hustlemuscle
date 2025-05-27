@@ -165,13 +165,17 @@ const HomeScreen = ({ navigation }: any) => {
 
     try {
       const userRef = doc(db, 'dietPlans', userId);
-      await updateDoc(userRef, {
-        totalCalories: updatedTotal,
-        totalFats: updatedFats,
-        totalProtein: updatedProtein,
-        totalCarbs: updatedCarbs,
-        selectedMeals: updatedMeals,
-      });
+      await setDoc(
+        userRef,
+        {
+          totalCalories: updatedTotal,
+          totalFats: updatedFats,
+          totalProtein: updatedProtein,
+          totalCarbs: updatedCarbs,
+          selectedMeals: updatedMeals,
+        },
+        { merge: true }
+      );
 
       setSelectedMeals(updatedMeals);
       setTotalCalories(updatedTotal);
@@ -193,13 +197,14 @@ const HomeScreen = ({ navigation }: any) => {
       setTotalCarbs(0);
 
       const dietPlanRef = doc(db, 'dietPlans', userId);
-      await updateDoc(dietPlanRef, {
+      await setDoc(dietPlanRef, {
         totalCalories: 0,
         totalFats: 0,
         totalProtein: 0,
         totalCarbs: 0,
         selectedMeals: [],
-      });
+      }, { merge: true }
+    );
     } catch (error) {
       console.error('Error resetting data:', error);
     }
