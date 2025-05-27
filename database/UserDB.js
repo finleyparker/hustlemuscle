@@ -53,6 +53,15 @@ export const getUserDetails = async () => {
     }
 }
 
+export const getUserID = async () => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.warn('User not logged in.');
+        return [];
+    }
+    return user.uid;
+}
+
 export function logout(navigation) {
     auth.signOut()
         .then(() => {

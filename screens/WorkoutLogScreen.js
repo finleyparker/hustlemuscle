@@ -3,9 +3,10 @@ import {
     View, Modal, Button, Text, Image, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
-import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
+import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion, updateSessionCompletion } from '../database/WorkoutDB';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getExerciseInstructions } from '../api/exercises';
+import { getUserID } from '../database/UserDB';
 
 
 export default function WorkoutLogScreen() {
@@ -86,24 +87,40 @@ export default function WorkoutLogScreen() {
         setExercises(updated);
     };
 
-    const handleSave = async () => {
-        const completions = exercises.map((exercise) => ({
-            workout_session_id: sessionId,
-            exercise_id: exercise.exercise_id || exercise.name, // fallback if no ID
-            sets: exercise.sets.length,
-            reps: exercise.sets.map(set => parseInt(set.reps) || 0),
-            weights: exercise.sets.map(set => parseFloat(set.weight) || 0),
-            duration: null,
-            isComplete: exercise.sets.every(set => set.reps && set.weight)
-        }));
-
+    const handleSaveSession = async () => {
         try {
+
+            //get user id
+            const user_id = await getUserID();
+            console.log('user id: ', user_id);
+
+            //date
+            const completion_date = new Date();
+            completion_date.setSeconds(0, 0);
+            console.log('exercise_completion date: ', completion_date);
+
+            //save exercise completion details
+            const completions = exercises.map((exercise) => ({
+                workout_session_id: sessionId,
+                exercise_id: exercise.exercise_id || exercise.name,
+                sets: exercise.sets.length,
+                reps: exercise.sets.map(set => parseInt(set.reps) || 0),
+                weights: exercise.sets.map(set => parseFloat(set.weight) || 0),
+                completion_date: completion_date,
+                user_id: user_id,
+            }));
+
+            // Save exercise completions first
             await updateExerciseCompletion(completions);
-            alert('Workout saved!');
+
+            // Then mark the session as completed
+            await updateSessionCompletion(sessionId);
+
+            alert('Workout saved successfully!');
             navigation.navigate('Home');
         } catch (error) {
             console.error('Save error:', error);
-            alert('Failed to save.');
+            alert('Failed to save workout. Please try again.');
         }
     };
 
@@ -238,7 +255,7 @@ export default function WorkoutLogScreen() {
 
                 <TouchableOpacity
                     style={styles.endWorkoutButton}
-                    onPress={handleSave}
+                    onPress={handleSaveSession()}
                 >
                     <Text style={styles.endWorkoutText}>Finish Workout</Text>
                 </TouchableOpacity>

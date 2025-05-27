@@ -10,6 +10,7 @@ import { ActivityIndicator, View } from 'react-native';
 import WorkoutPlanScreen from './screens/WorkoutPlanScreen';
 import SessionListScreen from './screens/SessionListScreen';
 import WorkoutLogScreen from './screens/WorkoutLogScreen';
+import WorkoutHistoryScreen from './screens/WorkoutHistoryScreen';
 
 //main app screens
 import AuthScreen from './screens/AuthScreen';
