@@ -174,21 +174,12 @@ const HomeScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Statistics Section */}
-      <TouchableOpacity
-        style={styles.card}
-        onPress={() => navigation.navigate('WorkoutHistory')}
-      >
-        <View style={styles.statisticsHeader}>
-          <Text style={styles.sectionTitle}>Statistics</Text>
-          <Ionicons name="chevron-forward" size={24} color="white" />
-        </View>
-      </TouchableOpacity>
+      {/* Statistics Stat Cards (restored) */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>3</Text>
           <Text style={styles.statLabel}>
-            Workouts Completed{'\n'}this week
+            Workouts Completed{"\n"}this week
           </Text>
         </View>
         <View style={styles.statCard}>
@@ -196,6 +187,24 @@ const HomeScreen = () => {
           <Text style={styles.statLabel}>Calorie Tracker</Text>
         </View>
       </View>
+
+      {/* My Progress Panel */}
+      <TouchableOpacity
+        style={styles.progressPanel}
+        activeOpacity={0.8}
+        onPress={() => navigation.navigate('WorkoutHistory')}
+      >
+        <View style={styles.progressPanelHeader}>
+          <Text style={styles.progressPanelLabel}>My Progress</Text>
+          <Ionicons name="chevron-forward" size={22} color="#fff" />
+        </View>
+        <LinearGradient
+          colors={['#a18fff', '#e0d7ff', '#fff']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.progressBar}
+        />
+      </TouchableOpacity>
     </ScrollView>
   );
 };
@@ -295,30 +304,48 @@ const styles = StyleSheet.create({
     fontSize: 30.5,
     fontWeight: 'bold',
   },
-  statisticsHeader: {
+  progressPanel: {
+    backgroundColor: '#18181b',
+    borderRadius: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    marginTop: 8,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 6,
+    elevation: 3,
+    gap: 12,
+  },
+  progressPanelHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
+    marginBottom: 12,
     
-    paddingHorizontal: 40,
-    marginBottom: 15,
   },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
+  progressPanelLabel: {
+    color: '#fff',
+    fontSize: 16,
     fontWeight: '600',
+  },
+  progressBar: {
+    height: 14,
+    borderRadius: 7,
+    width: '100%',
   },
   statsContainer: {
     flexDirection: 'row',
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 8,
+    gap: 12,
   },
   statCard: {
     flex: 1,
     backgroundColor: '#1C1C1E',
     borderRadius: 12,
-    padding: 15,
-    marginRight: 10,
+    padding: 20,
   },
   statNumber: {
     color: '#FFFFFF',
