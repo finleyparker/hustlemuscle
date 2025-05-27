@@ -8,147 +8,72 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { updateDietRestrictions } from '../database/UserDB';
 
 const DietaryRestrictionsScreen = ({ navigation }) => {
-  const [selectedRestrictions, setSelectedRestrictions] = useState([]);
-
-  const dietaryOptions = [
-    {
-      label: 'None',
-      description: 'No dietary restrictions'
-    },
-    {
-      label: 'Vegetarian',
-      description: 'No meat products'
-    },
-    {
-      label: 'Vegan',
-      description: 'No animal products'
-    },
-    {
-      label: 'Dairy Free',
-      description: 'No dairy products'
-    },
-    {
-      label: 'Celiac',
-      description: 'No gluten'
-    },
-    {
-      label: 'Pescatarian',
-      description: 'Fish but no other meat'
-    }
-  ];
+  const [selectedRestriction, setSelectedRestriction] = useState('');
 
   const handleRestrictionSelect = (restriction) => {
-    setSelectedRestrictions(prev => {
-      // If "None" is selected, clear all other selections
-      if (restriction === 'None') {
-        return 'None';
-      }
-      
-      // If selecting something else, remove "None"
-      let newSelection = prev.filter(r => r !== 'None');
-      
-      // Toggle the selected restriction
-      if (newSelection.includes(restriction)) {
-        newSelection = newSelection.filter(r => r !== restriction);
-      } else {
-        newSelection = [...newSelection, restriction];
-      }
-      
-      // If nothing is selected, add "None"
-      return newSelection.length === 0 ? ['None'] : newSelection;
-    });
+    setSelectedRestriction(restriction);
   };
 
   const handleNext = async () => {
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-
-      await setDoc(doc(db, 'UserDetails', userId), {
-        dietRestriction: selectedRestrictions
-      }, { merge: true });
-
+      await updateDietRestrictions(selectedRestriction);
       navigation.navigate('Equipment');
     } catch (error) {
-      console.error('Error saving dietary restrictions:', error);
+      console.error('Error saving diet restrictions:', error);
     }
   };
 
-  const RestrictionButton = ({ option }) => (
+  const RestrictionButton = ({ label, value }) => (
     <TouchableOpacity
       style={[
         styles.restrictionButton,
-        selectedRestrictions.includes(option.label) && styles.selectedRestrictionButton,
+        selectedRestriction === value && styles.selectedRestrictionButton,
       ]}
-      onPress={() => handleRestrictionSelect(option.label)}
+      onPress={() => handleRestrictionSelect(value)}
     >
-      <View style={styles.checkboxContainer}>
-        <View style={[
-          styles.checkbox,
-          selectedRestrictions.includes(option.label) && styles.checkboxSelected
-        ]}>
-          {selectedRestrictions.includes(option.label) && (
-            <Ionicons name="checkmark" size={20} color="#000000" />
-          )}
-        </View>
-      </View>
-      <View style={styles.textContainer}>
-        <Text style={[
-          styles.restrictionButtonText,
-          selectedRestrictions.includes(option.label) && styles.selectedRestrictionButtonText,
-        ]}>
-          {option.label}
-        </Text>
-        <Text style={[
-          styles.restrictionDescription,
-          selectedRestrictions.includes(option.label) && styles.selectedRestrictionDescription,
-        ]}>
-          {option.description}
-        </Text>
-      </View>
+      <Text style={[
+        styles.restrictionButtonText,
+        selectedRestriction === value && styles.selectedRestrictionButtonText,
+      ]}>
+        {label}
+      </Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity
+      <TouchableOpacity 
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <ScrollView style={styles.scrollView}>
-        <View style={styles.contentContainer}>
-          <Text style={styles.metricText}>Starting Metric #7</Text>
-          <Text style={styles.titleText}>Dietary Restrictions</Text>
-          <Text style={styles.subtitleText}>Select all that apply</Text>
+      <View style={styles.contentContainer}>
+        <Text style={styles.metricText}>Starting Metric #7</Text>
+        <Text style={styles.titleText}>Dietary Restrictions</Text>
+        <Text style={styles.subtitleText}>Select your dietary restriction.</Text>
 
+        <ScrollView>
           <View style={styles.restrictionsContainer}>
-            {dietaryOptions.map((option, index) => (
-              <RestrictionButton key={index} option={option} />
-            ))}
+            <RestrictionButton label="Vegetarian" value="Vegetarian" />
+            <RestrictionButton label="Vegan" value="Vegan" />
+            <RestrictionButton label="Gluten-Free" value="Gluten-Free" />
+            <RestrictionButton label="Dairy-Free" value="Dairy-Free" />
+            <RestrictionButton label="No Restrictions" value="None" />
           </View>
-        </View>
-      </ScrollView>
-
-      <TouchableOpacity
-        style={[
-          styles.nextButton,
-          selectedRestrictions.length === 0 && styles.nextButtonDisabled
-        ]}
-        onPress={handleNext}
-        disabled={selectedRestrictions.length === 0}
-      >
-        <Text style={styles.nextButtonText}>Next</Text>
-      </TouchableOpacity>
+        </ScrollView>
+        
+        <TouchableOpacity 
+          style={styles.nextButton}
+          onPress={handleNext}
+        >
+          <Text style={styles.nextButtonText}>Next</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 };
@@ -157,9 +82,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000000',
-  },
-  scrollView: {
-    flex: 1,
   },
   backButton: {
     padding: 16,
@@ -172,7 +94,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 20,
     paddingTop: 120,
-    paddingBottom: 100,
   },
   metricText: {
     color: '#FFFFFF',
@@ -194,6 +115,7 @@ const styles = StyleSheet.create({
   },
   restrictionsContainer: {
     gap: 16,
+    marginBottom: 20,
   },
   restrictionButton: {
     backgroundColor: 'transparent',
@@ -201,49 +123,20 @@ const styles = StyleSheet.create({
     borderColor: '#333333',
     borderRadius: 30,
     paddingVertical: 16,
-    paddingHorizontal: 20,
-    flexDirection: 'row',
+    paddingHorizontal: 10,
     alignItems: 'center',
   },
   selectedRestrictionButton: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
-  checkboxContainer: {
-    marginRight: 12,
-  },
-  checkbox: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#FFFFFF',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkboxSelected: {
-    borderColor: '#000000',
-  },
-  textContainer: {
-    flex: 1,
-  },
   restrictionButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
-    marginBottom: 4,
   },
   selectedRestrictionButtonText: {
     color: '#000000',
-  },
-  restrictionDescription: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    opacity: 0.7,
-  },
-  selectedRestrictionDescription: {
-    color: '#000000',
-    opacity: 0.7,
   },
   nextButton: {
     backgroundColor: '#FFFFFF',
@@ -251,12 +144,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 20,
     alignItems: 'center',
-    marginHorizontal: 20,
+    marginTop: 'auto',
     marginBottom: 40,
-  },
-  nextButtonDisabled: {
-    backgroundColor: '#333333',
-    opacity: 0.5,
   },
   nextButtonText: {
     color: '#000000',
