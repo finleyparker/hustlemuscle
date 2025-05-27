@@ -31,7 +31,7 @@ const AthleticAbilityScreen = ({ navigation }) => {
         AthleticGoal: selectedGoal
       }, { merge: true });
 
-      navigation.navigate('FreeDays');
+      navigation.navigate('ActivityLevel');
     } catch (error) {
       console.error('Error saving athletic goal:', error);
     }

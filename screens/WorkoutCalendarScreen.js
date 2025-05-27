@@ -4,8 +4,7 @@ import { Calendar } from 'react-native-calendars';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';  
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan } from '../utils/planFormatters';
-import { loadFromCache, saveToCache, CACHE_KEYS, CACHE_DURATIONS } from '../utils/cacheManager';
+import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan, extractDaysFromPlan, formatPlanDaysWithExercises, formatDayOfWeek } from '../utils/planFormatters';
 
 const WorkoutCalendarScreen = ({ navigation }) => {
   const [selected, setSelected] = useState('');
@@ -14,28 +13,13 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   const [endDate, setEndDate] = useState('');
   const [planName, setPlanName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+  const [days, setDays] = useState('');
+  const [daysOfWeek, setDaysOfWeek] = useState([]);
+  const [durationWeeks, setDurationWeeks] = useState('');
   
   const hasFetchedData = useRef(false);
 
   const fetchWorkoutPlans = useMemo(() => async () => {
-    if (hasFetchedData.current) return;
-    
-    // Try to load from cache first
-    const cachedData = await loadFromCache(
-      CACHE_KEYS.WORKOUT_PLAN.DATA,
-      CACHE_KEYS.WORKOUT_PLAN.TIMESTAMP,
-      CACHE_DURATIONS.MEDIUM
-    );
-    
-    if (cachedData) {
-      setStartDate(cachedData.startDate);
-      setEndDate(cachedData.endDate);
-      setPlanName(cachedData.planName);
-      setIsLoading(false);
-      hasFetchedData.current = true;
-      return;
-    }
-    
     setIsLoading(true);
     const userId = auth.currentUser && auth.currentUser.uid;
 
@@ -48,58 +32,45 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       const formattedData = {
         startDate: formatCreatedAt(data.createdAt),
         endDate: formatCreatedAt(data.createdAt, data.durationWeeks),
-        planName: formatPlanName(data.planName)
+        planName: formatPlanName(data.planName),
+        days: formatPlanDaysWithExercises(data.plan),
+        daysOfWeek: formatDayOfWeek(data.plan),
+        durationWeeks: formatDurationWeeks(data.durationWeeks)
       };
       
       setStartDate(formattedData.startDate);
       setEndDate(formattedData.endDate);
       setPlanName(formattedData.planName);
-      
-      // Save to cache
-      await saveToCache(
-        CACHE_KEYS.WORKOUT_PLAN.DATA,
-        CACHE_KEYS.WORKOUT_PLAN.TIMESTAMP,
-        formattedData
-      );
+      setDays(formattedData.days);
+      setDaysOfWeek(formattedData.daysOfWeek);
+      setDurationWeeks(formattedData.durationWeeks);
     } else {
       const emptyData = {
         startDate: 'No plans found',
         endDate: 'No date',
-        planName: 'No plan'
+        planName: 'No plan',
+        days: [],
+        daysOfWeek: [],
+        durationWeeks: 0
       };
       setStartDate(emptyData.startDate);
       setEndDate(emptyData.endDate);
       setPlanName(emptyData.planName);
-      
-      // Save empty state to cache
-      await saveToCache(
-        CACHE_KEYS.WORKOUT_PLAN.DATA,
-        CACHE_KEYS.WORKOUT_PLAN.TIMESTAMP,
-        emptyData
-      );
+      setDays(emptyData.days);
+      setDaysOfWeek(emptyData.daysOfWeek);
+      setDurationWeeks(emptyData.durationWeeks);
     }
     
-    hasFetchedData.current = true;
     setIsLoading(false);
   }, []);
-
-  // Add a function to force refresh
-  const refreshData = async () => {
-    hasFetchedData.current = false;
-    await fetchWorkoutPlans();
-  };
 
   useEffect(() => {
     fetchWorkoutPlans();
   }, [fetchWorkoutPlans]);
   
-  
-  
-    
-  
-
-
-  
+  console.log('DAYS:', days);
+  console.log('DAYS OF WEEK:', daysOfWeek);
+  console.log('DURATION WEEKS:', durationWeeks);
 
   // Workout details for each type
   const workoutDetails = {
@@ -126,133 +97,45 @@ const WorkoutCalendarScreen = ({ navigation }) => {
     ],
   };
 
-  // Get current week's dates
-  const workoutDates = useMemo(() => {
-    const today = new Date();
-    const dates = {};
-    
-    // Get Monday of current week
-    const monday = new Date(today);
-    monday.setDate(today.getDate() - today.getDay() + 1);
-    
-    // Add Push day (Monday)
-    const pushDate = monday.toISOString().split('T')[0];
-    dates[pushDate] = {
-      selected: false,
-      marked: true,
-      dotColor: '#ff5e69',
-      selectedColor: '#ff5e69',
-      type: 'push',
-      customStyles: {
-        container: {
-          backgroundColor: '#ff5e69',
-          borderRadius: 8,
-        },
-        text: {
-          color: 'white',
-          fontWeight: 'bold',
-        },
-      },
-    };
-
-    // Add Pull day (Wednesday)
-    const wednesday = new Date(monday);
-    wednesday.setDate(monday.getDate() + 2);
-    const pullDate = wednesday.toISOString().split('T')[0];
-    dates[pullDate] = {
-      selected: false,
-      marked: true,
-      dotColor: '#4CAF50',
-      selectedColor: '#4CAF50',
-      type: 'pull',
-      customStyles: {
-        container: {
-          backgroundColor: '#4CAF50',
-          borderRadius: 8,
-        },
-        text: {
-          color: 'white',
-          fontWeight: 'bold',
-        },
-      },
-    };
-
-    // Add Legs day (Friday)
-    const friday = new Date(monday);
-    friday.setDate(monday.getDate() + 4);
-    const legsDate = friday.toISOString().split('T')[0];
-    dates[legsDate] = {
-      selected: false,
-      marked: true,
-      dotColor: '#2196F3',
-      selectedColor: '#2196F3',
-      type: 'legs',
-      customStyles: {
-        container: {
-          backgroundColor: '#2196F3',
-          borderRadius: 8,
-        },
-        text: {
-          color: 'white',
-          fontWeight: 'bold',
-        },
-      },
-    };
-
-    return dates;
-  }, []);
-
+  // No hardcoded workoutDates or modal logic
   const handleDayPress = (day) => {
     setSelected(day.dateString);
-    if (workoutDates[day.dateString]) {
-      setShowWorkoutDetails(true);
-    }
   };
 
-  const getWorkoutType = () => {
-    return workoutDates[selected]?.type || '';
+  const dayNameToIndex = {
+    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
+    Thursday: 4, Friday: 5, Saturday: 6
   };
 
-  const renderWorkoutDetails = () => {
-    const type = getWorkoutType();
-    const exercises = workoutDetails[type] || [];
+  function getMarkedDates(daysOfWeek, durationWeeks) {
+    const today = new Date();
+    const marked = {};
 
-    return (
-      <Modal
-        visible={showWorkoutDetails}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowWorkoutDetails(false)}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>
-                {type.charAt(0).toUpperCase() + type.slice(1)} Day Workout
-              </Text>
-              <TouchableOpacity
-                onPress={() => setShowWorkoutDetails(false)}
-                style={styles.closeButton}
-              >
-                <Ionicons name="close" size={24} color="#fff" />
-              </TouchableOpacity>
-            </View>
-            <ScrollView style={styles.exercisesList}>
-              {exercises.map((exercise, index) => (
-                <View key={index} style={styles.exerciseItem}>
-                  <Text style={styles.exerciseName}>{exercise.name}</Text>
-                  <View style={styles.exerciseDetails}>
-                    <Text style={styles.exerciseSets}>Sets: {exercise.sets}</Text>
-                    <Text style={styles.exerciseReps}>Reps: {exercise.reps}</Text>
-                  </View>
-                </View>
-              ))}
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-    );
-  };
+    daysOfWeek.forEach(dayName => {
+      const dayIndex = dayNameToIndex[dayName];
+      // Find the next occurrence of this day
+      let firstDate = new Date(today);
+      const diff = (dayIndex - today.getDay() + 7) % 7;
+      firstDate.setDate(today.getDate() + diff);
+
+      // Mark this day for each week
+      for (let week = 0; week < durationWeeks; week++) {
+        const d = new Date(firstDate);
+        d.setDate(firstDate.getDate() + week * 7);
+        const key = d.toISOString().split('T')[0];
+        marked[key] = {
+          marked: true,
+          dotColor: '#ff5e69',
+          selected: true,
+          selectedColor: '#ff5e69'
+        };
+      }
+    });
+
+    return marked;
+  }
+
+  const markedDates = getMarkedDates(daysOfWeek, durationWeeks);
 
   return (
     <View style={styles.container}>
@@ -269,21 +152,6 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       
 
       <Text style={styles.label}>Projected End Date:</Text>
-
-      <View style={styles.legendContainer}>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#ff5e69' }]} />
-          <Text style={styles.legendText}>Push</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#4CAF50' }]} />
-          <Text style={styles.legendText}>Pull</Text>
-        </View>
-        <View style={styles.legendItem}>
-          <View style={[styles.legendDot, { backgroundColor: '#2196F3' }]} />
-          <Text style={styles.legendText}>Legs</Text>
-        </View>
-      </View>
 
       <View style={styles.calendarContainer}>
         <Calendar
@@ -306,17 +174,24 @@ const WorkoutCalendarScreen = ({ navigation }) => {
             textDayHeaderFontSize: 14,
           }}
           onDayPress={handleDayPress}
-          markedDates={{
-            ...workoutDates,
-            [selected]: { 
-              ...workoutDates[selected],
-              selected: true,
-            },
-          }}
           hideExtraDays={true}
+          markedDates={markedDates}
         />
       </View>
-      {renderWorkoutDetails()}
+
+      {/* Display formatted plan days string */}
+      {days && Array.isArray(days) && days.length > 0 && (
+        <ScrollView style={{ marginTop: 24, backgroundColor: '#18181A', borderRadius: 12, padding: 16, maxHeight: 200 }}>
+          {days.map((line, idx) => (
+            <Text key={idx} style={{ color: '#808080', fontFamily: 'monospace', marginBottom: 12 }}>{line}</Text>
+          ))}
+        </ScrollView>
+      )}
+      {days && typeof days === 'string' && days.length > 0 && (
+        <View style={{ marginTop: 24, backgroundColor: '#18181A', borderRadius: 12, padding: 16 }}>
+          <Text style={{ color: '#fff', fontFamily: 'monospace' }}>{days}</Text>
+        </View>
+      )}
     </View>
   );
 };
@@ -361,26 +236,6 @@ const styles = StyleSheet.create({
     shadowColor: '#000',
     shadowOpacity: 0.1,
     shadowRadius: 8,
-  },
-  legendContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginTop: 16,
-    marginBottom: 8,
-  },
-  legendItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  legendDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 8,
-  },
-  legendText: {
-    color: '#fff',
-    fontSize: 14,
   },
   modalContainer: {
     flex: 1,

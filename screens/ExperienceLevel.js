@@ -7,8 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { updateExperienceLevel } from '../database/UserDB';
 
 const ExperienceLevelScreen = ({ navigation }) => {
   const [selectedGoal, setSelectedGoal] = useState(null);
@@ -21,18 +20,7 @@ const ExperienceLevelScreen = ({ navigation }) => {
     if (!selectedGoal) return;
 
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-
-      console.log('Saving experience level:', selectedGoal);
-      await setDoc(doc(db, 'UserDetails', userId), {
-        ExperienceLevel: selectedGoal
-      }, { merge: true });
-
-      console.log('Navigating to ActivityLevel');
+      await updateExperienceLevel(selectedGoal);
       navigation.navigate('ActivityLevel');
     } catch (error) {
       console.error('Error saving experience level:', error);

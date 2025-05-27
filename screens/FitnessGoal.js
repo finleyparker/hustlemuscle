@@ -7,8 +7,7 @@ import {
   SafeAreaView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';
-import { setDoc, doc } from 'firebase/firestore';
+import { updateFitnessGoal } from '../database/UserDB';
 
 const FitnessGoal = ({ navigation }) => {
   const [selectedGoal, setSelectedGoal] = useState(null);
@@ -21,16 +20,7 @@ const FitnessGoal = ({ navigation }) => {
     if (!selectedGoal) return;
 
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-
-      await setDoc(doc(db, 'UserDetails', userId), {
-        PhysiqueGoal: selectedGoal
-      }, { merge: true });
-
+      await updateFitnessGoal(selectedGoal);
       navigation.navigate('ExperienceLevel');
     } catch (error) {
       console.error('Error saving physique goal:', error);

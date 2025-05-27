@@ -8,8 +8,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';  // adjust if needed
-import { doc, setDoc } from 'firebase/firestore';
+import { updateFreeDays } from '../database/UserDB';
 
 const FreeDaysPerWeekScreen = ({ navigation }) => {
   const [selectedDays, setSelectedDays] = useState(0);
@@ -22,16 +21,7 @@ const FreeDaysPerWeekScreen = ({ navigation }) => {
     if (selectedDays === 0) return;
     
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-      
-      await setDoc(doc(db, 'UserDetails', userId), {
-        WorkoutDaysPerWeek: selectedDays
-      }, { merge: true });
-      
+      await updateFreeDays(selectedDays);
       navigation.navigate('DietaryRestrictions');
     } catch (error) {
       console.error('Error saving workout days:', error);

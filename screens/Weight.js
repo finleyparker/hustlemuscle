@@ -10,9 +10,7 @@ import {
   TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';
-import { setDoc, doc } from 'firebase/firestore';
-
+import { updateWeight } from '../database/UserDB';
 
 const WeightScreen = ({ navigation }) => {
   const [weight, setWeight] = useState('0.0');
@@ -31,17 +29,7 @@ const WeightScreen = ({ navigation }) => {
     if (parseFloat(weight) <= 0) return;
 
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-
-      await setDoc(doc(db, 'UserDetails', userId), {
-        Weight: parseFloat(weight),
-        WeightUnit: unit
-      }, { merge: true });
-
+      await updateWeight(weight, unit);
       navigation.navigate('FitnessGoal');
     } catch (error) {
       console.error('Error saving weight:', error);
