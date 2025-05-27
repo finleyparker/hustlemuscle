@@ -179,8 +179,16 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     const targetCategories = goalCategoryMap[goal.toLowerCase()] || [];
     const normalizedEquipment = equipment.map(e => e.toLowerCase());
 
+    // Define level priority based on user's selected level
+    const levelPriority = {
+      beginner: ['beginner'],
+      intermediate: ['intermediate', 'beginner'],
+      advanced: ['advanced', 'intermediate', 'beginner'],
+      expert: ['expert', 'advanced', 'intermediate', 'beginner']
+    };
+
     const filteredExercises = allExercises.filter(ex =>
-      ex.level?.toLowerCase() === level.toLowerCase() &&
+      levelPriority[level.toLowerCase()]?.includes(ex.level?.toLowerCase()) &&
       (
         ex.equipment?.toLowerCase() === 'body only' ||
         ex.equipment?.toLowerCase() === 'none' ||
@@ -188,6 +196,15 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
       ) &&
       targetCategories.includes(ex.category?.toLowerCase())
     );
+
+
+    // Sort exercises to prioritize the user's selected level first
+    const userLevel = level.toLowerCase();
+    filteredExercises.sort((a, b) => {
+      if (a.level?.toLowerCase() === userLevel && b.level?.toLowerCase() !== userLevel) return -1;
+      if (a.level?.toLowerCase() !== userLevel && b.level?.toLowerCase() === userLevel) return 1;
+      return 0;
+    });
 
     if (filteredExercises.length === 0) {
       throw new Error('No exercises found matching your filters. Try different equipment or goal.');
@@ -242,8 +259,21 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
 
         muscleGroup.forEach(muscle => {
           const muscleExercises = muscleToExercisesMap[muscle] || [];
-          const shuffled = muscleExercises.sort(() => 0.5 - Math.random());
-          selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
+          
+          // Try to get exercises at the user's level first
+          const priorityExercises = muscleExercises.filter(
+            ex => ex.level?.toLowerCase() === level.toLowerCase()
+          );
+          
+          // If we have enough priority exercises, use those
+          if (priorityExercises.length >= perMuscleTarget) {
+            const shuffled = priorityExercises.sort(() => 0.5 - Math.random());
+            selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
+          } else {
+            // Otherwise use all priority exercises plus some from lower levels
+            const shuffledAll = muscleExercises.sort(() => 0.5 - Math.random());
+            selectedExercises.push(...shuffledAll.slice(0, perMuscleTarget));
+          }
         });
 
         const finalExercises = selectedExercises
@@ -318,23 +348,3 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
 
 
 
-// // Test runner
-// const testGeneratePlan = async () => {
-//   const userInput = {
-//     goal: 'strength',
-//     level: 'beginner',
-//     daysPerWeek: 4,
-//     equipment: ['body only', 'cable', 'machine', ],
-//   };
-
-//   const { plan, warnings } = await generateWorkoutPlan(userInput);
-//   console.log('Generated Plan Preview:', plan);
-//   if (warnings.length) {
-//     console.log('Warnings:');
-//     warnings.forEach(w => console.warn(w));
-//   }
-// };
-
-// if (require.main === module) {
-//   testGeneratePlan();
-// }

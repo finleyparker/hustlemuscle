@@ -159,9 +159,20 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       const normalizedEquipment = userInput.equipment.map(e => e.toLowerCase());
 
+      // Get all exercise IDs currently in this day's plan
+      const currentDayExerciseIds = currentDay.exercises.map(ex => ex.id);
+
       const alternatives = allExercises.filter(ex =>
-        ex.id !== currentExercise.id &&
-        ex.level?.toLowerCase() === userInput.level.toLowerCase() &&
+        // Exclude the current exercise and any other exercises already in this day's plan
+        !currentDayExerciseIds.includes(ex.id) &&
+        (
+          ex.level?.toLowerCase() === userInput.level.toLowerCase() ||
+          (userInput.level.toLowerCase() === 'intermediate' && ex.level?.toLowerCase() === 'beginner') ||
+          (userInput.level.toLowerCase() === 'advanced' && 
+          (ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner')) ||
+          (userInput.level.toLowerCase() === 'expert' && 
+          (ex.level?.toLowerCase() === 'advanced' || ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner'))
+        ) &&
         (
           ex.equipment?.toLowerCase() === 'body only' ||
           ex.equipment?.toLowerCase() === 'none' ||
@@ -193,7 +204,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       setPlan(updatedPlan);
 
-      // 1. First update the workout plan document
+      // Rest of your update logic remains the same...
       const workoutPlansRef = collection(db, 'workoutPlans');
       const planQuery = query(
         workoutPlansRef,
@@ -213,7 +224,6 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         console.warn('No workout plan document found to update');
       }
 
-      // 2. Then update the workout session document
       const workoutSessionsRef = collection(db, 'workout_sessions');
       const sessionQuery = query(
         workoutSessionsRef,
