@@ -80,21 +80,21 @@ const DietScreen = ({ navigation }: any) => {
             else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Moderate') target = 1900;
             else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Active') target = 2100;
             else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Extremely Active') target = 2300;
-            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Not Active') target = 1800;
-            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Mildly Active') target = 2000;
-            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Moderate') target = 2200;
-            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Active') target = 2400;
-            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Extremely Active') target = 2600;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Not Active') target = 2050;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Mildly Active') target = 2200;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Moderate') target = 2350;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Active') target = 2500;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Extremely Active') target = 2650;
             else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Not Active') target = 2500;
             else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Mildly Active') target = 2700;
             else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Moderate') target = 2900;
             else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Active') target = 3100;
             else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Extremely Active') target = 3300;
-            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Not Active') target = 2500;
-            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Mildly Active') target = 2700;
-            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Moderate') target = 2900;
-            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Active') target = 3100;
-            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Extremely Active') target = 3300;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Not Active') target = 1800;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Mildly Active') target = 1900;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Moderate') target = 2000;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Active') target = 2200;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Extremely Active') target = 2400;
             else if (PhysiqueGoal === 'Strength' && activityLevel === 'Not Active') target = 2500;
             else if (PhysiqueGoal === 'Strength' && activityLevel === 'Mildly Active') target = 2700;
             else if (PhysiqueGoal === 'Strength' && activityLevel === 'Moderate') target = 2900;
@@ -106,19 +106,28 @@ const DietScreen = ({ navigation }: any) => {
             let fatRatio = 0.3; 
             let carbRatio = 0.4;
 
-            if (PhysiqueGoal === 'LoseWeight') {
+            if (PhysiqueGoal === 'Weight Loss') {
               proteinRatio = 0.4; 
               fatRatio = 0.3;
               carbRatio = 0.3;
-            } else if (PhysiqueGoal === 'MaintainWeight') {
+            } else if (PhysiqueGoal === 'Flexibility') {
               proteinRatio = 0.3;
               fatRatio = 0.3;
               carbRatio = 0.4;
-            } else if (PhysiqueGoal === 'GainWeight') {
+            } else if (PhysiqueGoal === 'Muscle Gain') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; 
+            } else if (PhysiqueGoal === 'Strength') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; 
+            } else if (PhysiqueGoal === 'Endurance') {
               proteinRatio = 0.25;
               fatRatio = 0.25;
               carbRatio = 0.5; 
             }
+
             setDailyTarget(target);
             setCarbTarget(carbRatio);
             setFatTarget(fatRatio);
