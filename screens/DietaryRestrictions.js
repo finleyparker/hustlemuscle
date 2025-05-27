@@ -61,8 +61,9 @@ const DietaryRestrictionsScreen = ({ navigation }) => {
           <View style={styles.restrictionsContainer}>
             <RestrictionButton label="Vegetarian" value="Vegetarian" />
             <RestrictionButton label="Vegan" value="Vegan" />
-            <RestrictionButton label="Gluten-Free" value="Gluten-Free" />
-            <RestrictionButton label="Dairy-Free" value="Dairy-Free" />
+            <RestrictionButton label="Gluten-Free" value="Celiac" />
+            <RestrictionButton label="Dairy-Free" value="DairyFree" />
+            <RestrictionButton label="Pescatarian" value="Pescatarian" />
             <RestrictionButton label="No Restrictions" value="None" />
           </View>
         </ScrollView>
