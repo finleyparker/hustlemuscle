@@ -14,7 +14,7 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
-import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
+import { collection, getDoc, doc, updateDoc, setDoc } from 'firebase/firestore';
 import { db, auth } from '../database/firebase';
 import { useFocusEffect } from '@react-navigation/native';
 
@@ -111,10 +111,10 @@ const DietScreen = ({ navigation }: any) => {
         return;
       }
       const userRef = doc(db, 'dietPlans', userId);
-      await updateDoc(userRef, {
+      await setDoc(userRef, {
         totalCalories: updatedTotal,
         selectedMeals: updatedMeals,
-      });
+      }, { merge: true });
 
       setSelectedMeals(updatedMeals);
       setTotalCalories(updatedTotal);
@@ -136,10 +136,10 @@ const DietScreen = ({ navigation }: any) => {
         return;
       }
       const dietPlanRef = doc(db, 'dietPlans', userId);
-      await updateDoc(dietPlanRef, {
+      await setDoc(dietPlanRef, {
         totalCalories: 0,
         selectedMeals: [],
-      });
+      },{ merge: true });
     } catch (error) {
       console.error('Error resetting data:', error);
     }
