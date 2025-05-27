@@ -37,9 +37,10 @@ export default function NewDiet() {
     loadMeals();
   }, []);
     return (
-        <><View>
-        <Text>Macro History</Text>
-      </View><View style={styles.container}>
+        <><View style={styles.container}>
+          <View>
+        <Text style={styles.title1}>Macro History</Text>
+      </View>
           {loading ? (
             <Text>Loading...</Text>
           ) : (
@@ -65,7 +66,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 16,
-    backgroundColor: '#fff',
+    backgroundColor: 'black',
   },
   card: {
     marginBottom: 16,
@@ -82,6 +83,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: 'bold',
     marginBottom: 8,
+  },
+  title1: {
+    fontSize: 22,
+    textAlign: 'center',
+    fontWeight: 'bold',
+    color: 'white',
+    marginBottom: 16,
   },
 });
 

@@ -147,7 +147,7 @@ export default function App() {
   };
 
   return (
-    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16 }}>
+    <View style={{ flex: 1, paddingTop: 50, paddingHorizontal: 16, backgroundColor: 'black' }}>
       {loading ? (
         <Text>Loading...</Text>
       ) : (
@@ -182,7 +182,7 @@ export default function App() {
                     )
                   }
                 />
-                <View style={styles.divider} />
+              
               </View>
             )}
           />
@@ -197,21 +197,28 @@ const styles = StyleSheet.create({
     fontSize: 22,
     textAlign: 'center',
     fontWeight: 'bold',
+    color: 'white',
   },
   totalCalories: {
     fontSize: 18,
     textAlign: 'center',
     marginVertical: 10,
+    color: 'white',
   },
   subtitle: {
     marginLeft: 10,
     color: 'gray',
   },
   mealCard: {
-    marginVertical: 10,
-    padding: 10,
-    backgroundColor: '#f1f1f1',
-    borderRadius: 10,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 8,
+    backgroundColor: '#f9f9f9',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 2,
   },
   mealTitle: {
     fontSize: 18,

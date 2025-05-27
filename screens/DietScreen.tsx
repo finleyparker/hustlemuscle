@@ -20,8 +20,7 @@ import { db, auth } from '../database/firebase';
 import { useFocusEffect } from '@react-navigation/native';
 import { setDoc, serverTimestamp } from 'firebase/firestore';
 
-
-const HomeScreen = ({ navigation }: any) => {
+const DietScreen = ({ navigation }: any) => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
@@ -41,10 +40,10 @@ const HomeScreen = ({ navigation }: any) => {
   const [manualFats, setManualFats] = useState('');
   const [manualProtein, setManualProtein] = useState('');
   const [manualCarbs, setManualCarbs] = useState('');
-  const [dailyTarget, setDailyTarget] = useState(2000); // Default target
-  const [carbTarget, setCarbTarget] = useState(0.3);
-  const [fatTarget, setFatTarget] = useState(0.3);  
-  const [proteinTarget, setProteinTarget] = useState(0.4);
+  const [dailyTarget, setDailyTarget] = useState(2000); // default target
+  const [carbTarget, setCarbTarget] = useState(0.3); // default target
+  const [fatTarget, setFatTarget] = useState(0.3);  // default target
+  const [proteinTarget, setProteinTarget] = useState(0.4); // default target
   const [dietGoal, setDietGoal] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
 
@@ -67,13 +66,14 @@ const HomeScreen = ({ navigation }: any) => {
             setTotalProtein(data.totalProtein || 0);
             setTotalCarbs(data.totalCarbs || 0);
 
-            // Set daily target based on diet goal
+            
             const PhysiqueGoal = data.weightGoal || 'MaintainWeight';
             setDietGoal(PhysiqueGoal);
 
             const activityLevel = data.activityLevel || 'MildlyActive';
             setActivityLevel(activityLevel);
 
+            // set daily target based on diet goal
             let target = 2000;
             if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Not Active') target = 1500;
             else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Mildly Active') target = 1700;
@@ -102,12 +102,12 @@ const HomeScreen = ({ navigation }: any) => {
             else if (PhysiqueGoal === 'Strength' && activityLevel === 'Extremely Active') target = 3300;
             else target = 2000;
             
-            let proteinRatio = 0.3; // 30% of daily target
-            let fatRatio = 0.3; // 30% of daily target  
-            let carbRatio = 0.4; // 40% of daily target
+            let proteinRatio = 0.3; 
+            let fatRatio = 0.3; 
+            let carbRatio = 0.4;
 
             if (PhysiqueGoal === 'LoseWeight') {
-              proteinRatio = 0.4; // higher protein
+              proteinRatio = 0.4; 
               fatRatio = 0.3;
               carbRatio = 0.3;
             } else if (PhysiqueGoal === 'MaintainWeight') {
@@ -117,7 +117,7 @@ const HomeScreen = ({ navigation }: any) => {
             } else if (PhysiqueGoal === 'GainWeight') {
               proteinRatio = 0.25;
               fatRatio = 0.25;
-              carbRatio = 0.5; // higher carbs
+              carbRatio = 0.5; 
             }
             setDailyTarget(target);
             setCarbTarget(carbRatio);
@@ -138,9 +138,9 @@ const HomeScreen = ({ navigation }: any) => {
   const submitDailySummary = async () => {
     const today = new Date();
 const yyyy = today.getFullYear();
-const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+const mm = String(today.getMonth() + 1).padStart(2, '0');
 const dd = String(today.getDate()).padStart(2, '0');
-const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
+const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
   
     if (!userId) {
       console.error('User ID is undefined');
@@ -181,9 +181,9 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
 
     const newMeal = { name: manualMealName, calories: cal };
     const updatedTotal = totalCalories + cal;
-    const updatedFats = totalFats + fat; // Replace with actual fat calculation
-    const updatedProtein = totalProtein + protein; // Replace with actual protein calculation
-    const updatedCarbs = totalCarbs + carbs; // Replace with actual carb calculation
+    const updatedFats = totalFats + fat; 
+    const updatedProtein = totalProtein + protein;
+    const updatedCarbs = totalCarbs + carbs; 
     const updatedMeals = [...selectedMeals, newMeal];
 
     try {
@@ -241,9 +241,9 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
     }
   };
 
-  const proteinTarget1 = (dailyTarget * proteinTarget) // 30% of daily target
-  const fatTarget1 = (dailyTarget * fatTarget) // 30% of daily target
-  const carbTarget1 = (dailyTarget * carbTarget) // 40% of daily target
+  const proteinTarget1 = (dailyTarget * proteinTarget) 
+  const fatTarget1 = (dailyTarget * fatTarget) 
+  const carbTarget1 = (dailyTarget * carbTarget) 
 
 
   const fill = (totalCalories / dailyTarget) * 100;
@@ -256,8 +256,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
   return (
     <View style={backgroundStyle}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+        
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic">
         <View style={styles.sectionContainer}>
@@ -294,15 +293,15 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
             />
           </View>
           <View style={styles.carbs}>
-            <Text>Carbs: {Math.round(fillCarbs * 100)}%   </Text>
+            <Text style={styles.text1}>Carbs: {Math.round(fillCarbs * 100)}%   </Text>
             <Progress.Bar progress={fillCarbs} width={200} height={15} color="#ff0000" animationType="spring" />
           </View>
           <View style={styles.fats}>
-          <Text>Fats: {Math.round(fillFats * 100)}%   </Text>
+          <Text style={styles.text1}>Fats: {Math.round(fillFats * 100)}%   </Text>
             <Progress.Bar progress={fillFats} width={200} height={15} color="#00ff00"/>
           </View>
           <View style={styles.protein}>
-          <Text>Protein: {Math.round(fillProtein * 100)}%   </Text>
+          <Text style={styles.text1}>Protein: {Math.round(fillProtein * 100)}%   </Text>
             <Progress.Bar progress={fillProtein} width={200} height={15} color="#0000ff"/>
           </View>
           <View style={styles.log}>
@@ -322,8 +321,8 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
         </View>
       </ScrollView>
 
-      {/* Manual Entry Modal */}
-      <Modal
+     
+      <Modal  // Modal for manual data entry
         visible={modalVisible}
         animationType="slide"
         transparent={true}
@@ -395,15 +394,22 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // "YYYY-MM-DD"
 };
 
 const styles = StyleSheet.create({
+
   sectionContainer: {
-    marginTop: 40,
     paddingHorizontal: 24,
+    backgroundColor: 'black',
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  text1: {
+    color: 'white',
   },
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 20,
+    color: 'white',
   },
   progress: {
     alignItems: 'center',
@@ -412,14 +418,16 @@ const styles = StyleSheet.create({
   calorie: {
     marginTop: -170,
     fontSize: 35,
+    color: 'white',
   },
   calorie1: {
     fontSize: 30,
+    color: 'white',
   },
   goalText: {
     fontSize: 16,
     marginTop: 10,
-    color: '#333',
+    color: 'white',
   },
   warningText: {
     marginTop: 70,
@@ -490,6 +498,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  backgroundStyle: {
+    backgroundColor: '#000',
+
+  },
 });
 
-export default HomeScreen;
+export default DietScreen;
