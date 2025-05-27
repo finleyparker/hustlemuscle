@@ -33,7 +33,7 @@ const UpdateMetricsScreen = () => {
       setExperienceLevel(details.ExperienceLevel || '');
       setWorkoutDays(details.WorkoutDaysPerWeek ? details.WorkoutDaysPerWeek.toString() : '');
       console.log('Setting diet restrictions:', details.DietaryRestrictions);
-      setDietRestrictions(details.DietaryRestrictions || []);
+      setDietRestrictions(Array.isArray(details.DietaryRestrictions) ? details.DietaryRestrictions : []);
     } catch (e) {
       console.error('Error loading details:', e);
     }
@@ -48,6 +48,7 @@ const UpdateMetricsScreen = () => {
   const openGenderModal = () => setGenderModalVisible(true);
   const closeGenderModal = () => setGenderModalVisible(false);
   const selectGender = async (value) => {
+    
     try {
       await updateGender(value);
       setGender(value);
@@ -155,7 +156,7 @@ const UpdateMetricsScreen = () => {
       <TouchableOpacity style={styles.card} onPress={() => setDietRestrictionsModalVisible(true)} activeOpacity={0.7}>
         <Text style={styles.label}>Your Diet Restrictions</Text>
         <Text style={styles.value}>
-          {dietRestrictions.length > 0 
+          {Array.isArray(dietRestrictions) && dietRestrictions.length > 0 
             ? dietRestrictions.join(', ') 
             : 'No restrictions'}
         </Text>
