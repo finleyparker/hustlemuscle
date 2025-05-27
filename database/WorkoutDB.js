@@ -156,6 +156,35 @@ export const getSessionName = async (sessionId) => {
     }
 };
 
+export const getCompletedSessions = async () => {
+    const user = auth.currentUser;
+
+    if (!user) {
+        console.warn('User not logged in.');
+        return [];
+    }
+
+    try {
+        const sessionsRef = collection(db, 'completed_sessions');
+        const q = query(sessionsRef, where('user_id', '==', user.uid));
+        const snapshot = await getDocs(q);
+
+        if (snapshot.empty) {
+            console.log('No completed sessions found for user:', user.uid);
+            return [];
+        }
+
+        return snapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+            completion_date: doc.data().completion_date?.toDate() // Convert Firestore timestamp to Date
+        }));
+    } catch (error) {
+        console.error('Firebase error fetching completed sessions:', error);
+        return [];
+    }
+};
+
 
 export const getExerciseCompletions = async (user_id, completion_date, sessionId) => {
     try {
@@ -180,36 +209,6 @@ export const getExerciseCompletions = async (user_id, completion_date, sessionId
         // Return only the document IDs
         return snapshot.docs.map((doc) => doc.id);
 
-    } catch (error) {
-        console.error('Firebase error fetching completed sessions:', error);
-        return [];
-    }
-};
-
-
-export const getCompletedSessions = async () => {
-    const user = auth.currentUser;
-
-    if (!user) {
-        console.warn('User not logged in.');
-        return [];
-    }
-
-    try {
-        const sessionsRef = collection(db, 'completed_sessions');
-        const q = query(sessionsRef, where('user_id', '==', user.uid));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            console.log('No completed sessions found for user:', user.uid);
-            return [];
-        }
-
-        return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            completion_date: doc.data().completion_date?.toDate() // Convert Firestore timestamp to Date
-        }));
     } catch (error) {
         console.error('Firebase error fetching completed sessions:', error);
         return [];

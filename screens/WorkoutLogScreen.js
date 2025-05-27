@@ -3,7 +3,7 @@ import {
     View, Modal, Button, Text, Image, TextInput, ScrollView,
     StyleSheet, TouchableOpacity, ActivityIndicator, Platform, StatusBar, SafeAreaView
 } from 'react-native';
-import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion } from '../database/WorkoutDB';
+import { getExerciseIDFromSession, getExerciseNamesFromSession, getSessionName, updateExerciseCompletion, updateSessionCompletion } from '../database/WorkoutDB';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import { getExerciseInstructions } from '../api/exercises';
 import { getUserID } from '../database/UserDB';
