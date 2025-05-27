@@ -122,7 +122,7 @@ export const updateSessionCompletion = async (sessionId) => {
         const completedSession = {
             completion_date: completion_date,
             session_name: sessionData.session_name,
-            exercise_completion_ids: [], // This will be populated when exercises are completed
+            exercise_completion_ids: exercise_completion_ids, // This will be populated when exercises are completed
             user_id: user.uid,
             workout_session_id: sessionId
         };
