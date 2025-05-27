@@ -32,8 +32,8 @@ const ExperienceLevelScreen = ({ navigation }) => {
         ExperienceLevel: selectedGoal
       }, { merge: true });
 
-      console.log('Navigating to FreeDays');
-      navigation.navigate('FreeDays');
+      console.log('Navigating to ActivityLevel');
+      navigation.navigate('ActivityLevel');
     } catch (error) {
       console.error('Error saving experience level:', error);
     }

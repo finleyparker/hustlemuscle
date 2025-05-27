@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';
 import { setDoc, doc } from 'firebase/firestore';
 
-const PhysiqueScreen = ({ navigation }) => {
+const FitnessGoal = ({ navigation }) => {
   const [selectedGoal, setSelectedGoal] = useState(null);
 
   const handleGoalSelect = (goal) => {
@@ -31,7 +31,7 @@ const PhysiqueScreen = ({ navigation }) => {
         PhysiqueGoal: selectedGoal
       }, { merge: true });
 
-      navigation.navigate('AthleticAbility');
+      navigation.navigate('ExperienceLevel');
     } catch (error) {
       console.error('Error saving physique goal:', error);
     }
@@ -170,4 +170,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default PhysiqueScreen; 
+export default FitnessGoal; 

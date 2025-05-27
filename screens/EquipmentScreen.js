@@ -91,7 +91,7 @@ const EquipmentScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <ScrollView style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #5</Text>
+        <Text style={styles.metricText}>Starting Metric #8</Text>
         <Text style={styles.titleText}>Equipment</Text>
         <Text style={styles.subtitleText}>What equipment do you have access to?</Text>
 

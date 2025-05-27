@@ -19,14 +19,22 @@ import HomeScreen from './screens/HomeScreen';
 import GenderScreen from './screens/GenderScreen';
 import EquipmentScreen from './screens/EquipmentScreen';
 import WeightScreen from './screens/Weight';
-import PhysiqueScreen from './screens/Physique';
-import AthleticAbilityScreen from './screens/ExperienceLevel';
+import FitnessGoal from './screens/FitnessGoal';
+import ExperienceLevelScreen from './screens/ExperienceLevel';
+import ActivityLevelScreen from './screens/ActivityLevel';
+import DietaryRestrictionsScreen from './screens/DietaryRestrictions';
 
 //diet screens
 import DietScreen from './screens/DietScreen'; //main diet page
 import NewDiet from './screens/NewDiet';
 import CurrentPlan from './screens/CurrentPlan';
-import FreeDaysPerWeekScreen from './screens/FreeDay';
+import FreeDaysPerWeekScreen from './screens/FreeDays';
+import WorkoutCalendarScreen from './screens/WorkoutCalendarScreen';
+
+
+//settings screen
+import SettingsScreen from './screens/SettingsScreen';
+import UpdateMetricsScreen from './screens/UpdateMetricsScreen';
 
 
 const Stack = createNativeStackNavigator();
@@ -63,12 +71,20 @@ export default function App() {
                 <Stack.Screen name="DietScreen" component={DietScreen} />
                 <Stack.Screen name="FreeDays" component={FreeDaysPerWeekScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="NewDiet" component={NewDiet} />
+                <Stack.Screen name="ExperienceLevel" component={ExperienceLevelScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Current" component={CurrentPlan} />
                 <Stack.Screen name="Gender" component={GenderScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="ActivityLevel" component={ActivityLevelScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="DietaryRestrictions" component={DietaryRestrictionsScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Physique" component={PhysiqueScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="AthleticAbility" component={AthleticAbilityScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="FitnessGoal" component={FitnessGoal} options={{ headerShown: false }} />
+                
                 <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
+                <Stack.Screen name="Settings" component={SettingsScreen} />
+                <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
+                <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
+                
+
             </Stack.Navigator>
         </NavigationContainer>
     );

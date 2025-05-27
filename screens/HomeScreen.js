@@ -5,10 +5,13 @@ import { useNavigation } from '@react-navigation/native';
 import { Ionicons } from '@expo/vector-icons';
 import { auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
+import DateTimePickerModal from 'react-native-modal-datetime-picker';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
   const navigation = useNavigation();
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -63,30 +66,45 @@ const HomeScreen = () => {
     );
   };
 
+  const showCalendar = () => setCalendarVisible(true);
+  const hideCalendar = () => setCalendarVisible(false);
+  const handleConfirm = (date) => {
+    setSelectedDate(date);
+    hideCalendar();
+    console.log('Selected date:', date);
+  };
+
   return (
     <ScrollView style={styles.container}>
+      
+
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
-          <TouchableOpacity onPress={() => askLogout()}>
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
+          </View>
+          <TouchableOpacity 
+            style={styles.profileButton}
+            onPress={() => navigation.navigate('Settings')}>
             <Image
               source={require('../assets/profile-placeholder.png')}
               style={styles.profileImage} />
           </TouchableOpacity>
-
         </View>
       </View>
 
       {/* Calendar Strip */}
       <View style={styles.calendarStrip}>
         {weekDays.map((item, index) => (
-          <View
+          <TouchableOpacity
             key={index}
             style={[
               styles.dayContainer,
               isToday(item.fullDate) && styles.selectedDayContainer,
             ]}
+            onPress={() => navigation.navigate('WorkoutCalendar')}
+            activeOpacity={0.7}
           >
             <Text
               style={[
@@ -104,8 +122,15 @@ const HomeScreen = () => {
             >
               {item.day}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
+        <DateTimePickerModal
+          isVisible={isCalendarVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideCalendar}
+          display="inline"
+        />
       </View>
 
       {/* Main Cards */}
@@ -171,10 +196,15 @@ const HomeScreen = () => {
 };
 
 const styles = StyleSheet.create({
-  // (all your styles here exactly the same)
   container: {
     flex: 1,
     backgroundColor: '#000000',
+  },
+  backButton: {
+    position: 'absolute',
+    top: 40,
+    left: 20,
+    zIndex: 10,
   },
   header: {
     paddingTop: 60,
@@ -183,13 +213,23 @@ const styles = StyleSheet.create({
   },
   headerContent: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  welcomeContainer: {
     alignItems: 'center',
   },
   welcomeText: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 15.6,
     fontWeight: '600',
+    textAlign: 'center',
+    paddingVertical: 20,
+  },
+  profileButton: {
+    position: 'absolute',
+    right: 0,
   },
   profileImage: {
     width: 40,
@@ -199,7 +239,7 @@ const styles = StyleSheet.create({
   calendarStrip: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    paddingHorizontal: 50,
     marginBottom: 20,
   },
   dayContainer: {
@@ -211,12 +251,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#E4FA00',
   },
   dayText: {
-    color: '#FFFFFF',
+    color: '#89868A',
     fontSize: 16,
     fontWeight: '500',
   },
   dayLabel: {
-    color: '#FFFFFF',
+    color: '#89868A',
     fontSize: 12,
     marginTop: 4,
   },
@@ -247,14 +287,15 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     color: '#FFFFFF',
-    fontSize: 24,
+    fontSize: 30.5,
     fontWeight: 'bold',
   },
   statisticsHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    
+    paddingHorizontal: 40,
     marginBottom: 15,
   },
   sectionTitle: {

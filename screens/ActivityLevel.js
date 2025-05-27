@@ -10,50 +10,82 @@ import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
-const FreeDaysPerWeekScreen = ({ navigation }) => {
-  const [selectedDays, setSelectedDays] = useState(0);
+const ActivityLevelScreen = ({ navigation }) => {
+  const [selectedLevel, setSelectedLevel] = useState(null);
 
-  const handleDaySelect = (days) => {
-    setSelectedDays(days);
+  const activityLevels = [
+    {
+      label: 'Extremely Active',
+      description: 'Exercise 6+ days a week'
+    },
+    {
+      label: 'Active',
+      description: 'Exercise 4-5 days a week'
+    },
+    {
+      label: 'Moderate',
+      description: 'Exercise 2-3 days a week'
+    },
+    {
+      label: 'Mildly Active',
+      description: 'Exercise 1 day a week'
+    },
+    {
+      label: 'Not Active',
+      description: 'Little to no exercise'
+    }
+  ];
+
+  const handleLevelSelect = (level) => {
+    setSelectedLevel(level);
   };
 
   const handleNext = async () => {
-    if (selectedDays === 0) return;
+    if (!selectedLevel) return;
+
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
         console.error('No user is signed in');
         return;
       }
+
       await setDoc(doc(db, 'UserDetails', userId), {
-        WorkoutDaysPerWeek: selectedDays
+        ActivityLevel: selectedLevel
       }, { merge: true });
-      navigation.navigate('Equipment');
+
+      navigation.navigate('FreeDays');
     } catch (error) {
-      console.error('Error saving workout days:', error);
+      console.error('Error saving activity level:', error);
     }
   };
 
-  const DayButton = ({ days }) => (
+  const LevelButton = ({ level }) => (
     <TouchableOpacity
       style={[
-        styles.dayButton,
-        selectedDays === days && styles.selectedDayButton,
+        styles.levelButton,
+        selectedLevel === level.label && styles.selectedLevelButton,
       ]}
-      onPress={() => handleDaySelect(days)}
+      onPress={() => handleLevelSelect(level.label)}
     >
       <Text style={[
-        styles.dayButtonText,
-        selectedDays === days && styles.selectedDayButtonText,
+        styles.levelButtonText,
+        selectedLevel === level.label && styles.selectedLevelButtonText,
       ]}>
-        {days} Days
+        {level.label}
+      </Text>
+      <Text style={[
+        styles.levelDescription,
+        selectedLevel === level.label && styles.selectedLevelDescription,
+      ]}>
+        {level.description}
       </Text>
     </TouchableOpacity>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.backButton}
         onPress={() => navigation.goBack()}
       >
@@ -61,23 +93,23 @@ const FreeDaysPerWeekScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #4</Text>
-        <Text style={styles.titleText}>Workout Schedule</Text>
-        <Text style={styles.subtitleText}>How many days per week can you workout?</Text>
+        <Text style={styles.metricText}>Starting Metric #5</Text>
+        <Text style={styles.titleText}>Activity Level</Text>
+        <Text style={styles.subtitleText}>How often do you exercise?</Text>
 
-        <View style={styles.daysContainer}>
-          <DayButton days={3} />
-          <DayButton days={4} />
-          <DayButton days={5} />
+        <View style={styles.levelsContainer}>
+          {activityLevels.map((level, index) => (
+            <LevelButton key={index} level={level} />
+          ))}
         </View>
-        
-        <TouchableOpacity 
+
+        <TouchableOpacity
           style={[
             styles.nextButton,
-            selectedDays === 0 && styles.nextButtonDisabled
+            !selectedLevel && styles.nextButtonDisabled
           ]}
           onPress={handleNext}
-          disabled={selectedDays === 0}
+          disabled={!selectedLevel}
         >
           <Text style={styles.nextButtonText}>Next</Text>
         </TouchableOpacity>
@@ -121,30 +153,39 @@ const styles = StyleSheet.create({
     marginBottom: 40,
     opacity: 0.7,
   },
-  daysContainer: {
+  levelsContainer: {
     gap: 16,
-    marginBottom: 20,
   },
-  dayButton: {
+  levelButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#333333',
     borderRadius: 30,
     paddingVertical: 16,
-    paddingHorizontal: 10,
+    paddingHorizontal: 20,
     alignItems: 'center',
   },
-  selectedDayButton: {
+  selectedLevelButton: {
     backgroundColor: '#FFFFFF',
     borderColor: '#FFFFFF',
   },
-  dayButtonText: {
+  levelButtonText: {
     color: '#FFFFFF',
     fontSize: 16,
     fontWeight: '500',
+    marginBottom: 4,
   },
-  selectedDayButtonText: {
+  selectedLevelButtonText: {
     color: '#000000',
+  },
+  levelDescription: {
+    color: '#FFFFFF',
+    fontSize: 14,
+    opacity: 0.7,
+  },
+  selectedLevelDescription: {
+    color: '#000000',
+    opacity: 0.7,
   },
   nextButton: {
     backgroundColor: '#FFFFFF',
@@ -166,5 +207,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default FreeDaysPerWeekScreen;  
-  
+export default ActivityLevelScreen; 

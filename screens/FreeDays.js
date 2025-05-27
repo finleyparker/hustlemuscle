@@ -32,7 +32,7 @@ const FreeDaysPerWeekScreen = ({ navigation }) => {
         WorkoutDaysPerWeek: selectedDays
       }, { merge: true });
       
-      navigation.navigate('Equipment');
+      navigation.navigate('DietaryRestrictions');
     } catch (error) {
       console.error('Error saving workout days:', error);
     }
@@ -65,14 +65,12 @@ const FreeDaysPerWeekScreen = ({ navigation }) => {
       </TouchableOpacity>
 
       <View style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #4</Text>
+        <Text style={styles.metricText}>Starting Metric #6</Text>
         <Text style={styles.titleText}>Workout Schedule</Text>
         <Text style={styles.subtitleText}>How many days per week can you workout?</Text>
 
         <ScrollView>
           <View style={styles.daysContainer}>
-            <DayButton days={1} />
-            <DayButton days={2} />
             <DayButton days={3} />
             <DayButton days={4} />
             <DayButton days={5} />
