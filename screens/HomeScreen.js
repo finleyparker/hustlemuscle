@@ -111,7 +111,7 @@ const HomeScreen = () => {
       {/* Main Cards */}
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('WorkoutPlan')}
+        onPress={() => navigation.navigate('Sessions')}
       >
         <Image
           source={require('../assets/weights3.jpg')}

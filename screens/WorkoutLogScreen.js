@@ -15,17 +15,18 @@ export default function WorkoutLogScreen() {
     const [loading, setLoading] = useState(true);
     const [selectedExercise, setSelectedExercise] = useState(null);
     const [instructions, setInstructions] = useState(null);
+    const [sessionName, setSessionName] = useState('');
     const route = useRoute();
     const sessionId = route.params?.sessionId;
     const navigation = useNavigation();
-    const exerciseURL = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
 
     useEffect(() => {
         const fetchSessionDetails = async () => {
             console.log("session id: ", sessionId);
             //set title on top
             const session_name = await getSessionName(sessionId);
-            navigation.setOptions({ title: `Current Session: ${session_name}` });
+            setSessionName(session_name);
+            navigation.setOptions({ title: `Workout Logging` });
             console.log("session name: ", session_name);
 
             //get each exercise name
@@ -195,6 +196,12 @@ export default function WorkoutLogScreen() {
             {/* main session list */}
             <ScrollView style={styles.planContainer}>
 
+                {/* Workout Details */}
+                <View style={styles.workoutDetails}>
+                    <Text style={styles.workoutTodayText}>Today's Workout:</Text>
+                    <Text style={styles.workoutTitle}>{sessionName}</Text>
+                </View>
+
                 {exercises.map((exercise, exerciseIndex) => (
                     <View key={exerciseIndex} style={styles.exerciseCard}>
                         <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -255,7 +262,7 @@ export default function WorkoutLogScreen() {
 
                 <TouchableOpacity
                     style={styles.endWorkoutButton}
-                    onPress={handleSaveSession()}
+                    onPress={handleSaveSession}
                 >
                     <Text style={styles.endWorkoutText}>Finish Workout</Text>
                 </TouchableOpacity>
@@ -415,7 +422,7 @@ const styles = StyleSheet.create({
     addSetButton: {
         marginTop: 5,
         alignSelf: 'flex-start',
-        backgroundColor: '#666', // Dark grey button color
+        backgroundColor: '#007AFF', // Blue button color
         paddingHorizontal: 10,
         paddingVertical: 6,
         borderRadius: 5,
@@ -436,7 +443,7 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     endWorkoutButton: {
-        backgroundColor: '#e3f900', // Red button for end workout
+        backgroundColor: '#888', // Grey button for end workout
         padding: 15,
         borderRadius: 10,
         alignItems: 'center',
@@ -458,8 +465,30 @@ const styles = StyleSheet.create({
         fontSize: 16,
     },
     endWorkoutText: {
-        color: '#000', // White text on end workout button
+        color: '#fff', // White text on end workout button
         fontSize: 16,
+        fontWeight: 'bold',
+    },
+    headerContainer: { // New style for header container
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: 20,
+    },
+    backArrow: { // New style for back arrow
+        color: '#fff',
+        fontSize: 24,
+        marginRight: 15,
+    },
+    workoutDetails: { // New style for workout details container
+        marginBottom: 20,
+    },
+    workoutTodayText: { // New style for "Today's Workout" text
+        color: '#ccc',
+        fontSize: 16,
+    },
+    workoutTitle: { // Existing style, might need adjustment
+        color: '#fff',
+        fontSize: 20,
         fontWeight: 'bold',
     },
 });

@@ -49,7 +49,7 @@ export default function SessionListScreen() {
             />
             <TouchableOpacity
                 style={styles.newPlanButton}
-                onPress={() => navigation.navigate('Gender')}
+                onPress={() => navigation.navigate('WorkoutPlan')}
             >
                 <Text style={styles.newPlanText}>Create New Workout Plan</Text>
             </TouchableOpacity>
