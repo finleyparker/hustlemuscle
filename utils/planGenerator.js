@@ -167,11 +167,11 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     5: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   };
   const durationMap = {
-      'muscle gain': { beginner: 8, intermediate: 12, advanced: 16 },
-      'weight loss': { beginner: 4, intermediate: 8, advanced: 12 },
-      'strength': { beginner: 8, intermediate: 12, advanced: 16 },
-      'flexibility': { beginner: 4, intermediate: 6, advanced: 8 },
-      'endurance': { beginner: 4, intermediate: 8, advanced: 12 },
+      'muscle gain': { beginner: 8, intermediate: 12, expert: 16 },
+      'weight loss': { beginner: 4, intermediate: 8, expert: 12 },
+      'strength': { beginner: 8, intermediate: 12, expert: 16 },
+      'flexibility': { beginner: 4, intermediate: 6, expert: 8 },
+      'endurance': { beginner: 4, intermediate: 8, expert: 12 },
     };
     const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
   try {
@@ -183,8 +183,7 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     const levelPriority = {
       beginner: ['beginner'],
       intermediate: ['intermediate', 'beginner'],
-      advanced: ['advanced', 'intermediate', 'beginner'],
-      expert: ['expert', 'advanced', 'intermediate', 'beginner']
+      expert: ['expert', 'intermediate', 'beginner']
     };
 
     const filteredExercises = allExercises.filter(ex =>
@@ -249,32 +248,55 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
       .map(async ([dayKey, muscleGroup], index) => {
         const muscleToExercisesMap = {};
         muscleGroup.forEach(muscle => {
-          muscleToExercisesMap[muscle] = filteredExercises.filter(ex =>
+          // First get all exercises that have this as primary muscle
+          const primaryExercises = filteredExercises.filter(ex =>
             ex.primaryMuscles?.includes(muscle)
           );
+          
+          // Then get exercises that have this as secondary muscle
+          const secondaryExercises = filteredExercises.filter(ex =>
+            ex.secondaryMuscles?.includes(muscle) && 
+            !primaryExercises.some(pe => pe.id === ex.id) // Don't include duplicates
+          );
+          
+          // Combine with primary exercises first
+          muscleToExercisesMap[muscle] = [...primaryExercises, ...secondaryExercises];
         });
+
+
 
         const selectedExercises = [];
         const perMuscleTarget = Math.ceil(maxExercisesPerDay / muscleGroup.length);
 
         muscleGroup.forEach(muscle => {
-          const muscleExercises = muscleToExercisesMap[muscle] || [];
+        const allMuscleExercises = muscleToExercisesMap[muscle] || [];
+        
+        // Separate primary and secondary exercises
+        const primaryExercises = allMuscleExercises.filter(ex => 
+          ex.primaryMuscles?.includes(muscle)
+        );
+        const secondaryExercises = allMuscleExercises.filter(ex => 
+          ex.secondaryMuscles?.includes(muscle)
+        );
+
+        // Try to get enough primary exercises first
+        if (primaryExercises.length >= perMuscleTarget) {
+          const shuffled = primaryExercises.sort(() => 0.5 - Math.random());
+          selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
+        } else {
+          // If not enough primary exercises, use all available primary ones
+          selectedExercises.push(...primaryExercises);
           
-          // Try to get exercises at the user's level first
-          const priorityExercises = muscleExercises.filter(
-            ex => ex.level?.toLowerCase() === level.toLowerCase()
-          );
-          
-          // If we have enough priority exercises, use those
-          if (priorityExercises.length >= perMuscleTarget) {
-            const shuffled = priorityExercises.sort(() => 0.5 - Math.random());
-            selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
-          } else {
-            // Otherwise use all priority exercises plus some from lower levels
-            const shuffledAll = muscleExercises.sort(() => 0.5 - Math.random());
-            selectedExercises.push(...shuffledAll.slice(0, perMuscleTarget));
+          // Then fill the remaining slots with secondary exercises
+          const remainingSlots = perMuscleTarget - primaryExercises.length;
+          if (remainingSlots > 0 && secondaryExercises.length > 0) {
+            const shuffledSecondary = secondaryExercises.sort(() => 0.5 - Math.random());
+            selectedExercises.push(...shuffledSecondary.slice(0, remainingSlots));
           }
-        });
+        }
+      });
+
+
 
         const finalExercises = selectedExercises
           .sort(() => 0.5 - Math.random())

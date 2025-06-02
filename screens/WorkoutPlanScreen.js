@@ -163,24 +163,25 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       const currentDayExerciseIds = currentDay.exercises.map(ex => ex.id);
 
       const alternatives = allExercises.filter(ex =>
-        // Exclude the current exercise and any other exercises already in this day's plan
         !currentDayExerciseIds.includes(ex.id) &&
         (
           ex.level?.toLowerCase() === userInput.level.toLowerCase() ||
           (userInput.level.toLowerCase() === 'intermediate' && ex.level?.toLowerCase() === 'beginner') ||
-          (userInput.level.toLowerCase() === 'advanced' && 
-          (ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner')) ||
           (userInput.level.toLowerCase() === 'expert' && 
-          (ex.level?.toLowerCase() === 'advanced' || ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner'))
+            (ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner'))
         ) &&
         (
           ex.equipment?.toLowerCase() === 'body only' ||
           ex.equipment?.toLowerCase() === 'none' ||
           normalizedEquipment.includes(ex.equipment?.toLowerCase())
         ) &&
-        ex.primaryMuscles?.some(m => currentExercise.muscles.includes(m)) &&
+        (
+          ex.primaryMuscles?.some(m => currentExercise.muscles.includes(m)) ||
+          ex.secondaryMuscles?.some(m => currentExercise.muscles.includes(m))
+        ) &&
         targetCategories.includes(ex.category?.toLowerCase())
       );
+      
 
       if (alternatives.length === 0) {
         alert('⚠️ No more alternative exercises available for this muscle group.');
