@@ -5,7 +5,7 @@
  */
 
 import { db, auth } from './firebase';
-import { collection, query, where, getDocs, doc, setDoc, addDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, addDoc, getDoc, deleteDoc, getDocs as getSubcollectionDocs } from 'firebase/firestore';
 import { formatDurationWeeks } from '../utils/planFormatters';
 
 // =============================================
@@ -31,9 +31,20 @@ const createWorkoutTimeline = async () => {
 
     // Create reference to the user's timeline document
     const workoutTimelineRef = doc(db, "workoutTimeline", userId);
-    //and this is the path to the timeline document
     
-
+    // Delete existing timeline data if it exists
+    const timelineDoc = await getDoc(workoutTimelineRef);
+    if (timelineDoc.exists()) {
+      // Delete all documents in the datedExercises subcollection
+      const datedExercisesRef = collection(workoutTimelineRef, "datedExercises");
+      const exercisesSnapshot = await getSubcollectionDocs(datedExercisesRef);
+      const deletePromises = exercisesSnapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+      
+      // Delete the main timeline document
+      await deleteDoc(workoutTimelineRef);
+      console.log('Deleted existing timeline data');
+    }
     
     // Query for existing workout plan from Taha's workoutPlanscollection
     const workoutPlansRef = collection(db, "workoutPlans");
@@ -50,25 +61,17 @@ const createWorkoutTimeline = async () => {
       console.log('Successfully retrieved workout plan:', workoutPlan);
     }
     
-    // Create the timeline document with metadata if it doesn't already exist
-    const timelineDoc = await getDoc(workoutTimelineRef);
-    if (!timelineDoc.exists()) {
-      await setDoc(workoutTimelineRef, {
-        userId: userId,
-        durationWeeks: durationWeeks,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
-
-    
+    // Create the timeline document with metadata
+    await setDoc(workoutTimelineRef, {
+      userId: userId,
+      durationWeeks: durationWeeks,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    });
 
     // Create a new subcollection for storing dated exercises
-    
     const datedExercisesRef = collection(workoutTimelineRef, "datedExercises");
     console.log('Creating new timeline document at path:', workoutTimelineRef.path);
-
-    
     
     // If a workout plan exists, migrate it to the timeline
     if (workoutPlan) {
@@ -179,10 +182,11 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
       'saturday': 6
     };
 
+    let totalSessions = 0;
+
     // Process each workout day in the plan
-    for (const workoutDay of workoutPlan) { //workoutDay is a member of the plan array in the workoutPlan document
-      const dayOfWeek = dayMap[workoutDay.dayOfWeek.toLowerCase()];  //dayOfWeek is the literal dayOfWeek key in the workoutPlan document, mapped to the values listed in the dayMap object above
-      
+    for (const workoutDay of workoutPlan) {
+      const dayOfWeek = dayMap[workoutDay.dayOfWeek.toLowerCase()];
       
       // Generate dates for this workout day within the duration
       let currentDate = new Date(startDate);
@@ -193,8 +197,8 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
           
           await setDoc(doc(datedExercisesRef, dateStr), {
             date: dateStr,
-            programId: workoutDay.programId || 'default', //default is the default programId if no programId is provided or until it comes in handy later
-            completionStatus: "incomplete", //incomplete is the default completion status until the user completes the day's workout
+            programId: workoutDay.programId || 'default',
+            completionStatus: "incomplete",
             exercises: workoutDay.exercises.map(exercise => ({
               exerciseName: exercise.name,
               instructions: exercise.steps || [],
@@ -202,12 +206,31 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
               suggestedSets: exercise.sets,
               weight: 0,
               reps: 0,
-              sets: 0, //sets, reps, and weight are 0 until the user completes the day's workout and fills in the reps and sets
-              restTime: exercise.restTime || '60s' //60 seconds is the default rest time if no rest time is provided
+              sets: 0,
+              restTime: exercise.restTime || '60s'
             }))
           });
+          totalSessions++;
         }
         currentDate.setDate(currentDate.getDate() + 1);
+      }
+    }
+
+    // Update totalSessions in UserDetails
+    const userId = auth.currentUser?.uid;
+    if (userId) {
+      const userRef = doc(db, 'UserDetails', userId);
+      const userDoc = await getDoc(userRef);
+      
+      if (userDoc.exists()) {
+        await setDoc(userRef, {
+          ...userDoc.data(),
+          totalSessions: totalSessions
+        });
+      } else {
+        await setDoc(userRef, {
+          totalSessions: totalSessions
+        });
       }
     }
     
@@ -255,4 +278,4 @@ TODO: Implement the following functions:
    - Returns: success status
 */
 
-export { createWorkoutTimeline, getWorkoutTimeline };
+export { createWorkoutTimeline, getWorkoutTimeline }; 

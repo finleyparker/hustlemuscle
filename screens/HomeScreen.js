@@ -7,7 +7,8 @@ import { db, auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { doc, getDoc } from 'firebase/firestore';
-import { runDailyTask, testRunDailyTask } from '../utils/syncWorkoutSchedule';  
+import { runDailyTask, testRunDailyTask } from '../utils/syncWorkoutSchedule';
+import ProgressBar from '../components/ProgressBar';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -265,25 +266,20 @@ const HomeScreen = () => {
         >
           <Text style={styles.testButtonText}>Test Date Shift</Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => {
+            const userId = auth.currentUser?.uid;
+            console.log('Current User ID:', userId);
+          }}
+        >
+          <Text style={styles.testButtonText}>Print User ID</Text>
+        </TouchableOpacity>
       </View>
 
       {/* My Progress Panel */}
-      <TouchableOpacity
-        style={styles.progressPanel}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('WorkoutHistory')}
-      >
-        <View style={styles.progressPanelHeader}>
-          <Text style={styles.progressPanelLabel}>My Progress</Text>
-          <Ionicons name="chevron-forward" size={22} color="#fff" />
-        </View>
-        <LinearGradient
-          colors={['#a18fff', '#e0d7ff', '#fff']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.progressBar}
-        />
-      </TouchableOpacity>
+      <ProgressBar onPress={() => navigation.navigate('WorkoutHistory')} />
     </ScrollView>
   );
 };
@@ -382,37 +378,6 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 30.5,
     fontWeight: 'bold',
-  },
-  progressPanel: {
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    marginTop: 8,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-    gap: 12,
-  },
-  progressPanelHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-    
-  },
-  progressPanelLabel: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  progressBar: {
-    height: 14,
-    borderRadius: 7,
-    width: '100%',
   },
   statsContainer: {
     flexDirection: 'row',

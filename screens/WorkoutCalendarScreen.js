@@ -18,6 +18,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   const [days, setDays] = useState('');
   const [markedDates, setMarkedDates] = useState({});
   const [exercises, setExercises] = useState([]);
+  const [selectedDayExercises, setSelectedDayExercises] = useState([]);
   
   const hasFetchedData = useRef(false);
 
@@ -29,6 +30,15 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       console.log("Timeline data received:", timelineData);
       
       if (timelineData && timelineData.exercises) {
+        // Log the structure of the first exercise to see all available fields
+        if (timelineData.exercises.length > 0) {
+          console.log("First exercise document structure:", {
+            id: timelineData.exercises[0].id,
+            allFields: timelineData.exercises[0],
+            exercisesArray: timelineData.exercises[0].exercises
+          });
+        }
+        
         setMarkedDates(timelineData.markedDates || {});
         setExercises(timelineData.exercises || []);
         
@@ -81,14 +91,43 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   );
 
   const handleDayPress = (day) => {
+    console.log("Day pressed:", day.dateString);
     setSelected(day.dateString);
     // Find the exercises for this day
-    const dayExercises = exercises.find(e => e.id === day.dateString);
+    const dayExercises = exercises.find(e => e.date === day.dateString); //here we find the exercises for the day by date field
+    console.log("Found exercises for day:", {
+      searchedDate: day.dateString,
+      foundExercise: dayExercises ? {
+        id: dayExercises.id,
+        date: dayExercises.date,
+        exercisesCount: dayExercises.exercises.length
+      } : null
+    });
     if (dayExercises) {
+      setSelectedDayExercises(dayExercises.exercises);
       setShowWorkoutDetails(true);
-      // You can add logic here to show the exercises in a modal
     }
   };
+
+  const ExerciseCard = ({ exercise }) => (
+    <View style={styles.exerciseCard}>
+      <Text style={styles.exerciseName}>{exercise.exerciseName}</Text>
+      <View style={styles.exerciseDetails}>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Sets</Text>
+          <Text style={styles.detailValue}>{exercise.suggestedSets}</Text>
+        </View>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Reps</Text>
+          <Text style={styles.detailValue}>{exercise.suggestedReps}</Text>
+        </View>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Rest</Text>
+          <Text style={styles.detailValue}>{exercise.restTime}</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -146,6 +185,35 @@ const WorkoutCalendarScreen = ({ navigation }) => {
           ))}
         </ScrollView>
       )}
+
+      {/* Exercise Details Modal */}
+      <Modal
+        visible={showWorkoutDetails}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowWorkoutDetails(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selected ? new Date(selected).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''}
+              </Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowWorkoutDetails(false)}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.exercisesList}>
+              {selectedDayExercises.map((exercise, index) => (
+                <ExerciseCard key={index} exercise={exercise} />
+              ))}
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 };
@@ -221,7 +289,7 @@ const styles = StyleSheet.create({
   exercisesList: {
     marginTop: 10,
   },
-  exerciseItem: {
+  exerciseCard: {
     backgroundColor: '#2C2C2E',
     borderRadius: 12,
     padding: 15,
@@ -231,19 +299,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   exerciseDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  exerciseSets: {
-    color: '#aaa',
-    fontSize: 16,
+  exerciseDetail: {
+    alignItems: 'center',
   },
-  exerciseReps: {
-    color: '#aaa',
+  detailLabel: {
+    color: '#8E8E93',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  detailValue: {
+    color: '#fff',
     fontSize: 16,
+    fontWeight: '500',
   },
 });
 
