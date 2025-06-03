@@ -5,7 +5,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';  
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan, extractDaysFromPlan, formatPlanDaysWithExercises, formatDayOfWeek } from '../utils/planFormatters';
-import getWorkoutTimeline from '../database/WorkoutTimeline';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
+import { useFocusEffect } from '@react-navigation/native';
 
 const WorkoutCalendarScreen = ({ navigation }) => {
   const [selected, setSelected] = useState('');
@@ -21,13 +22,15 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   const hasFetchedData = useRef(false);
 
   const fetchTimeline = useMemo(() => async () => {
+    console.log("Fetching timeline data...");
     setIsLoading(true);
     try {
       const timelineData = await getWorkoutTimeline();
+      console.log("Timeline data received:", timelineData);
       
-      if (timelineData) {
-        setMarkedDates(timelineData.markedDates);
-        setExercises(timelineData.exercises);
+      if (timelineData && timelineData.exercises) {
+        setMarkedDates(timelineData.markedDates || {});
+        setExercises(timelineData.exercises || []);
         
         // Format the exercises for display
         const formattedDays = timelineData.exercises.map(exercise => {
@@ -48,6 +51,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
           setEndDate(end.toLocaleDateString());
         }
       } else {
+        console.log("No timeline data or exercises found");
         setDays([]);
         setMarkedDates({});
         setExercises([]);
@@ -57,14 +61,24 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       }
     } catch (error) {
       console.error('Error fetching timeline:', error);
+      setDays([]);
+      setMarkedDates({});
+      setExercises([]);
+      setPlanName('Error Loading Timeline');
+      setStartDate('Error');
+      setEndDate('Error');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchTimeline();
-  }, [fetchTimeline]);
+  // Use useFocusEffect to refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("Screen focused, refreshing timeline data...");
+      fetchTimeline();
+    }, [fetchTimeline])
+  );
 
   const handleDayPress = (day) => {
     setSelected(day.dateString);

@@ -16,6 +16,10 @@ const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, d
   try {
     const workoutSessionsCollection = collection(db, 'workout_sessions');
     const sessionId = sessionName.toLowerCase().replace('day_', '').replace('_', '');
+    const planId = `plan_${userId}`;
+    console.log('\n=== WORKOUT PLAN ID ===');
+    console.log(planId);
+    console.log('=====================\n');
 
     // Validate and format dates
     const validDates = (dates || []).map(date => {
@@ -134,8 +138,8 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     startDate = new Date(); // Fallback to current date if invalid
   }
 
-
   const userId = currentUser.uid;
+  console.log('Plan ID:', `plan_${userId}`);
 
   const userInput = await getUserDetailsFromUserDetailsCollection(userId);
   if (!userInput) {

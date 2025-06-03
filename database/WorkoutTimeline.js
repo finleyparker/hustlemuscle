@@ -129,7 +129,7 @@ const getWorkoutTimeline = async () => {
     // Create marked dates object for the calendar
     const markedDates = {};
     exercises.forEach(exercise => {
-      markedDates[exercise.id] = {
+      markedDates[exercise.date] = {
         marked: true,
         dotColor: '#ff5e69',
         selected: true,
@@ -255,5 +255,4 @@ TODO: Implement the following functions:
    - Returns: success status
 */
 
-export { createWorkoutTimeline };
-export default getWorkoutTimeline;
+export { createWorkoutTimeline, getWorkoutTimeline };

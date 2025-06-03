@@ -7,7 +7,7 @@ import { db, auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { doc, getDoc } from 'firebase/firestore';
-import { runDailyTask } from '../utils/syncWorkoutSchedule';  
+import { runDailyTask, testRunDailyTask } from '../utils/syncWorkoutSchedule';  
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -59,23 +59,31 @@ const HomeScreen = () => {
       },
     ]);
 
-  // Update date at midnight
+  // Run daily task when date changes
   useEffect(() => {
-    const checkDate = () => {
-      const newDate = new Date().toISOString().split('T')[0];
+    const checkDate = async () => {
+      console.log("Checking date...");
+      const newDate = new Date().toISOString().slice(0, 10);
+      console.log("Current date in state:", currentDate);
+      console.log("New date:", newDate);
+      
       if (newDate !== currentDate) {
+        console.log("Date changed, updating state...");
         setCurrentDate(newDate);
-        runDailyTask();
+      } else {
+        console.log("Date hasn't changed");
       }
     };
 
-    // Check immediately
+    console.log("Setting up daily task check...");
+    // Check immediately and then every minute
     checkDate();
-
-    // Set up interval to check every minute
     const interval = setInterval(checkDate, 60000);
 
-    return () => clearInterval(interval);
+    return () => {
+      console.log("Cleaning up interval");
+      clearInterval(interval);
+    };
   }, [currentDate]);
 
   const today = useMemo(() => new Date(), [currentDate]); // Update today when date changes
@@ -228,13 +236,36 @@ const HomeScreen = () => {
         </View>
       </View>
 
-      {/* Test Button */}
-      <TouchableOpacity
-        style={styles.testButton}
-        onPress={() => navigation.navigate('TestWorkoutTimeline')}
-      >
-        <Text style={styles.testButtonText}>Test Workout Timeline</Text>
-      </TouchableOpacity>
+      {/* Test Buttons */}
+      <View style={styles.testButtonsContainer}>
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => navigation.navigate('TestWorkoutTimeline')}
+        >
+          <Text style={styles.testButtonText}>Test Workout Timeline</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={async () => {
+            console.log("Manually triggering test task...");
+            try {
+              const result = await testRunDailyTask();
+              console.log("Test task completed:", result);
+              if (result && result.success) {
+                // Navigate to calendar to refresh it
+                navigation.navigate('WorkoutCalendar');
+              } else {
+                console.log("Test task did not complete successfully:", result?.message || "Unknown error");
+              }
+            } catch (error) {
+              console.error("Error running test task:", error);
+            }
+          }}
+        >
+          <Text style={styles.testButtonText}>Test Date Shift</Text>
+        </TouchableOpacity>
+      </View>
 
       {/* My Progress Panel */}
       <TouchableOpacity
@@ -405,12 +436,15 @@ const styles = StyleSheet.create({
     color: '#8E8E93',
     fontSize: 14,
   },
+  testButtonsContainer: {
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
   testButton: {
     backgroundColor: '#2C2C2E',
     borderRadius: 12,
     padding: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
     alignItems: 'center',
   },
   testButtonText: {
