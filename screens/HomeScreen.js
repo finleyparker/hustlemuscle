@@ -7,6 +7,7 @@ import { db, auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { doc, getDoc } from 'firebase/firestore';
+import { runDailyTask } from '../utils/syncWorkoutSchedule';  
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -14,6 +15,7 @@ const HomeScreen = () => {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -57,7 +59,26 @@ const HomeScreen = () => {
       },
     ]);
 
-  const today = useMemo(() => new Date(), []);
+  // Update date at midnight
+  useEffect(() => {
+    const checkDate = () => {
+      const newDate = new Date().toISOString().split('T')[0];
+      if (newDate !== currentDate) {
+        setCurrentDate(newDate);
+        runDailyTask();
+      }
+    };
+
+    // Check immediately
+    checkDate();
+
+    // Set up interval to check every minute
+    const interval = setInterval(checkDate, 60000);
+
+    return () => clearInterval(interval);
+  }, [currentDate]);
+
+  const today = useMemo(() => new Date(), [currentDate]); // Update today when date changes
 
   const weekDays = useMemo(() => {
     const days = [];
