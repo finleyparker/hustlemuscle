@@ -73,53 +73,50 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     const loadPlan = async () => {
       try {
         const workoutPlansCollection = collection(db, 'workoutPlans');
-        
-        
-  
-        // Adding multiple fields to the query
         const userInputKey = createUserInputKey(userInput);
-          const q = query(
-            workoutPlansCollection, 
-            where('userId', '==', userId),
-            where('userInputKey', '==', userInputKey)
-          );
-
-  
+        
+        // Query for existing document
+        const q = query(
+          workoutPlansCollection, 
+          where('userId', '==', userId),
+          where('userInputKey', '==', userInputKey)
+        );
         const querySnapshot = await getDocs(q);
-  
-        if (!querySnapshot.empty) {
-        const existingDoc = querySnapshot.docs[0].data();
 
-        // Just load the existing plan without regenerating
-        setPlan(existingDoc.plan);
-        setWarnings(existingDoc.warnings || []);
-        setDurationWeeks(existingDoc.durationWeeks || null);
-        setPlanName(existingDoc.planName || '');
-
-
-
-      } else {
-        // No doc found - generate and create new
-        const startDate = new Date(); 
+        const startDate = new Date();
         const generated = await generateWorkoutPlan(userInput, userId, startDate);
+
+        if (!querySnapshot.empty) {
+          // Update existing document
+          const existingDoc = querySnapshot.docs[0];
+          await updateDoc(existingDoc.ref, {
+            plan: generated.plan,
+            warnings: generated.warnings || [],
+            durationWeeks: generated.durationWeeks,
+            planName: generated.planName,
+            updatedAt: startDate,
+            userInput, // Update the userInput in case it changed
+          });
+        } else {
+          // Create new document if none exists
+          await addDoc(workoutPlansCollection, {
+            userId: userId,
+            userInput,
+            userInputKey,
+            plan: generated.plan,
+            warnings: generated.warnings || [],
+            durationWeeks: generated.durationWeeks,
+            planName: generated.planName,
+            createdAt: startDate,
+            updatedAt: startDate,
+          });
+        }
+
+        // Update the state with the new plan
         setPlan(generated.plan);
         setWarnings(generated.warnings || []);
         setDurationWeeks(generated.durationWeeks || null);
         setPlanName(generated.planName || '');
-
-        await addDoc(workoutPlansCollection, {
-          userId: userId,
-          userInput,
-          userInputKey,
-          plan: generated.plan,
-          warnings: generated.warnings || [],
-          durationWeeks: generated.durationWeeks,
-          planName: generated.planName,
-          createdAt: startDate,
-          updatedAt: startDate,
-        });
-      }
-
 
       } catch (error) {
         console.error('Failed to retrieve or generate plan:', error);
@@ -127,9 +124,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         setLoading(false);
       }
     };
-  
+
     loadPlan();
-    
   }, [userInput, userInputReady, userId]);
   
 
