@@ -154,6 +154,9 @@ export default function App() {
         <>
           <Text style={styles.title}>Dietary Restrictions: {userDietRestriction}</Text>
           <Text style={styles.totalCalories}>
+            View meals based on your dietary restrictions and goals.
+          </Text>
+          <Text style={styles.totalCalories}>
             Total Calories Consumed: {totalCalories}
           </Text>
 
@@ -170,6 +173,7 @@ export default function App() {
                     : 'No ingredients listed.'}
                 </Text>
                 <Text>Calories: {item.calories}</Text>
+                <Text>Protein: {item.protein}g  |  Carbs: {item.carbs}g  |  Fat: {item.fat}g</Text>
                 <View style={styles.selectbutton}>
                 <Button
                   title="Select"
@@ -214,7 +218,6 @@ const styles = StyleSheet.create({
     color: 'white',
   },
   subtitle: {
-    marginLeft: 10,
     color: 'gray',
   },
   mealCard: {
