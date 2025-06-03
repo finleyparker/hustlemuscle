@@ -258,9 +258,13 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       const newStartDate = new Date();
-      const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
+      console.log('Starting plan regeneration...');
+      console.log('Current userInput:', userInput);
+      console.log('Current userInputKey:', createUserInputKey(userInput));
       
-
+      const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
+      console.log('Generated plan:', generated.plan);
+      
       setPlan(generated.plan);
       setWarnings(generated.warnings || []);
       setDurationWeeks(generated.durationWeeks || null);
@@ -276,10 +280,12 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         where('userInputKey', '==', userInputKey)
       );
       const planSnap = await getDocs(planQuery);
+      console.log('Found existing plans:', planSnap.size);
 
       if (!planSnap.empty) {
         // Update existing document
         const planDoc = planSnap.docs[0];
+        console.log('Updating existing plan with ID:', planDoc.id);
         await updateDoc(planDoc.ref, {
           plan: generated.plan,
           warnings: generated.warnings || [],
@@ -287,9 +293,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           planName: generated.planName,
           updatedAt: newStartDate,
         });
+        console.log('Plan updated successfully');
       } else {
+        console.log('No existing plan found, creating new one');
         // Create new document if none exists (fallback)
-        await addDoc(workoutPlansRef, {
+        const newDoc = await addDoc(workoutPlansRef, {
           userId: userId,
           userInput,
           userInputKey,
@@ -300,14 +308,15 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           createdAt: newStartDate,
           updatedAt: newStartDate,
         });
+        console.log('New plan created with ID:', newDoc.id);
       }
     } catch (error) {
-    console.error('Failed to regenerate workout plan:', error);
-    Alert.alert('Error', 'Failed to regenerate workout plan. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+      console.error('Failed to regenerate workout plan:', error);
+      Alert.alert('Error', 'Failed to regenerate workout plan. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 

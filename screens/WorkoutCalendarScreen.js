@@ -180,6 +180,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       </View>
 
       {/* Display formatted plan days string */}
+      <Text style={styles.sectionTitle}>Workout Schedule</Text>
       {days && Array.isArray(days) && days.length > 0 && (
         <ScrollView style={{ marginTop: 24, backgroundColor: '#18181A', borderRadius: 12, padding: 16, maxHeight: 200 }}>
           {days.map((line, idx) => (

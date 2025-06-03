@@ -207,6 +207,14 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* Test Button */}
+      <TouchableOpacity
+        style={styles.testButton}
+        onPress={() => navigation.navigate('TestWorkoutTimeline')}
+      >
+        <Text style={styles.testButtonText}>Test Workout Timeline</Text>
+      </TouchableOpacity>
+
       {/* My Progress Panel */}
       <TouchableOpacity
         style={styles.progressPanel}
@@ -375,6 +383,19 @@ const styles = StyleSheet.create({
   statLabel: {
     color: '#8E8E93',
     fontSize: 14,
+  },
+  testButton: {
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    padding: 16,
+    marginHorizontal: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
