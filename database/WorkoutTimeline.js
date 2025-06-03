@@ -5,8 +5,10 @@
  */
 
 import { db, auth } from './firebase';
-import { collection, query, where, getDocs, doc, setDoc, addDoc, getDoc, deleteDoc, getDocs as getSubcollectionDocs } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, addDoc, getDoc, deleteDoc, getDocs as getSubcollectionDocs, updateDoc } from 'firebase/firestore';
 import { formatDurationWeeks } from '../utils/planFormatters';
+import { clearTodaysSessionCache } from '../utils/cacheManager';
+
 
 // =============================================
 // Current Functions
@@ -56,7 +58,9 @@ const createWorkoutTimeline = async () => {
     let workoutPlan = null; //workoutplan equals null if no workout plan exists
     if (!querySnapshot.empty) { //if there is a workout plan
       const data = querySnapshot.docs[0].data();
-      durationWeeks = formatDurationWeeks(data.durationWeeks);
+      console.log('Raw durationWeeks from workout plan:', data.durationWeeks);
+      durationWeeks = formatDurationWeeks(data.durationWeeks);  // Format the duration weeks
+      console.log('Formatted durationWeeks:', durationWeeks);
       workoutPlan = data.plan;  // here we take the plan array from the workoutPlan document for looping over the days of the week in the migrateWorkoutPlanToTimeline function
       console.log('Successfully retrieved workout plan:', workoutPlan);
     }
@@ -64,7 +68,7 @@ const createWorkoutTimeline = async () => {
     // Create the timeline document with metadata
     await setDoc(workoutTimelineRef, {
       userId: userId,
-      durationWeeks: durationWeeks,
+      durationWeeks: durationWeeks,  // This will now be the formatted value
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -198,6 +202,7 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
           await setDoc(doc(datedExercisesRef, dateStr), {
             date: dateStr,
             programId: workoutDay.programId || 'default',
+            workoutTitle: workoutDay.day || '',
             completionStatus: "incomplete",
             exercises: workoutDay.exercises.map(exercise => ({
               exerciseName: exercise.name,
@@ -216,6 +221,8 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
       }
     }
 
+    await clearTodaysSessionCache();
+
     // Update totalSessions in UserDetails
     const userId = auth.currentUser?.uid;
     if (userId) {
@@ -223,8 +230,7 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
       const userDoc = await getDoc(userRef);
       
       if (userDoc.exists()) {
-        await setDoc(userRef, {
-          ...userDoc.data(),
+        await updateDoc(userRef, {
           totalSessions: totalSessions
         });
       } else {

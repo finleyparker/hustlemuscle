@@ -1,11 +1,32 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
+import { doc, getDoc } from 'firebase/firestore';
+import { db, auth } from '../database/firebase';
 
 const ProgressBar = ({ onPress }) => {
   const [completedSessions, setCompletedSessions] = useState(0);
-  const totalSessions = 12;
+  const [totalSessions, setTotalSessions] = useState(0);
+
+  useEffect(() => {
+    const fetchTotalSessions = async () => {
+      try {
+        const userId = auth.currentUser?.uid;
+        if (userId) {
+          const userRef = doc(db, 'UserDetails', userId);
+          const userDoc = await getDoc(userRef);
+          if (userDoc.exists()) {
+            setTotalSessions(userDoc.data().totalSessions || 0);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching total sessions:', error);
+      }
+    };
+
+    fetchTotalSessions();
+  }, []);
 
   const handleIncrement = () => {
     if (completedSessions < totalSessions) {
@@ -13,7 +34,7 @@ const ProgressBar = ({ onPress }) => {
     }
   };
 
-  const progressPercentage = (completedSessions / totalSessions) * 100;
+  const progressPercentage = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
 
   return (
     <TouchableOpacity
@@ -24,7 +45,10 @@ const ProgressBar = ({ onPress }) => {
       <View style={styles.progressPanelHeader}>
         <View>
           <Text style={styles.progressPanelLabel}>My Progress</Text>
-          <Text style={styles.sessionCount}>{completedSessions}/{totalSessions} Sessions Complete</Text>
+          <Text style={styles.sessionCount}>
+            {Math.round(progressPercentage)}% Complete{'\n'}
+            Out of {totalSessions} Sessions
+          </Text>
         </View>
         <Ionicons name="chevron-forward" size={22} color="#fff" />
       </View>

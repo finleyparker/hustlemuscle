@@ -8,6 +8,22 @@ import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan, extra
 import { getWorkoutTimeline } from '../database/WorkoutTimeline';
 import { useFocusEffect } from '@react-navigation/native';
 
+export const getTodaysWorkout = (exercises) => {
+  const today = new Date().toISOString().split('T')[0];
+  console.log('Looking for workout on date:', today);
+  console.log('Available exercises:', JSON.stringify(exercises, null, 2));
+  console.log('Exercise dates:', exercises.map(e => e.date));
+  const dayExercises = exercises.find(e => {
+    console.log('Comparing:', { exerciseDate: e.date, today });
+    return e.date === today;
+  });
+  console.log('Found day exercises:', dayExercises);
+  return dayExercises ? {
+    exercises: dayExercises.exercises,
+    day: dayExercises.workoutTitle || 'Workout'
+  } : { exercises: [], day: '' };
+};
+
 const WorkoutCalendarScreen = ({ navigation }) => {
   const [selected, setSelected] = useState('');
   const [showWorkoutDetails, setShowWorkoutDetails] = useState(false);

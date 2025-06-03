@@ -9,6 +9,9 @@ import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { doc, getDoc } from 'firebase/firestore';
 import { runDailyTask, testRunDailyTask } from '../utils/syncWorkoutSchedule';
 import ProgressBar from '../components/ProgressBar';
+import { getTodaysWorkout } from './WorkoutCalendarScreen';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
+import { loadFromCache, saveToCache, createCacheKey, CACHE_DURATIONS } from '../utils/cacheManager';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -17,6 +20,9 @@ const HomeScreen = () => {
   const [selectedDate, setSelectedDate] = useState(null);
   const [totalCalories, setTotalCalories] = useState(0);
   const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [exercises, setExercises] = useState([]);
+  const [todaysSession, setTodaysSession] = useState('');
+  const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -29,6 +35,22 @@ const HomeScreen = () => {
     };
 
     fetchUserName();
+  }, []);
+
+  // Fetch workout timeline data
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          setExercises(timelineData.exercises);
+        }
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+      }
+    };
+
+    fetchTimeline();
   }, []);
 
   useEffect(() => {
@@ -123,6 +145,44 @@ const HomeScreen = () => {
     console.log('Selected date:', date);
   };
 
+  // Cache today's session title
+  useEffect(() => {
+    const fetchTodaysSession = async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      console.log('Fetching today\'s session for date:', todayStr);
+      const cacheKey = createCacheKey('todays_session', todayStr);
+      const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
+      // Try to load from cache (1 day duration)
+      const cached = await loadFromCache(cacheKey, timestampKey, CACHE_DURATIONS.LONG);
+      console.log('Cached session data:', cached);
+      if (cached) {
+        setTodaysSession(cached);
+      } else {
+        // Fallback: get exercises and session title
+        let sessionTitle = '';
+        try {
+          const timelineData = await getWorkoutTimeline();
+          console.log('Timeline data:', timelineData);
+          if (timelineData && timelineData.exercises) {
+            const { day } = getTodaysWorkout(timelineData.exercises);
+            console.log('Today\'s workout day:', day);
+            sessionTitle = day || '';
+          }
+        } catch (e) {
+          console.error('Error fetching timeline data:', e);
+          sessionTitle = '';
+        }
+        console.log('Setting session title:', sessionTitle);
+        setTodaysSession(sessionTitle);
+        await saveToCache(cacheKey, timestampKey, sessionTitle);
+      }
+    };
+    fetchTodaysSession();
+  }, [currentDate, sessionCacheBuster]);
+
+  // Expose a function to trigger a session refetch after plan shift
+  const triggerSessionRefetch = () => setSessionCacheBuster(b => b + 1);
+
   return (
     <ScrollView style={styles.container}>
       
@@ -196,9 +256,19 @@ const HomeScreen = () => {
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
           style={styles.cardGradient}
         >
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Workout</Text>
-            <Ionicons name="chevron-forward" size={24} color="white" />
+          <View style={styles.cardContentRow}>
+            <View style={styles.cardContentColumn}>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>Workout</Text>
+                <Ionicons name="chevron-forward" size={25} color="white" style={styles.chevronIcon} />
+              </View>
+              {todaysSession ? (
+                <View style={styles.sessionRow}>
+                  <Text style={styles.sessionLabel}>TODAY'S SESSION:</Text>
+                  <Text style={styles.sessionValue}> {todaysSession}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -249,19 +319,8 @@ const HomeScreen = () => {
         <TouchableOpacity
           style={styles.testButton}
           onPress={async () => {
-            console.log("Manually triggering test task...");
-            try {
-              const result = await testRunDailyTask();
-              console.log("Test task completed:", result);
-              if (result && result.success) {
-                // Navigate to calendar to refresh it
-                navigation.navigate('WorkoutCalendar');
-              } else {
-                console.log("Test task did not complete successfully:", result?.message || "Unknown error");
-              }
-            } catch (error) {
-              console.error("Error running test task:", error);
-            }
+            await testRunDailyTask();
+            triggerSessionRefetch();
           }}
         >
           <Text style={styles.testButtonText}>Test Date Shift</Text>
@@ -369,15 +428,50 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  cardContent: {
+  cardContentRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    flex: 1,
+    paddingRight: 8,
+  },
+  cardContentColumn: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   cardTitle: {
     color: '#FFFFFF',
-    fontSize: 30.5,
+    fontSize: 22,
     fontWeight: 'bold',
+  },
+  sessionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 4,
+    flexWrap: 'nowrap',
+  },
+  sessionLabel: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1,
+  },
+  sessionValue: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '400',
+    marginLeft: 4,
+    letterSpacing: 1,
+    minWidth: 0,
+  },
+  chevronIcon: {
+    marginLeft: 12,
   },
   statsContainer: {
     flexDirection: 'row',

@@ -1,6 +1,7 @@
 import { db, auth } from '../database/firebase';
 import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { clearCache, createCacheKey, clearTodaysSessionCache } from '../utils/cacheManager';
 
 const runDailyTask = async (testDate = null) => {
     try {
@@ -11,6 +12,15 @@ const runDailyTask = async (testDate = null) => {
             console.log("No user found");
             return { success: false, message: "No user found" };
         }
+
+        const handlePlanShift = async () => {
+            const todayStr = new Date().toISOString().split('T')[0];
+            const cacheKey = createCacheKey('todays_session', todayStr);
+            const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
+            await clearCache(cacheKey, timestampKey);
+            // Optionally, trigger a refetch or update state to force UI refresh
+        };
+
 
         // Use testDate if provided, otherwise use current date
         const today = testDate ? new Date(testDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
@@ -71,6 +81,9 @@ const runDailyTask = async (testDate = null) => {
                 }
 
                 console.log(`Successfully shifted all incomplete exercises forward by ${daysLate} days`);
+                // Clear today's session cache
+                await clearTodaysSessionCache();
+
                 return { success: true, message: `Shifted exercises forward by ${daysLate} days` };
             }
         } else {
