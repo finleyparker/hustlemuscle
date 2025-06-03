@@ -295,6 +295,7 @@ const UpdateMetricsScreen = () => {
               { label: 'Vegan', value: 'Vegan' },
               { label: 'Gluten-Free', value: 'Gluten-Free' },
               { label: 'Dairy-Free', value: 'Dairy-Free' },
+              { label: 'Pescatarian', value: 'Pescatarian' },
               { label: 'No Restrictions', value: 'None' },
             ].map((option) => (
               <TouchableOpacity
