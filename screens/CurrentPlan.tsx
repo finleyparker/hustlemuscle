@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, Button } from 'react-native';
+import { View, Text, FlatList, StyleSheet, Button, Alert } from 'react-native';
 import { collection, getDocs, doc, getDoc, updateDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../database/firebase';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -28,7 +28,7 @@ interface DietPlan {
 }
 
 export default function App() {
-  const [hello, setHello] = useState<FoodItem[]>([]);
+  const [meal, setMeal] = useState<FoodItem[]>([]);
   const [userId, setUserId] = useState<string | null>(null);
   const [userDietRestriction, setUserDietRestriction] = useState<string>('');
   const [totalCalories, setTotalCalories] = useState<number>(0);
@@ -37,7 +37,7 @@ export default function App() {
   const [totalCarbs, setTotalCarbs] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  useEffect(() => {
+  useEffect(() => { //get user id of person signed in
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
         setUserId(user.uid);
@@ -52,7 +52,7 @@ export default function App() {
   useEffect(() => {
     if (!userId) return;
 
-    const fetchUserDiet = async () => {
+    const fetchUserDiet = async () => { // Fetch the user's diet plan from Firestore
       try {
         const dietPlanDocRef = doc(db, 'UserDetails', userId);
         const dietPlanDoc = await getDoc(dietPlanDocRef);
@@ -63,34 +63,37 @@ export default function App() {
           setTotalCalories(dietPlanData.totalCalories || 0);
         } else {
           console.log('No diet plan found for this user');
+          Alert.alert("Alert Title","No diet plan found for this user",[{ text: "OK"}]);
         }
       } catch (error) {
         console.error('Error fetching user diet plan:', error);
+        Alert.alert("Alert Title","Error fetching user diet plan",[{ text: "OK"}]);
       }
     };
 
-    const fetchHello = async () => {
+    const fetchMeals = async () => { // Fetch meals from Firestore
       try {
         const querySnapshot = await getDocs(collection(db, 'meals'));
-        const helloData: FoodItem[] = [];
+        const mealData: FoodItem[] = [];
         querySnapshot.forEach((doc) => {
-          helloData.push({ id: doc.id, ...doc.data() } as FoodItem);
+          mealData.push({ id: doc.id, ...doc.data() } as FoodItem);
         });
-        setHello(helloData);
+        setMeal(mealData);
       } catch (error) {
         console.error('Error loading meals: ', error);
+        Alert.alert("Alert Title","Error loading meals",[{ text: "OK"}]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchUserDiet();
-    fetchHello();
+    fetchMeals();
   }, [userId]);
 
-  const filteredDiet = userDietRestriction === 'None'
-    ? hello
-    : hello.filter(item => item.type === userDietRestriction);
+  const filteredDiet = userDietRestriction === 'None' // If no dietary restrictions, show all meals
+    ? meal
+    : meal.filter(item => item.type === userDietRestriction); // Filter meals based on user's dietary restrictions
 
   const handleSelectMeal = async (
     calories: number,
@@ -101,9 +104,11 @@ export default function App() {
   ) => {
     if (!userId) {
       console.error('User ID is undefined');
+      Alert.alert("Alert Title","User ID is undefined",[{ text: "OK"}]);
       return;
     }
 
+    // Update the total calories and macros
     const newTotal = totalCalories + calories;
     const newProtein = totalProtein + protein;
     const newFat = totalFat + fat;
@@ -126,7 +131,7 @@ export default function App() {
         carbs: number;
       }[] = [];
 
-      if (docSnap.exists()) {
+      if (docSnap.exists()) { // If the diet plan document exists, update the selected meals
         const data = docSnap.data() as DietPlan;
         const currentMeals = data.selectedMeals || [];
         updatedMeals = [...currentMeals, { name: title, calories, protein, fat, carbs }];
@@ -134,15 +139,16 @@ export default function App() {
         updatedMeals = [{ name: title, calories, protein, fat, carbs }];
       }
 
-      await setDoc(dietPlanRef, {
+      await setDoc(dietPlanRef, { // Update the diet plan with new total calories and selected meals
         totalCalories: newTotal,
         totalProtein: newProtein,
         totalFat: newFat,
         totalCarbs: newCarbs,
         selectedMeals: updatedMeals,
-      }, { merge: true });
+      }, { merge: true }); //add merge to avoid overwriting the entire document
     } catch (error) {
       console.error('Error updating meal selection:', error);
+      Alert.alert("Alert Title","Error updating meal selection",[{ text: "OK"}]);
     }
   };
 
