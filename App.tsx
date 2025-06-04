@@ -12,6 +12,7 @@ import SessionListScreen from './screens/SessionListScreen';
 import WorkoutLogScreen from './screens/WorkoutLogScreen';
 import WorkoutHistoryScreen from './screens/WorkoutHistoryScreen';
 import WorkoutScreen from './screens/WorkoutScreen';
+import TestWorkoutTimeline from './screens/TestWorkoutTimeline';
 
 //main app screens
 import AuthScreen from './screens/AuthScreen';
@@ -86,8 +87,7 @@ export default function App() {
                 <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
                 <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
                 <Stack.Screen name="Workout" component={WorkoutScreen} />
-
-
+                <Stack.Screen name="TestWorkoutTimeline" component={TestWorkoutTimeline} />
             </Stack.Navigator>
         </NavigationContainer>
     );
