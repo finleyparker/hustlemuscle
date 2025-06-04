@@ -453,13 +453,9 @@ const styles = StyleSheet.create({
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
-<<<<<<< HEAD
     marginTop: 4,
-    flexWrap: 'nowrap',
-=======
     marginBottom: 12,
-
->>>>>>> 94aeb2736a6334c4ef6955b93ee2a409dda89a81
+    flexWrap: 'nowrap',
   },
   sessionLabel: {
     color: '#fff',
