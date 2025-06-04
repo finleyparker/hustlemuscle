@@ -60,9 +60,11 @@ const WorkoutScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <Text style={styles.heading}>No workouts available</Text>
-          <Text style={styles.noWorkoutText}>
-            Start a new workout plan to begin your fitness journey!
-          </Text>
+          <TouchableOpacity onPress={() => navigation.navigate("WorkoutPlan")}>
+            <Text style={styles.noWorkoutText}>
+              Start a new workout plan to begin your fitness journey!
+            </Text>
+          </TouchableOpacity>
         </View>
       </SafeAreaView>
     );
@@ -103,38 +105,9 @@ const WorkoutScreen = () => {
           <Text style={styles.programName}>{workout.workoutTitle}</Text>
           <View style={styles.exerciseList}>
             {workout.exercises.map((ex, idx) => (
-              <Pressable
-                key={idx}
-                style={({ pressed }) => [
-                  styles.exerciseCard,
-                  pressed && styles.exerciseCardPressed,
-                ]}
-                onPress={() => {
-                  console.log("Exercise pressed:", ex.exerciseName);
-                }}
-              >
-                <View style={styles.exerciseInfo}>
-                  <Text style={styles.exerciseName}>{ex.exerciseName}</Text>
-                  <Text style={styles.exerciseSets}>
-                    Sets: {ex.suggestedSets}
-                  </Text>
-                  <Text style={styles.exerciseReps}>
-                    Reps: {ex.suggestedReps}
-                  </Text>
-                  {ex.instructions && ex.instructions.length > 0 && (
-                    <View style={styles.instructionsContainer}>
-                      <Text style={styles.instructionsTitle}>
-                        Instructions:
-                      </Text>
-                      {ex.instructions.map((instruction, i) => (
-                        <Text key={i} style={styles.instructionText}>
-                          • {instruction}
-                        </Text>
-                      ))}
-                    </View>
-                  )}
-                </View>
-              </Pressable>
+              <Text key={idx} style={styles.exerciseName}>
+                {ex.exerciseName}
+              </Text>
             ))}
           </View>
         </View>
@@ -233,10 +206,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   exerciseName: {
+    fontSize: 16,
     color: "#fff",
-    fontSize: 18,
-    fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 8,
   },
   exerciseSets: {
     color: "#bbb",

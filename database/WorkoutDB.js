@@ -241,6 +241,7 @@ export const saveUpdatedTimeline = async (
     );
     await updateDoc(docRef, {
       exercises: updatedExercises,
+      completionStatus: "complete",
     });
     console.log("Workout log updated.");
   } catch (error) {

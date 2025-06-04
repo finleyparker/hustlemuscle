@@ -67,8 +67,9 @@ export default function WorkoutLogScreen() {
         name: exercise.exerciseName || "Unknown",
         sets: [
           {
-            reps: exercise.suggestedReps?.toString() || "",
-            weight: exercise.weight?.toString() || "",
+            reps: "",
+            weight: "",
+            suggestedReps: exercise.suggestedReps?.toString() || "",
           },
         ],
       }));
@@ -112,7 +113,11 @@ export default function WorkoutLogScreen() {
 
   const handleAddSet = (exerciseIndex) => {
     const updated = [...exercises];
-    updated[exerciseIndex].sets.push({ reps: "", weight: "" });
+    updated[exerciseIndex].sets.push({
+      reps: "",
+      weight: "",
+      suggestedReps: exercises[exerciseIndex].sets[0].suggestedReps || "Reps",
+    });
     setExercises(updated);
   };
 
@@ -122,24 +127,8 @@ export default function WorkoutLogScreen() {
       const user_id = await getUserID();
       console.log("user id: ", user_id);
 
-      //date
-      const completion_date = new Date();
-      completion_date.setSeconds(0, 0);
-      console.log("exercise_completion date: ", completion_date);
-
-      //save exercise completion details
-      const completions = exercises.map((exercise) => ({
-        workout_session_id: sessionId,
-        exercise_id: exercise.exercise_id || exercise.name,
-        sets: exercise.sets.length,
-        reps: exercise.sets.map((set) => parseInt(set.reps) || 0),
-        weights: exercise.sets.map((set) => parseFloat(set.weight) || 0),
-        completion_date: completion_date,
-        user_id: user_id,
-      }));
-
       // Save exercise completions first
-      await saveUpdatedTimeline(user_id, today, exercises);
+      await saveUpdatedTimeline(user_id, workoutDate, exercises);
 
       // Then mark the session as completed
       //await updateSessionCompletion(sessionId);
@@ -262,7 +251,7 @@ export default function WorkoutLogScreen() {
                 <TextInput
                   style={styles.input}
                   keyboardType="numeric"
-                  placeholder="Reps"
+                  placeholder={set.suggestedReps || "Reps"}
                   value={set.reps}
                   onChangeText={(value) =>
                     handleInputChange(exerciseIndex, setIndex, "reps", value)
