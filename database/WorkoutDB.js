@@ -169,31 +169,68 @@ export const updateSessionCompletion = async (sessionId) => {
 };
 
 // New fetch function from workoutTimeline
-export const getExercisesFromWorkoutTimeline = async (userId, dateString) => {
+//get exercises from workout timeline for a given date
+//if theres no workout for that date, find the next incomplete workout
+export const getExercisesFromWorkoutTimeline = async (user_id, date) => {
   try {
-    const ref = doc(
-      db,
-      "workoutTimeline",
-      userId,
-      "datedExercises",
-      dateString
-    );
-    const snap = await getDoc(ref);
+    console.log("Getting exercises for date:", date);
 
-    if (!snap.exists()) {
-      console.warn("No workout found for date:", dateString);
-      return [];
+    const userDocRef = doc(db, "workoutTimeline", user_id);
+    const datedExercisesRef = collection(userDocRef, "datedExercises");
+
+    // Step 1: Try to get today's workout
+    const todayDoc = doc(datedExercisesRef, date);
+    const todaySnap = await getDoc(todayDoc);
+
+    if (todaySnap.exists()) {
+      const data = todaySnap.data();
+      console.log("Today's workout found.");
+      return { exercises: data.exercises || [], date };
     }
 
-    const data = snap.data();
-    return data.exercises || [];
+    console.warn("No workout found for today:", date);
+
+    // Step 2: Fallback – find next incomplete workout
+    const allDocsSnap = await getDocs(datedExercisesRef);
+    const futureIncompleteDocs = [];
+
+    allDocsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (
+        Array.isArray(data.exercises) &&
+        (data.completionStatus || "").toLowerCase() === "incomplete"
+      ) {
+        futureIncompleteDocs.push({
+          date: docSnap.id,
+          exercises: data.exercises,
+        });
+      }
+    });
+
+    // Sort and return the earliest future incomplete workout
+    const sorted = futureIncompleteDocs.sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
+    );
+
+    if (sorted.length > 0) {
+      console.log("workout: ", sorted[0]);
+      console.log("Using fallback workout from:", sorted[0].date);
+      return { exercises: sorted[0].exercises, date: sorted[0].date };
+    }
+
+    console.warn("No incomplete workouts found.");
+    return { exercises: [], date: null };
   } catch (error) {
-    console.error("Firestore error:", error);
-    return [];
+    console.error("Error fetching exercises from timeline:", error);
+    return { exercises: [], date: null };
   }
 };
 
-const saveUpdatedTimeline = async (user_id, dateString, updatedExercises) => {
+export const saveUpdatedTimeline = async (
+  user_id,
+  dateString,
+  updatedExercises
+) => {
   try {
     const docRef = doc(
       db,

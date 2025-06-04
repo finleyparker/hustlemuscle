@@ -20,6 +20,8 @@ import {
   getSessionName,
   updateExerciseCompletion,
   updateSessionCompletion,
+  saveUpdatedTimeline,
+  getExercisesFromWorkoutTimeline,
 } from "../database/WorkoutDB";
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getExerciseInstructions } from "../api/exercises";
@@ -32,6 +34,7 @@ export default function WorkoutLogScreen() {
   const [selectedExercise, setSelectedExercise] = useState(null);
   const [instructions, setInstructions] = useState(null);
   const [sessionName, setSessionName] = useState("");
+  const [workoutDate, setWorkoutDate] = useState("N/A");
   const route = useRoute();
   const sessionId = route.params?.sessionId;
   const navigation = useNavigation();
@@ -40,18 +43,32 @@ export default function WorkoutLogScreen() {
     const fetchSessionDetails = async () => {
       const user_id = await getUserID();
       const today = new Date().toISOString().split("T")[0]; // e.g., "2025-06-16"
-      const exercisesFromDB = await getExercisesFromWorkoutTimeline(
-        user_id,
-        today
-      );
+      console.log("user_id: ", user_id);
+      console.log("today: ", today);
+      const workout = await getExercisesFromWorkoutTimeline(user_id, today);
+      console.log("workout: ", workout);
+      const { exercises, date } = workout;
 
-      const formatted = exercisesFromDB.map((exercise, index) => ({
-        exercise_id: exercise.id || index.toString(),
+      setWorkoutDate(date);
+      //console.log("exercises: ", exercises);
+      console.log("date: ", date);
+
+      if (!exercises || exercises.length === 0) {
+        console.warn("No exercises found.");
+        setExercises([]);
+        setLoading(false);
+        return;
+      }
+      console.log("exercises found");
+      console.log("exercises: ", exercises);
+
+      const formatted = exercises.map((exercise, index) => ({
+        exercise_id: exercise.exerciseId || index.toString(),
         name: exercise.exerciseName || "Unknown",
         sets: [
           {
-            reps: exercise.instructions?.reps?.toString() || "",
-            weight: exercise.instructions?.weight?.toString() || "",
+            reps: exercise.suggestedReps?.toString() || "",
+            weight: exercise.weight?.toString() || "",
           },
         ],
       }));
@@ -173,20 +190,18 @@ export default function WorkoutLogScreen() {
                 style={styles.exerciseImage}
                 source={{
                   //example image
-                  uri:
-                    "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/" +
-                    selectedExercise?.exercise_id +
-                    "/0.jpg",
+                  uri: selectedExercise?.exercise_id
+                    ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${selectedExercise.exercise_id}/0.jpg`
+                    : "https://placehold.co/400",
                 }}
               ></Image>
               <Image
                 style={styles.exerciseImage}
                 source={{
                   //example image
-                  uri:
-                    "https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/" +
-                    selectedExercise?.exercise_id +
-                    "/1.jpg",
+                  uri: selectedExercise?.exercise_id
+                    ? `https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/${selectedExercise.exercise_id}/1.jpg`
+                    : "https://placehold.co/400",
                 }}
               ></Image>
             </View>
@@ -225,6 +240,7 @@ export default function WorkoutLogScreen() {
         {/* Workout Details */}
         <View style={styles.workoutDetails}>
           <Text style={styles.workoutTodayText}>Today's Workout:</Text>
+          <Text style={styles.workoutTitle}>Workout for: {workoutDate}</Text>
           <Text style={styles.workoutTitle}>{sessionName}</Text>
         </View>
 

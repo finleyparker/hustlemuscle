@@ -1,13 +1,20 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
-import { getWorkoutTimeline } from '../database/WorkoutTimeline';
+import React, { useEffect, useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  ActivityIndicator,
+  Pressable,
+} from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+import { useNavigation } from "@react-navigation/native";
+import { getWorkoutTimeline } from "../database/WorkoutTimeline";
 import { getSessionDetails } from "../database/WorkoutDB";
 
-
 const WorkoutScreen = () => {
-  const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const [workout, setWorkout] = useState(null);
@@ -19,7 +26,7 @@ const WorkoutScreen = () => {
         if (timelineData && timelineData.exercises) {
           // Find the most recent incomplete workout
           const incompleteWorkouts = timelineData.exercises
-            .filter(ex => ex.completionStatus === 'incomplete')
+            .filter((ex) => ex.completionStatus === "incomplete")
             .sort((a, b) => new Date(b.date) - new Date(a.date));
 
           if (incompleteWorkouts.length > 0) {
@@ -27,12 +34,13 @@ const WorkoutScreen = () => {
           }
         }
       } catch (error) {
-        console.error('Error fetching workout:', error);
+        console.error("Error fetching workout:", error);
       } finally {
         setLoading(false);
       }
     };
-
+    console.log("workout: ", workout);
+    //console.log("workout.id: ", workout.id);
     fetchWorkout();
   }, []);
 
@@ -52,31 +60,8 @@ const WorkoutScreen = () => {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <Text style={styles.heading}>No workouts available</Text>
-          <Text style={styles.noWorkoutText}>Start a new workout plan to begin your fitness journey!</Text>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  useEffect(() => {
-    const fetchSession = async () => {
-      console.log("Fetching session details...");
-      const data = await getSessionDetails();
-      setSession(data);
-      setLoading(false);
-    };
-    fetchSession();
-  }, []);
-
-  if (loading) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
-        >
-          <ActivityIndicator size="large" color="#fff" />
-          <Text style={{ color: "#fff", marginTop: 10 }}>
-            Loading workout...
+          <Text style={styles.noWorkoutText}>
+            Start a new workout plan to begin your fitness journey!
           </Text>
         </View>
       </SafeAreaView>
@@ -100,7 +85,7 @@ const WorkoutScreen = () => {
             3-Day a Week Muscle Gain Program
           </Text>
           <Text style={styles.programDate}>
-            Started on : {session?.startDate || "N/A"}
+            Started on : {workout?.startDate || "N/A"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
@@ -122,21 +107,29 @@ const WorkoutScreen = () => {
                 key={idx}
                 style={({ pressed }) => [
                   styles.exerciseCard,
-                  pressed && styles.exerciseCardPressed
+                  pressed && styles.exerciseCardPressed,
                 ]}
                 onPress={() => {
-                  console.log('Exercise pressed:', ex.exerciseName);
+                  console.log("Exercise pressed:", ex.exerciseName);
                 }}
               >
                 <View style={styles.exerciseInfo}>
                   <Text style={styles.exerciseName}>{ex.exerciseName}</Text>
-                  <Text style={styles.exerciseSets}>Sets: {ex.suggestedSets}</Text>
-                  <Text style={styles.exerciseReps}>Reps: {ex.suggestedReps}</Text>
+                  <Text style={styles.exerciseSets}>
+                    Sets: {ex.suggestedSets}
+                  </Text>
+                  <Text style={styles.exerciseReps}>
+                    Reps: {ex.suggestedReps}
+                  </Text>
                   {ex.instructions && ex.instructions.length > 0 && (
                     <View style={styles.instructionsContainer}>
-                      <Text style={styles.instructionsTitle}>Instructions:</Text>
+                      <Text style={styles.instructionsTitle}>
+                        Instructions:
+                      </Text>
                       {ex.instructions.map((instruction, i) => (
-                        <Text key={i} style={styles.instructionText}>• {instruction}</Text>
+                        <Text key={i} style={styles.instructionText}>
+                          • {instruction}
+                        </Text>
                       ))}
                     </View>
                   )}
@@ -148,7 +141,7 @@ const WorkoutScreen = () => {
       </ScrollView>
       <TouchableOpacity
         style={styles.startButton}
-        onPress={() => navigation.navigate('WorkoutLog', { sessionId: workout.programId })}
+        onPress={() => navigation.navigate("WorkoutLog")} //, { sessionId: workout.id })}
       >
         <Text style={styles.startButtonText}>Start Now</Text>
       </TouchableOpacity>
@@ -168,18 +161,18 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
-    color: '#fff',
+    color: "#fff",
     marginTop: 10,
     fontSize: 16,
   },
   noWorkoutText: {
-    color: '#888',
+    color: "#888",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 10,
   },
   heading: {
@@ -227,26 +220,26 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   exerciseCard: {
-    backgroundColor: '#1a1a1c',
+    backgroundColor: "#1a1a1c",
     borderRadius: 8,
     padding: 12,
     marginBottom: 8,
   },
   exerciseCardPressed: {
-    backgroundColor: '#232325',
+    backgroundColor: "#232325",
     transform: [{ scale: 0.98 }],
   },
   exerciseInfo: {
     gap: 4,
   },
   exerciseName: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   exerciseSets: {
-    color: '#bbb',
+    color: "#bbb",
     fontSize: 15,
   },
   exerciseReps: {
@@ -257,16 +250,16 @@ const styles = StyleSheet.create({
     marginTop: 8,
     paddingTop: 8,
     borderTopWidth: 1,
-    borderTopColor: '#333',
+    borderTopColor: "#333",
   },
   instructionsTitle: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 15,
-    fontWeight: '600',
+    fontWeight: "600",
     marginBottom: 4,
   },
   instructionText: {
-    color: '#bbb',
+    color: "#bbb",
     fontSize: 14,
     lineHeight: 20,
     marginBottom: 2,
