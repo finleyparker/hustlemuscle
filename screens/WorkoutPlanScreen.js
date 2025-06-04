@@ -254,9 +254,14 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     try {
       setLoading(true);
       const newStartDate = new Date();
-      const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
+      console.log('Starting plan regeneration...');
+      console.log('Current userInput:', userInput);
+      console.log('Current userInputKey:', createUserInputKey(userInput));
       
-
+      const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
+      console.log('Generated plan:', generated.plan);
+      console.log('Generated durationWeeks:', generated.durationWeeks);
+      
       setPlan(generated.plan);
       setWarnings(generated.warnings || []);
       setDurationWeeks(generated.durationWeeks || null);
@@ -272,10 +277,12 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         where('userInputKey', '==', userInputKey)
       );
       const planSnap = await getDocs(planQuery);
+      console.log('Found existing plans:', planSnap.size);
 
       if (!planSnap.empty) {
         // Update existing document
         const planDoc = planSnap.docs[0];
+        console.log('Updating existing plan with ID:', planDoc.id);
         await updateDoc(planDoc.ref, {
           plan: generated.plan,
           warnings: generated.warnings || [],
@@ -283,9 +290,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           planName: generated.planName,
           updatedAt: newStartDate,
         });
+        console.log('Plan updated successfully');
       } else {
+        console.log('No existing plan found, creating new one');
         // Create new document if none exists (fallback)
-        await addDoc(workoutPlansRef, {
+        const newDoc = await addDoc(workoutPlansRef, {
           userId: userId,
           userInput,
           userInputKey,
@@ -296,14 +305,21 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           createdAt: newStartDate,
           updatedAt: newStartDate,
         });
+        console.log('New plan created with ID:', newDoc.id);
       }
+
+      // Recreate the timeline with the new plan
+      const { createWorkoutTimeline } = require('../database/WorkoutTimeline');
+      await createWorkoutTimeline();
+      console.log('Timeline recreated successfully');
+
     } catch (error) {
-    console.error('Failed to regenerate workout plan:', error);
-    Alert.alert('Error', 'Failed to regenerate workout plan. Please try again.');
-  } finally {
-    setLoading(false);
-  }
-};
+      console.error('Failed to regenerate workout plan:', error);
+      Alert.alert('Error', 'Failed to regenerate workout plan. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
 
 
@@ -351,9 +367,13 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           ))}
         </View>
       ))}
-      {/* 🔁 Regenerate Button - insert it here */}
-      <TouchableOpacity style={styles.backButton} onPress={regeneratePlan}>
-        <Text style={styles.backButtonText}>🔄 Regenerate Plan</Text>
+
+      {/* Regenerate Button */}
+      <TouchableOpacity
+        style={styles.regenerateButton}
+        onPress={regeneratePlan}
+      >
+        <Text style={styles.regenerateButtonText}>🔄 Regenerate Workout Plan</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -474,6 +494,19 @@ const styles = StyleSheet.create({
   replaceButton: {
     marginTop: 8,
     alignSelf: 'flex-start',
+  },
+  regenerateButton: {
+    backgroundColor: '#007AFF',
+    padding: 16,
+    borderRadius: 8,
+    marginTop: 20,
+    marginBottom: 40,
+    alignItems: 'center',
+  },
+  regenerateButtonText: {
+    color: '#FFFFFF',
+    fontSize: 18,
+    fontWeight: '600',
   },
 
 

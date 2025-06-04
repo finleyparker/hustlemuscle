@@ -208,4 +208,25 @@ export const updateDietRestrictions = async (restriction) => {
     }
 };
 
+// Update equipment field in the specific document
+export const updateEquipment = async (equipment) => {
+    const user = auth.currentUser;
+    if (!user) {
+        console.error('No user is signed in');
+        return [];
+    }
+
+    const equipmentDocRef = doc(db, 'UserDetails', user.uid);
+
+    try {
+        await setDoc(equipmentDocRef, { 
+            Equipment: equipment 
+        }, { merge: true });
+        console.log('Equipment updated successfully!');
+    } catch (error) {
+        console.error('Firestore error:', error);
+        return [];
+    }
+};
+
 

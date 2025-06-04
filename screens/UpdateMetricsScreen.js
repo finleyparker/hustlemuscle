@@ -2,8 +2,22 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Modal, TextInput, Button } from 'react-native';
 import { getUserManagedDetails } from '../utils/manageDetails';
 import { Ionicons } from '@expo/vector-icons';
-import { updateGender, updateFitnessGoal, updateExperienceLevel, updateFreeDays, updateWeight, updateDietRestrictions } from '../database/UserDB';
+import { updateGender, updateFitnessGoal, updateExperienceLevel, updateFreeDays, updateWeight, updateDietRestrictions, updateEquipment } from '../database/UserDB';
 import { useFocusEffect } from '@react-navigation/native';
+
+const COMMON_EQUIPMENT = [
+  'Dumbbell',
+  'Body Only',
+  'Bands',
+  'Kettlebells',
+  'Foam Roll',
+  'Cable',
+  'Machine',
+  'Barbell',
+  'Exercise Ball',
+  'E-Z Curl Bar',
+  'None',
+];
 
 const UpdateMetricsScreen = () => {
   const [gender, setGender] = useState('');
@@ -20,6 +34,8 @@ const UpdateMetricsScreen = () => {
   const [workoutDaysModalVisible, setWorkoutDaysModalVisible] = useState(false);
   const [dietRestrictions, setDietRestrictions] = useState('');
   const [dietRestrictionsModalVisible, setDietRestrictionsModalVisible] = useState(false);
+  const [equipment, setEquipment] = useState([]);
+  const [equipmentModalVisible, setEquipmentModalVisible] = useState(false);
 
   const loadDetails = async () => {
     try {
@@ -34,6 +50,7 @@ const UpdateMetricsScreen = () => {
       setWorkoutDays(details.WorkoutDaysPerWeek ? details.WorkoutDaysPerWeek.toString() : '');
       console.log('Setting diet restrictions:', details.DietaryRestrictions);
       setDietRestrictions(details.DietaryRestrictions || '');
+      setEquipment(details.Equipment || []);
     } catch (e) {
       console.error('Error loading details:', e);
     }
@@ -156,6 +173,11 @@ const UpdateMetricsScreen = () => {
       <TouchableOpacity style={styles.card} onPress={() => setDietRestrictionsModalVisible(true)} activeOpacity={0.7}>
         <Text style={styles.label}>Your Diet Restrictions</Text>
         <Text style={styles.value}>{dietRestrictions || 'No restrictions'}</Text>
+      </TouchableOpacity>
+      {/* Equipment Card */}
+      <TouchableOpacity style={styles.card} onPress={() => setEquipmentModalVisible(true)} activeOpacity={0.7}>
+        <Text style={styles.label}>Your Equipment</Text>
+        <Text style={styles.value}>{equipment.length > 0 ? equipment.join(', ') : 'No equipment selected'}</Text>
       </TouchableOpacity>
       {/* Gender Modal */}
       <OptionModal
@@ -295,6 +317,7 @@ const UpdateMetricsScreen = () => {
               { label: 'Vegan', value: 'Vegan' },
               { label: 'Gluten-Free', value: 'Gluten-Free' },
               { label: 'Dairy-Free', value: 'Dairy-Free' },
+              { label: 'Pescatarian', value: 'Pescatarian' },
               { label: 'No Restrictions', value: 'None' },
             ].map((option) => (
               <TouchableOpacity
@@ -325,6 +348,55 @@ const UpdateMetricsScreen = () => {
                   setDietRestrictionsModalVisible(false);
                 } catch (error) {
                   console.error('Error updating diet restrictions:', error);
+                }
+              }}
+            >
+              <Text style={[styles.modalOptionText, { color: '#000' }]}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+      {/* Equipment Modal */}
+      <Modal
+        visible={equipmentModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setEquipmentModalVisible(false)}
+      >
+        <TouchableOpacity style={styles.modalOverlay} activeOpacity={1} onPress={() => setEquipmentModalVisible(false)}>
+          <View style={styles.modalContent}>
+            <TouchableOpacity
+              style={[styles.modalCloseIcon, { marginBottom: 15 }]}
+              onPress={() => setEquipmentModalVisible(false)}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Ionicons name="close" size={24} color="#fff" />
+            </TouchableOpacity>
+            <Text style={styles.modalTitle}>Select Equipment</Text>
+            {COMMON_EQUIPMENT.map((item) => (
+              <TouchableOpacity
+                key={item}
+                style={[styles.modalOption, equipment.includes(item) && styles.selectedOption]}
+                onPress={() => {
+                  const newEquipment = equipment.includes(item)
+                    ? equipment.filter(e => e !== item)
+                    : [...equipment, item];
+                  setEquipment(newEquipment);
+                }}
+              >
+                <Text style={[styles.modalOptionText, equipment.includes(item) && { color: '#222' }]}>
+                  {item}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity
+              style={[styles.modalOption, { marginTop: 20, backgroundColor: '#E4FA00' }]}
+              onPress={async () => {
+                try {
+                  await updateEquipment(equipment);
+                  setEquipmentModalVisible(false);
+                } catch (error) {
+                  console.error('Error updating equipment:', error);
                 }
               }}
             >

@@ -7,6 +7,11 @@ import { db, auth } from '../database/firebase';
 import { getUserName, logout } from '../database/UserDB';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
 import { doc, getDoc } from 'firebase/firestore';
+import { runDailyTask, testRunDailyTask } from '../utils/syncWorkoutSchedule';
+import ProgressBar from '../components/ProgressBar';
+import { getTodaysWorkout } from './WorkoutCalendarScreen';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
+import { loadFromCache, saveToCache, createCacheKey, CACHE_DURATIONS } from '../utils/cacheManager';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState('');
@@ -14,6 +19,10 @@ const HomeScreen = () => {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [currentDate, setCurrentDate] = useState(new Date().toISOString().split('T')[0]);
+  const [exercises, setExercises] = useState([]);
+  const [todaysSession, setTodaysSession] = useState('');
+  const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -26,6 +35,22 @@ const HomeScreen = () => {
     };
 
     fetchUserName();
+  }, []);
+
+  // Fetch workout timeline data
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          setExercises(timelineData.exercises);
+        }
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+      }
+    };
+
+    fetchTimeline();
   }, []);
 
   useEffect(() => {
@@ -57,7 +82,34 @@ const HomeScreen = () => {
       },
     ]);
 
-  const today = useMemo(() => new Date(), []);
+  // Run daily task when date changes
+  useEffect(() => {
+    const checkDate = async () => {
+      console.log("Checking date...");
+      const newDate = new Date().toISOString().slice(0, 10);
+      console.log("Current date in state:", currentDate);
+      console.log("New date:", newDate);
+      
+      if (newDate !== currentDate) {
+        console.log("Date changed, updating state...");
+        setCurrentDate(newDate);
+      } else {
+        console.log("Date hasn't changed");
+      }
+    };
+
+    console.log("Setting up daily task check...");
+    // Check immediately and then every minute
+    checkDate();
+    const interval = setInterval(checkDate, 60000);
+
+    return () => {
+      console.log("Cleaning up interval");
+      clearInterval(interval);
+    };
+  }, [currentDate]);
+
+  const today = useMemo(() => new Date(), [currentDate]); // Update today when date changes
 
   const weekDays = useMemo(() => {
     const days = [];
@@ -92,6 +144,44 @@ const HomeScreen = () => {
     hideCalendar();
     console.log('Selected date:', date);
   };
+
+  // Cache today's session title
+  useEffect(() => {
+    const fetchTodaysSession = async () => {
+      const todayStr = new Date().toISOString().split('T')[0];
+      console.log('Fetching today\'s session for date:', todayStr);
+      const cacheKey = createCacheKey('todays_session', todayStr);
+      const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
+      // Try to load from cache (1 day duration)
+      const cached = await loadFromCache(cacheKey, timestampKey, CACHE_DURATIONS.LONG);
+      console.log('Cached session data:', cached);
+      if (cached) {
+        setTodaysSession(cached);
+      } else {
+        // Fallback: get exercises and session title
+        let sessionTitle = '';
+        try {
+          const timelineData = await getWorkoutTimeline();
+          console.log('Timeline data:', timelineData);
+          if (timelineData && timelineData.exercises) {
+            const { day } = getTodaysWorkout(timelineData.exercises);
+            console.log('Today\'s workout day:', day);
+            sessionTitle = day || '';
+          }
+        } catch (e) {
+          console.error('Error fetching timeline data:', e);
+          sessionTitle = '';
+        }
+        console.log('Setting session title:', sessionTitle);
+        setTodaysSession(sessionTitle);
+        await saveToCache(cacheKey, timestampKey, sessionTitle);
+      }
+    };
+    fetchTodaysSession();
+  }, [currentDate, sessionCacheBuster]);
+
+  // Expose a function to trigger a session refetch after plan shift
+  const triggerSessionRefetch = () => setSessionCacheBuster(b => b + 1);
 
   return (
     <ScrollView style={styles.container}>
@@ -166,9 +256,19 @@ const HomeScreen = () => {
           colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
           style={styles.cardGradient}
         >
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Workout</Text>
-            <Ionicons name="chevron-forward" size={24} color="white" />
+          <View style={styles.cardContentRow}>
+            <View style={styles.cardContentColumn}>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>Workout</Text>
+                <Ionicons name="chevron-forward" size={25} color="white" style={styles.chevronIcon} />
+              </View>
+              {todaysSession ? (
+                <View style={styles.sessionRow}>
+                  <Text style={styles.sessionLabel}>TODAY'S SESSION:</Text>
+                  <Text style={styles.sessionValue}> {todaysSession}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         </LinearGradient>
       </TouchableOpacity>
@@ -207,23 +307,38 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* Test Buttons */}
+      <View style={styles.testButtonsContainer}>
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => navigation.navigate('TestWorkoutTimeline')}
+        >
+          <Text style={styles.testButtonText}>Test Workout Timeline</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={async () => {
+            await testRunDailyTask();
+            triggerSessionRefetch();
+          }}
+        >
+          <Text style={styles.testButtonText}>Test Date Shift</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => {
+            const userId = auth.currentUser?.uid;
+            console.log('Current User ID:', userId);
+          }}
+        >
+          <Text style={styles.testButtonText}>Print User ID</Text>
+        </TouchableOpacity>
+      </View>
+
       {/* My Progress Panel */}
-      <TouchableOpacity
-        style={styles.progressPanel}
-        activeOpacity={0.8}
-        onPress={() => navigation.navigate('WorkoutHistory')}
-      >
-        <View style={styles.progressPanelHeader}>
-          <Text style={styles.progressPanelLabel}>My Progress</Text>
-          <Ionicons name="chevron-forward" size={22} color="#fff" />
-        </View>
-        <LinearGradient
-          colors={['#a18fff', '#e0d7ff', '#fff']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 0 }}
-          style={styles.progressBar}
-        />
-      </TouchableOpacity>
+      <ProgressBar onPress={() => navigation.navigate('WorkoutHistory')} />
     </ScrollView>
   );
 };
@@ -313,46 +428,51 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 20,
   },
-  cardContent: {
+  cardContentRow: {
     flexDirection: 'row',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    flex: 1,
+    paddingRight: 8,
+  },
+  cardContentColumn: {
+    flex: 1,
+    flexDirection: 'column',
+    justifyContent: 'center',
+    paddingVertical: 4,
+  },
+  titleRow: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
   cardTitle: {
     color: '#FFFFFF',
-    fontSize: 30.5,
+    fontSize: 22,
     fontWeight: 'bold',
   },
-  progressPanel: {
-    backgroundColor: '#18181b',
-    borderRadius: 16,
-    marginHorizontal: 20,
-    marginBottom: 20,
-    marginTop: 8,
-    padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
-    elevation: 3,
-    gap: 12,
-  },
-  progressPanelHeader: {
+  sessionRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
+    marginTop: 4,
     marginBottom: 12,
-
+    flexWrap: 'nowrap',
   },
-  progressPanelLabel: {
+  sessionLabel: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 12,
     fontWeight: '600',
+    letterSpacing: 1,
   },
-  progressBar: {
-    height: 14,
-    borderRadius: 7,
-    width: '100%',
+  sessionValue: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '400',
+    marginLeft: 4,
+    letterSpacing: 1,
+    minWidth: 0,
+  },
+  chevronIcon: {
+    marginLeft: 12,
   },
   statsContainer: {
     flexDirection: 'row',
@@ -375,6 +495,22 @@ const styles = StyleSheet.create({
   statLabel: {
     color: '#8E8E93',
     fontSize: 14,
+  },
+  testButtonsContainer: {
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  testButton: {
+    backgroundColor: '#2C2C2E',
+    borderRadius: 12,
+    padding: 16,
+    alignItems: 'center',
+  },
+  testButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 

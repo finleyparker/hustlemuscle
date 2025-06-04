@@ -1,20 +1,62 @@
-import React, { useEffect, useState } from "react";
-import {
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ScrollView,
-  SafeAreaView,
-  ActivityIndicator,
-} from "react-native";
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, ActivityIndicator, Pressable } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
 import { getSessionDetails } from "../database/WorkoutDB";
-import { useNavigation } from "@react-navigation/native";
+
 
 const WorkoutScreen = () => {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
+  const [workout, setWorkout] = useState(null);
+
+  useEffect(() => {
+    const fetchWorkout = async () => {
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          // Find the most recent incomplete workout
+          const incompleteWorkouts = timelineData.exercises
+            .filter(ex => ex.completionStatus === 'incomplete')
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+          if (incompleteWorkouts.length > 0) {
+            setWorkout(incompleteWorkouts[0]);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching workout:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchWorkout();
+  }, []);
+
+  if (loading) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#fff" />
+          <Text style={styles.loadingText}>Loading workout...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  if (!workout) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.container}>
+          <Text style={styles.heading}>No workouts available</Text>
+          <Text style={styles.noWorkoutText}>Start a new workout plan to begin your fitness journey!</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   useEffect(() => {
     const fetchSession = async () => {
@@ -71,29 +113,42 @@ const WorkoutScreen = () => {
         </TouchableOpacity>
 
         {/* Today's Workout */}
-        <Text style={styles.heading}>Today's Workout:</Text>
-        <Text style={styles.workoutTitle}>{session?.dayName || "Day #X"}</Text>
-
-        <View style={styles.exerciseList}>
-          {session?.exercises?.map((ex, idx) => (
-            <View key={idx} style={styles.exerciseCard}>
-              <View>
-                <Text style={styles.exerciseName}>{ex.exerciseName}</Text>
-                <Text style={styles.exerciseSets}>
-                  Sets: {ex.instructions?.sets || 0}
-                </Text>
-              </View>
-              <Text style={styles.exerciseReps}>
-                Reps: {ex.instructions?.reps || 0}
-              </Text>
-            </View>
-          ))}
+        <Text style={styles.heading}>Your Next Workout:</Text>
+        <View style={styles.programBox}>
+          <Text style={styles.programName}>{workout.workoutTitle}</Text>
+          <View style={styles.exerciseList}>
+            {workout.exercises.map((ex, idx) => (
+              <Pressable
+                key={idx}
+                style={({ pressed }) => [
+                  styles.exerciseCard,
+                  pressed && styles.exerciseCardPressed
+                ]}
+                onPress={() => {
+                  console.log('Exercise pressed:', ex.exerciseName);
+                }}
+              >
+                <View style={styles.exerciseInfo}>
+                  <Text style={styles.exerciseName}>{ex.exerciseName}</Text>
+                  <Text style={styles.exerciseSets}>Sets: {ex.suggestedSets}</Text>
+                  <Text style={styles.exerciseReps}>Reps: {ex.suggestedReps}</Text>
+                  {ex.instructions && ex.instructions.length > 0 && (
+                    <View style={styles.instructionsContainer}>
+                      <Text style={styles.instructionsTitle}>Instructions:</Text>
+                      {ex.instructions.map((instruction, i) => (
+                        <Text key={i} style={styles.instructionText}>• {instruction}</Text>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              </Pressable>
+            ))}
+          </View>
         </View>
       </ScrollView>
-
       <TouchableOpacity
         style={styles.startButton}
-        onPress={() => navigation.navigate("WorkoutLog")}
+        onPress={() => navigation.navigate('WorkoutLog', { sessionId: workout.programId })}
       >
         <Text style={styles.startButtonText}>Start Now</Text>
       </TouchableOpacity>
@@ -110,6 +165,22 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingBottom: 32,
     backgroundColor: "#000",
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#fff',
+    marginTop: 10,
+    fontSize: 16,
+  },
+  noWorkoutText: {
+    color: '#888',
+    fontSize: 16,
+    textAlign: 'center',
+    marginTop: 10,
   },
   heading: {
     color: "#fff",
@@ -156,29 +227,49 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   exerciseCard: {
-    backgroundColor: "#232325",
-    borderRadius: 10,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingVertical: 16,
-    paddingHorizontal: 16,
+    backgroundColor: '#1a1a1c',
+    borderRadius: 8,
+    padding: 12,
     marginBottom: 8,
   },
+  exerciseCardPressed: {
+    backgroundColor: '#232325',
+    transform: [{ scale: 0.98 }],
+  },
+  exerciseInfo: {
+    gap: 4,
+  },
   exerciseName: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "600",
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '600',
+    marginBottom: 4,
   },
   exerciseSets: {
-    color: "#bbb",
-    fontSize: 13,
-    marginTop: 2,
+    color: '#bbb',
+    fontSize: 15,
   },
   exerciseReps: {
     color: "#bbb",
     fontSize: 15,
-    fontWeight: "500",
+  },
+  instructionsContainer: {
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  instructionsTitle: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  instructionText: {
+    color: '#bbb',
+    fontSize: 14,
+    lineHeight: 20,
+    marginBottom: 2,
   },
   startButton: {
     backgroundColor: "#d3d3d3",

@@ -5,6 +5,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';  
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan, extractDaysFromPlan, formatPlanDaysWithExercises, formatDayOfWeek } from '../utils/planFormatters';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
+import { useFocusEffect } from '@react-navigation/native';
+
+export const getTodaysWorkout = (exercises) => {
+  const today = new Date().toISOString().split('T')[0];
+  console.log('Looking for workout on date:', today);
+  console.log('Available exercises:', JSON.stringify(exercises, null, 2));
+  console.log('Exercise dates:', exercises.map(e => e.date));
+  const dayExercises = exercises.find(e => {
+    console.log('Comparing:', { exerciseDate: e.date, today });
+    return e.date === today;
+  });
+  console.log('Found day exercises:', dayExercises);
+  return dayExercises ? {
+    exercises: dayExercises.exercises,
+    day: dayExercises.workoutTitle || 'Workout'
+  } : { exercises: [], day: '' };
+};
 
 const WorkoutCalendarScreen = ({ navigation }) => {
   const [selected, setSelected] = useState('');
@@ -14,128 +32,118 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   const [planName, setPlanName] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [days, setDays] = useState('');
-  const [daysOfWeek, setDaysOfWeek] = useState([]);
-  const [durationWeeks, setDurationWeeks] = useState('');
+  const [markedDates, setMarkedDates] = useState({});
+  const [exercises, setExercises] = useState([]);
+  const [selectedDayExercises, setSelectedDayExercises] = useState([]);
   
   const hasFetchedData = useRef(false);
 
-  const fetchWorkoutPlans = useMemo(() => async () => {
+  const fetchTimeline = useMemo(() => async () => {
+    console.log("Fetching timeline data...");
     setIsLoading(true);
-    const userId = auth.currentUser && auth.currentUser.uid;
-
-    const workoutPlansRef = collection(db, "workoutPlans");
-    const q = query(workoutPlansRef, where("userId", "==", userId));
-    const querySnapshot = await getDocs(q);
-
-    if (!querySnapshot.empty) {
-      const data = querySnapshot.docs[0].data();
-      const formattedData = {
-        startDate: formatCreatedAt(data.createdAt),
-        endDate: formatCreatedAt(data.createdAt, data.durationWeeks),
-        planName: formatPlanName(data.planName),
-        days: formatPlanDaysWithExercises(data.plan),
-        daysOfWeek: formatDayOfWeek(data.plan),
-        durationWeeks: formatDurationWeeks(data.durationWeeks)
-      };
+    try {
+      const timelineData = await getWorkoutTimeline();
+      console.log("Timeline data received:", timelineData);
       
-      setStartDate(formattedData.startDate);
-      setEndDate(formattedData.endDate);
-      setPlanName(formattedData.planName);
-      setDays(formattedData.days);
-      setDaysOfWeek(formattedData.daysOfWeek);
-      setDurationWeeks(formattedData.durationWeeks);
-    } else {
-      const emptyData = {
-        startDate: 'No plans found',
-        endDate: 'No date',
-        planName: 'No plan',
-        days: [],
-        daysOfWeek: [],
-        durationWeeks: 0
-      };
-      setStartDate(emptyData.startDate);
-      setEndDate(emptyData.endDate);
-      setPlanName(emptyData.planName);
-      setDays(emptyData.days);
-      setDaysOfWeek(emptyData.daysOfWeek);
-      setDurationWeeks(emptyData.durationWeeks);
+      if (timelineData && timelineData.exercises) {
+        // Log the structure of the first exercise to see all available fields
+        if (timelineData.exercises.length > 0) {
+          console.log("First exercise document structure:", {
+            id: timelineData.exercises[0].id,
+            allFields: timelineData.exercises[0],
+            exercisesArray: timelineData.exercises[0].exercises
+          });
+        }
+        
+        setMarkedDates(timelineData.markedDates || {});
+        setExercises(timelineData.exercises || []);
+        
+        // Format the exercises for display
+        const formattedDays = timelineData.exercises.map(exercise => {
+          const date = new Date(exercise.id);
+          const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
+          return `${dayName} (${exercise.id}): ${exercise.exercises.length} exercises`;
+        });
+        
+        setDays(formattedDays);
+        setPlanName('Workout Calendar');
+        
+        // Set start and end dates from the exercises array
+        if (timelineData.exercises.length > 0) {
+          const dates = timelineData.exercises.map(e => new Date(e.id));
+          const start = new Date(Math.min(...dates));
+          const end = new Date(Math.max(...dates));
+          setStartDate(start.toLocaleDateString());
+          setEndDate(end.toLocaleDateString());
+        }
+      } else {
+        console.log("No timeline data or exercises found");
+        setDays([]);
+        setMarkedDates({});
+        setExercises([]);
+        setPlanName('No Timeline Found');
+        setStartDate('No start date');
+        setEndDate('No end date');
+      }
+    } catch (error) {
+      console.error('Error fetching timeline:', error);
+      setDays([]);
+      setMarkedDates({});
+      setExercises([]);
+      setPlanName('Error Loading Timeline');
+      setStartDate('Error');
+      setEndDate('Error');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchWorkoutPlans();
-  }, [fetchWorkoutPlans]);
-  
-  console.log('DAYS:', days);
-  console.log('DAYS OF WEEK:', daysOfWeek);
-  console.log('DURATION WEEKS:', durationWeeks);
+  // Use useFocusEffect to refresh data when screen comes into focus
+  useFocusEffect(
+    React.useCallback(() => {
+      console.log("Screen focused, refreshing timeline data...");
+      fetchTimeline();
+    }, [fetchTimeline])
+  );
 
-  // Workout details for each type
-  const workoutDetails = {
-    push: [
-      { name: 'Bench Press', sets: '4', reps: '8-10' },
-      { name: 'Overhead Press', sets: '4', reps: '8-10' },
-      { name: 'Incline Dumbbell Press', sets: '3', reps: '10-12' },
-      { name: 'Lateral Raises', sets: '3', reps: '12-15' },
-      { name: 'Tricep Pushdowns', sets: '3', reps: '12-15' },
-    ],
-    pull: [
-      { name: 'Pull-ups', sets: '4', reps: '8-10' },
-      { name: 'Barbell Rows', sets: '4', reps: '8-10' },
-      { name: 'Face Pulls', sets: '3', reps: '12-15' },
-      { name: 'Bicep Curls', sets: '3', reps: '10-12' },
-      { name: 'Hammer Curls', sets: '3', reps: '10-12' },
-    ],
-    legs: [
-      { name: 'Squats', sets: '4', reps: '8-10' },
-      { name: 'Romanian Deadlifts', sets: '4', reps: '8-10' },
-      { name: 'Leg Press', sets: '3', reps: '10-12' },
-      { name: 'Leg Extensions', sets: '3', reps: '12-15' },
-      { name: 'Calf Raises', sets: '4', reps: '15-20' },
-    ],
-  };
-
-  // No hardcoded workoutDates or modal logic
   const handleDayPress = (day) => {
+    console.log("Day pressed:", day.dateString);
     setSelected(day.dateString);
-  };
-
-  const dayNameToIndex = {
-    Sunday: 0, Monday: 1, Tuesday: 2, Wednesday: 3,
-    Thursday: 4, Friday: 5, Saturday: 6
-  };
-
-  function getMarkedDates(daysOfWeek, durationWeeks) {
-    const today = new Date();
-    const marked = {};
-
-    daysOfWeek.forEach(dayName => {
-      const dayIndex = dayNameToIndex[dayName];
-      // Find the next occurrence of this day
-      let firstDate = new Date(today);
-      const diff = (dayIndex - today.getDay() + 7) % 7;
-      firstDate.setDate(today.getDate() + diff);
-
-      // Mark this day for each week
-      for (let week = 0; week < durationWeeks; week++) {
-        const d = new Date(firstDate);
-        d.setDate(firstDate.getDate() + week * 7);
-        const key = d.toISOString().split('T')[0];
-        marked[key] = {
-          marked: true,
-          dotColor: '#ff5e69',
-          selected: true,
-          selectedColor: '#ff5e69'
-        };
-      }
+    // Find the exercises for this day
+    const dayExercises = exercises.find(e => e.date === day.dateString); //here we find the exercises for the day by date field
+    console.log("Found exercises for day:", {
+      searchedDate: day.dateString,
+      foundExercise: dayExercises ? {
+        id: dayExercises.id,
+        date: dayExercises.date,
+        exercisesCount: dayExercises.exercises.length
+      } : null
     });
+    if (dayExercises) {
+      setSelectedDayExercises(dayExercises.exercises);
+      setShowWorkoutDetails(true);
+    }
+  };
 
-    return marked;
-  }
-
-  const markedDates = getMarkedDates(daysOfWeek, durationWeeks);
+  const ExerciseCard = ({ exercise }) => (
+    <View style={styles.exerciseCard}>
+      <Text style={styles.exerciseName}>{exercise.exerciseName}</Text>
+      <View style={styles.exerciseDetails}>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Sets</Text>
+          <Text style={styles.detailValue}>{exercise.suggestedSets}</Text>
+        </View>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Reps</Text>
+          <Text style={styles.detailValue}>{exercise.suggestedReps}</Text>
+        </View>
+        <View style={styles.exerciseDetail}>
+          <Text style={styles.detailLabel}>Rest</Text>
+          <Text style={styles.detailValue}>{exercise.restTime}</Text>
+        </View>
+      </View>
+    </View>
+  );
 
   return (
     <View style={styles.container}>
@@ -148,10 +156,15 @@ const WorkoutCalendarScreen = ({ navigation }) => {
           <Text style={[styles.label, { marginLeft: 8 }]}>{startDate}</Text>
         )}
       </View>
-      
-      
 
-      <Text style={styles.label}>Projected End Date:</Text>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+        <Text style={styles.label}>End Date:</Text>
+        {isLoading ? (
+          <ActivityIndicator size="small" color="#aaa" style={{ marginLeft: 8 }} />
+        ) : (
+          <Text style={[styles.label, { marginLeft: 8 }]}>{endDate}</Text>
+        )}
+      </View>
 
       <View style={styles.calendarContainer}>
         <Calendar
@@ -180,6 +193,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       </View>
 
       {/* Display formatted plan days string */}
+      <Text style={styles.sectionTitle}>Workout Schedule</Text>
       {days && Array.isArray(days) && days.length > 0 && (
         <ScrollView style={{ marginTop: 24, backgroundColor: '#18181A', borderRadius: 12, padding: 16, maxHeight: 200 }}>
           {days.map((line, idx) => (
@@ -187,11 +201,35 @@ const WorkoutCalendarScreen = ({ navigation }) => {
           ))}
         </ScrollView>
       )}
-      {days && typeof days === 'string' && days.length > 0 && (
-        <View style={{ marginTop: 24, backgroundColor: '#18181A', borderRadius: 12, padding: 16 }}>
-          <Text style={{ color: '#fff', fontFamily: 'monospace' }}>{days}</Text>
+
+      {/* Exercise Details Modal */}
+      <Modal
+        visible={showWorkoutDetails}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowWorkoutDetails(false)}
+      >
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {selected ? new Date(selected).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }) : ''}
+              </Text>
+              <TouchableOpacity 
+                style={styles.closeButton}
+                onPress={() => setShowWorkoutDetails(false)}
+              >
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
+            <ScrollView style={styles.exercisesList}>
+              {selectedDayExercises.map((exercise, index) => (
+                <ExerciseCard key={index} exercise={exercise} />
+              ))}
+            </ScrollView>
+          </View>
         </View>
-      )}
+      </Modal>
     </View>
   );
 };
@@ -267,7 +305,7 @@ const styles = StyleSheet.create({
   exercisesList: {
     marginTop: 10,
   },
-  exerciseItem: {
+  exerciseCard: {
     backgroundColor: '#2C2C2E',
     borderRadius: 12,
     padding: 15,
@@ -277,19 +315,24 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 18,
     fontWeight: '600',
-    marginBottom: 8,
+    marginBottom: 12,
   },
   exerciseDetails: {
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
-  exerciseSets: {
-    color: '#aaa',
-    fontSize: 16,
+  exerciseDetail: {
+    alignItems: 'center',
   },
-  exerciseReps: {
-    color: '#aaa',
+  detailLabel: {
+    color: '#8E8E93',
+    fontSize: 12,
+    marginBottom: 4,
+  },
+  detailValue: {
+    color: '#fff',
     fontSize: 16,
+    fontWeight: '500',
   },
 });
 
