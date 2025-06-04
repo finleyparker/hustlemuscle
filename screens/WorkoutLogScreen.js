@@ -15,11 +15,6 @@ import {
   SafeAreaView,
 } from "react-native";
 import {
-  getExerciseIDFromSession,
-  getExerciseNamesFromSession,
-  getSessionName,
-  updateExerciseCompletion,
-  updateSessionCompletion,
   saveUpdatedTimeline,
   getExercisesFromWorkoutTimeline,
 } from "../database/WorkoutDB";
@@ -35,24 +30,21 @@ export default function WorkoutLogScreen() {
   const [instructions, setInstructions] = useState(null);
   const [sessionName, setSessionName] = useState("");
   const [workoutDate, setWorkoutDate] = useState("N/A");
-  const route = useRoute();
-  const sessionId = route.params?.sessionId;
   const navigation = useNavigation();
 
   useEffect(() => {
     const fetchSessionDetails = async () => {
+      //get details
       const user_id = await getUserID();
       const today = new Date().toISOString().split("T")[0]; // e.g., "2025-06-16"
-      console.log("user_id: ", user_id);
-      console.log("today: ", today);
+
+      //fetch from database using current user and date
       const workout = await getExercisesFromWorkoutTimeline(user_id, today);
-      console.log("workout: ", workout);
       const { exercises, date } = workout;
-
       setWorkoutDate(date);
-      //console.log("exercises: ", exercises);
-      console.log("date: ", date);
 
+      //null or no exercises in session
+      //means user has no plan
       if (!exercises || exercises.length === 0) {
         console.warn("No exercises found.");
         setExercises([]);
@@ -60,8 +52,9 @@ export default function WorkoutLogScreen() {
         return;
       }
       console.log("exercises found");
-      console.log("exercises: ", exercises);
 
+      //format the exercises array
+      //into id, name, sets[reps, weights, suggestedreps]
       const formatted = exercises.map((exercise, index) => ({
         exercise_id: exercise.exerciseId || index.toString(),
         name: exercise.exerciseName || "Unknown",
@@ -81,12 +74,14 @@ export default function WorkoutLogScreen() {
     fetchSessionDetails();
   }, []);
 
+  //updating when user adds input into text field
   const handleInputChange = (exerciseIndex, setIndex, field, value) => {
     const updated = [...exercises];
     updated[exerciseIndex].sets[setIndex][field] = value;
     setExercises(updated);
   };
 
+  //when user presses details button
   const openDetails = async (exercise) => {
     //make details pop up screen visible
     setModalVisible(true);
@@ -103,6 +98,7 @@ export default function WorkoutLogScreen() {
     }
   };
 
+  //updating screen when user removes set
   const handleRemoveSet = (exerciseIndex, setIndex) => {
     const updated = [...exercises];
     if (updated[exerciseIndex].sets.length > 1) {
@@ -111,27 +107,27 @@ export default function WorkoutLogScreen() {
     }
   };
 
+  //updating when additional set is added
   const handleAddSet = (exerciseIndex) => {
     const updated = [...exercises];
     updated[exerciseIndex].sets.push({
       reps: "",
       weight: "",
+      //make suggested reps apply for newly made set
       suggestedReps: exercises[exerciseIndex].sets[0].suggestedReps || "Reps",
     });
     setExercises(updated);
   };
 
+  //when user presses finish workout
   const handleSaveSession = async () => {
     try {
       //get user id
       const user_id = await getUserID();
       console.log("user id: ", user_id);
 
-      // Save exercise completions first
+      // Save exercises on timeline
       await saveUpdatedTimeline(user_id, workoutDate, exercises);
-
-      // Then mark the session as completed
-      //await updateSessionCompletion(sessionId);
 
       alert("Workout saved successfully!");
       navigation.navigate("Home");

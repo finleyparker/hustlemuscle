@@ -12,7 +12,6 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { getWorkoutTimeline } from "../database/WorkoutTimeline";
-import { getSessionDetails } from "../database/WorkoutDB";
 
 const WorkoutScreen = () => {
   const [loading, setLoading] = useState(true);
