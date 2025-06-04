@@ -190,6 +190,9 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
 
     // Process each workout day in the plan
     for (const workoutDay of workoutPlan) {
+      console.log('Processing workout day:', workoutDay.day);
+      console.log('Exercises in this day:', workoutDay.exercises);
+      
       const dayOfWeek = dayMap[workoutDay.dayOfWeek.toLowerCase()];
       
       // Generate dates for this workout day within the duration
@@ -199,21 +202,30 @@ const migrateWorkoutPlanToTimeline = async (datedExercisesRef, workoutPlan, dura
           // Create a document for each matching date
           const dateStr = currentDate.toISOString().split('T')[0];
           
-          await setDoc(doc(datedExercisesRef, dateStr), {
-            date: dateStr,
-            programId: workoutDay.programId || 'default',
-            workoutTitle: workoutDay.day || '',
-            completionStatus: "incomplete",
-            exercises: workoutDay.exercises.map(exercise => ({
+          const mappedExercises = workoutDay.exercises.map(exercise => {
+            console.log('Exercise being mapped:', exercise);
+            console.log('Exercise ID:', exercise.id);
+            return {
               exerciseName: exercise.name,
-              instructions: exercise.steps || [],
+              exerciseId: exercise.id,
+              instructions: exercise.instructions || [],
               suggestedReps: exercise.reps,
               suggestedSets: exercise.sets,
               weight: 0,
               reps: 0,
               sets: 0,
               restTime: exercise.restTime || '60s'
-            }))
+            };
+          });
+          
+          console.log('Mapped exercises:', mappedExercises);
+          
+          await setDoc(doc(datedExercisesRef, dateStr), {
+            date: dateStr,
+            programId: workoutDay.session_id,
+            workoutTitle: workoutDay.day || '',
+            completionStatus: "incomplete",
+            exercises: mappedExercises
           });
           totalSessions++;
         }
