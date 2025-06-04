@@ -96,7 +96,48 @@ export const saveUpdatedTimeline = async (
   }
 };
 
+//new function for workouthistory
+export const getCompletedSessions = async () => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    console.warn("User not logged in.");
+    return [];
+  }
+
+  try {
+    console.log("searching workouthistory for user: ", user.uid);
+    const timelineRef = collection(
+      db,
+      "workoutTimeline",
+      user.uid,
+      "datedExercises"
+    );
+    const q = query(timelineRef, where("completionStatus", "==", "complete"));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.log("No completed workout sessions found for user:", user.uid);
+      return [];
+    }
+
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      console.log(data);
+      return {
+        id: doc.id,
+        ...data,
+        completion_date: data.completion_date?.toDate?.() || null, // if field exists
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching completed workoutTimeline sessions:", error);
+    return [];
+  }
+};
+
 //old function for workouthistory
+/*
 export const getCompletedSessions = async () => {
   const user = auth.currentUser;
 
@@ -124,4 +165,4 @@ export const getCompletedSessions = async () => {
     console.error("Firebase error fetching completed sessions:", error);
     return [];
   }
-};
+};*/
