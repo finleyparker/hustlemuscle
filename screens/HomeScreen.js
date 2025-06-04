@@ -65,10 +65,10 @@ const HomeScreen = () => {
         }
       }
     };
-  
+
     fetchCalories();
   }, []);
-  
+
 
   const askLogout = () =>
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -185,7 +185,7 @@ const HomeScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      
+
 
       {/* Header Section */}
       <View style={styles.header}>
@@ -193,7 +193,7 @@ const HomeScreen = () => {
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileButton}
             onPress={() => navigation.navigate('Settings')}>
             <Image
@@ -453,8 +453,13 @@ const styles = StyleSheet.create({
   sessionRow: {
     flexDirection: 'row',
     alignItems: 'center',
+<<<<<<< HEAD
     marginTop: 4,
     flexWrap: 'nowrap',
+=======
+    marginBottom: 12,
+
+>>>>>>> 94aeb2736a6334c4ef6955b93ee2a409dda89a81
   },
   sessionLabel: {
     color: '#fff',

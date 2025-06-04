@@ -272,32 +272,55 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
         const selectedExercises = [];
         const perMuscleTarget = Math.ceil(maxExercisesPerDay / muscleGroup.length);
 
+
+        const usedExerciseIds = new Set();
+
         muscleGroup.forEach(muscle => {
         const allMuscleExercises = muscleToExercisesMap[muscle] || [];
         
+        const availableExercises = allMuscleExercises.filter(
+          ex => !usedExerciseIds.has(ex.id)
+        );
+        if (availableExercises.length === 0) return; // Skip if no available exercises
+
+        
+        
         // Separate primary and secondary exercises
-        const primaryExercises = allMuscleExercises.filter(ex => 
+        const primaryExercises = availableExercises.filter(ex => 
           ex.primaryMuscles?.includes(muscle)
         );
-        const secondaryExercises = allMuscleExercises.filter(ex => 
-          ex.secondaryMuscles?.includes(muscle)
+        const secondaryExercises = availableExercises.filter(ex => 
+          ex.secondaryMuscles?.includes(muscle) && 
+          !primaryExercises.some(pe => pe.id === ex.id)
         );
 
-        // Try to get enough primary exercises first
-        if (primaryExercises.length >= perMuscleTarget) {
-          const shuffled = primaryExercises.sort(() => 0.5 - Math.random());
-          selectedExercises.push(...shuffled.slice(0, perMuscleTarget));
-        } else {
-          // If not enough primary exercises, use all available primary ones
-          selectedExercises.push(...primaryExercises);
-          
-          // Then fill the remaining slots with secondary exercises
-          const remainingSlots = perMuscleTarget - primaryExercises.length;
-          if (remainingSlots > 0 && secondaryExercises.length > 0) {
-            const shuffledSecondary = secondaryExercises.sort(() => 0.5 - Math.random());
-            selectedExercises.push(...shuffledSecondary.slice(0, remainingSlots));
-          }
-        }
+        const exercisesToTake = Math.min(
+          perMuscleTarget,
+          primaryExercises.length + secondaryExercises.length
+        );
+
+        if (exercisesToTake <= 0) return;
+
+        const shuffledPrimary = [...primaryExercises].sort(() => 0.5 - Math.random());
+        const takenPrimary = shuffledPrimary.slice(0, exercisesToTake);
+
+        const remaining = exercisesToTake - takenPrimary.length;
+        const takenSecondary = remaining > 0 
+        ? [...secondaryExercises]
+          .sort(() => 0.5 - Math.random())
+          .slice(0, remaining)
+        : [];
+        
+        // Combine and add to selected exercises
+        const newExercises = [...takenPrimary, ...takenSecondary];
+        selectedExercises.push(...newExercises);
+
+        // Mark these exercises as used
+        newExercises.forEach(ex => usedExerciseIds.add(ex.id));
+
+
+
+        
       });
 
 

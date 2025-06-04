@@ -250,9 +250,9 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
     }
   };
 
-  const proteinTarget1 = (dailyTarget * proteinTarget) 
-  const fatTarget1 = (dailyTarget * fatTarget) 
-  const carbTarget1 = (dailyTarget * carbTarget) 
+  const proteinTarget1 = ((dailyTarget * proteinTarget) / 4)
+  const fatTarget1 = ((dailyTarget * fatTarget) / 9)
+  const carbTarget1 = ((dailyTarget * carbTarget) / 4)
 
 
   const fill = (totalCalories / dailyTarget) * 100;
@@ -360,7 +360,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
             />
 
             <TextInput
-              placeholder="Carbs"
+              placeholder="Carbs (grams)"
               style={styles.input}
               keyboardType="numeric"
               value={manualCarbs}
@@ -368,7 +368,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
             />
 
             <TextInput
-              placeholder="Protein"
+              placeholder="Protein (grams)"
               style={styles.input}
               keyboardType="numeric"
               value={manualProtein}
@@ -376,7 +376,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
             />
 
             <TextInput
-              placeholder="Fats"
+              placeholder="Fats (grams)"
               style={styles.input}
               keyboardType="numeric"
               value={manualFats}
