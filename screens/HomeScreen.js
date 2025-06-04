@@ -40,10 +40,10 @@ const HomeScreen = () => {
         }
       }
     };
-  
+
     fetchCalories();
   }, []);
-  
+
 
   const askLogout = () =>
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
@@ -95,7 +95,7 @@ const HomeScreen = () => {
 
   return (
     <ScrollView style={styles.container}>
-      
+
 
       {/* Header Section */}
       <View style={styles.header}>
@@ -103,7 +103,7 @@ const HomeScreen = () => {
           <View style={styles.welcomeContainer}>
             <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
           </View>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.profileButton}
             onPress={() => navigation.navigate('Settings')}>
             <Image
@@ -342,7 +342,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: 12,
-    
+
   },
   progressPanelLabel: {
     color: '#fff',
