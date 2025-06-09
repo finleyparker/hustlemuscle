@@ -26,6 +26,7 @@ export async function getUserManagedDetails() {
       ExperienceLevel: data.ExperienceLevel || null,
       WorkoutDaysPerWeek: data.WorkoutDaysPerWeek || null,
       DietaryRestrictions: data.DietaryRestrictions || [],
+      Equipment: data.Equipment || [],
     };
   } catch (error) {
     console.error('Error fetching managed user details:', error);

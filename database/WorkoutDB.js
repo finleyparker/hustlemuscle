@@ -1,219 +1,168 @@
-import { Timestamp, collection, getDocs, doc, getDoc, addDoc, updateDoc, query, where } from 'firebase/firestore';
-import { db, auth } from './firebase';
-import { getUserID } from './UserDB';
+import {
+  Timestamp,
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  updateDoc,
+  query,
+  where,
+} from "firebase/firestore";
+import { db, auth } from "./firebase";
 
-// Fetch all workout sessions
-export const getAllSessions = async () => {
-    const querySnapshot = await getDocs(collection(db, 'workout_sessions'));
-    return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-};
+// New fetch function from workoutTimeline
+//get exercises from workout timeline for a given date
+//if theres no workout for that date, find the next incomplete workout
+export const getExercisesFromWorkoutTimeline = async (user_id, date) => {
+  try {
+    console.log("Getting exercises for date:", date);
 
-// fetch session of currentuser
-export const getSessionDetails = async () => {
-    const user = auth.currentUser;
+    const userDocRef = doc(db, "workoutTimeline", user_id);
+    const datedExercisesRef = collection(userDocRef, "datedExercises");
 
-    if (!user) {
-        console.warn('User not logged in.');
-        return [];
+    // Step 1: Try to get today's workout
+    const todayDoc = doc(datedExercisesRef, date);
+    const todaySnap = await getDoc(todayDoc);
+
+    if (todaySnap.exists()) {
+      const data = todaySnap.data();
+      console.log("Today's workout found.");
+      return { exercises: data.exercises || [], date };
     }
 
-    console.log('Logged in user:', user.uid);
+    console.warn("No workout found for today:", date);
 
-    try {
-        const sessionsRef = collection(db, 'workout_sessions');
-        const q = query(sessionsRef, where('user_id', '==', user.uid));
-        const snapshot = await getDocs(q);
+    // Step 2: Fallback – find next incomplete workout
+    const allDocsSnap = await getDocs(datedExercisesRef);
+    const futureIncompleteDocs = [];
 
-        console.log('Sessions found:', snapshot.size);
+    allDocsSnap.forEach((docSnap) => {
+      const data = docSnap.data();
+      if (
+        Array.isArray(data.exercises) &&
+        (data.completionStatus || "").toLowerCase() === "incomplete"
+      ) {
+        futureIncompleteDocs.push({
+          date: docSnap.id,
+          exercises: data.exercises,
+        });
+      }
+    });
 
-        if (snapshot.empty) {
-            console.log('No matching sessions found for user:', user.uid);
-        }
-
-        return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data()
-        }));
-    } catch (error) {
-        console.error('Firebase error fetching sessions:', error);
-        return [];
-    }
-};
-
-
-//get session and exercises in it
-export const getExerciseNamesFromSession = async (sessionId) => {
-    try {
-        const ref = doc(db, 'workout_sessions', sessionId);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-            console.warn('No session found for ID:', sessionId);
-            return [];
-        }
-        console.log('Get exercise name successfull');
-        const data = snap.data();
-        console.log(data.exercise_name);
-        return data.exercise_name || [];
-    } catch (error) {
-        console.error('Firestore error:', error);
-        return [];
-    }
-};
-
-export const getExerciseIDFromSession = async (sessionId) => {
-    try {
-        const ref = doc(db, 'workout_sessions', sessionId);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-            console.warn('No session found for ID:', sessionId);
-            return [];
-        }
-        console.log('Get exercise ID successfull');
-        const data = snap.data();
-        console.log("exercise IDS: ", data.exercise_id);
-        return data.exercise_id || [];
-    } catch (error) {
-        console.error('Firestore error:', error);
-        return [];
-    }
-};
-
-// Update an exercise's completion status, reps, sets and weights
-export const updateExerciseCompletion = async (completions) => {
-    const promises = completions.map(completion =>
-        addDoc(collection(db, 'ExerciseCompletion'), completion)
+    // Sort and return the earliest future incomplete workout
+    const sorted = futureIncompleteDocs.sort(
+      (a, b) => new Date(a.date) - new Date(b.date)
     );
-    await Promise.all(promises);
-};
 
-export const updateSessionCompletion = async (sessionId) => {
-    try {
-        const user = auth.currentUser;
-        if (!user) {
-            throw new Error('User not logged in');
-        }
-
-        // Get session details
-        const sessionRef = doc(db, 'workout_sessions', sessionId);
-        const sessionSnap = await getDoc(sessionRef);
-
-        if (!sessionSnap.exists()) {
-            throw new Error('Session not found');
-        }
-
-        const sessionData = sessionSnap.data();
-
-        // Create completed session document
-
-        //date
-        const completion_date = new Date();
-        completion_date.setSeconds(0, 0);
-        console.log('session_completion date: ', completion_date);
-
-        //get exercise_completion_ids
-        //get all exercisecompletion documents with the same:
-        //workout_session_id, user_id, completion_date
-
-        const exercise_completion_ids = await getExerciseCompletions(user.uid, completion_date, sessionId);
-
-
-        const completedSession = {
-            completion_date: completion_date,
-            session_name: sessionData.session_name,
-            exercise_completion_ids: exercise_completion_ids, // This will be populated when exercises are completed
-            user_id: user.uid,
-            workout_session_id: sessionId
-        };
-
-        // Add to completed_sessions collection
-        const docRef = await addDoc(collection(db, 'completed_sessions'), completedSession);
-        console.log('Completed session added with ID:', docRef.id);
-        return docRef.id;
-    } catch (error) {
-        console.error('Error completing session:', error);
-        throw error;
+    if (sorted.length > 0) {
+      console.log("workout: ", sorted[0]);
+      console.log("Using fallback workout from:", sorted[0].date);
+      return { exercises: sorted[0].exercises, date: sorted[0].date };
     }
+
+    console.warn("No incomplete workouts found.");
+    return { exercises: [], date: null };
+  } catch (error) {
+    console.error("Error fetching exercises from timeline:", error);
+    return { exercises: [], date: null };
+  }
 };
 
-export const getSessionName = async (sessionId) => {
-    try {
-        console.log('getting session name...');
-        const ref = doc(db, 'workout_sessions', sessionId);
-        const snap = await getDoc(ref);
-
-        if (!snap.exists()) {
-            console.warn('No session name found for ID:', sessionId);
-            return [];
-        }
-        console.log('Get session name successfull');
-        const data = snap.data();
-        return data.session_name || [];
-    } catch (error) {
-        console.error('Firestore error:', error);
-        return [];
-    }
+//new save function for workoutTimeline
+export const saveUpdatedTimeline = async (
+  user_id,
+  dateString,
+  updatedExercises
+) => {
+  try {
+    //navigates to the user's current session document
+    const docRef = doc(
+      db,
+      "workoutTimeline",
+      user_id,
+      "datedExercises",
+      dateString
+    );
+    //then updates the exercise list with reps, sets and weights
+    //also changes completionStatus to complete
+    await updateDoc(docRef, {
+      exercises: updatedExercises,
+      completionStatus: "complete",
+    });
+    console.log("Workout log updated.");
+  } catch (error) {
+    console.error("Failed to update workoutTimeline:", error);
+  }
 };
 
+//new function for workouthistory
 export const getCompletedSessions = async () => {
-    const user = auth.currentUser;
+  const user = auth.currentUser;
 
-    if (!user) {
-        console.warn('User not logged in.');
-        return [];
+  if (!user) {
+    console.warn("User not logged in.");
+    return [];
+  }
+
+  try {
+    console.log("searching workouthistory for user: ", user.uid);
+    const timelineRef = collection(
+      db,
+      "workoutTimeline",
+      user.uid,
+      "datedExercises"
+    );
+    const q = query(timelineRef, where("completionStatus", "==", "complete"));
+    const snapshot = await getDocs(q);
+
+    if (snapshot.empty) {
+      console.log("No completed workout sessions found for user:", user.uid);
+      return [];
     }
 
-    try {
-        const sessionsRef = collection(db, 'completed_sessions');
-        const q = query(sessionsRef, where('user_id', '==', user.uid));
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            console.log('No completed sessions found for user:', user.uid);
-            return [];
-        }
-
-        return snapshot.docs.map((doc) => ({
-            id: doc.id,
-            ...doc.data(),
-            completion_date: doc.data().completion_date?.toDate() // Convert Firestore timestamp to Date
-        }));
-    } catch (error) {
-        console.error('Firebase error fetching completed sessions:', error);
-        return [];
-    }
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      console.log(data);
+      return {
+        id: doc.id,
+        ...data,
+        completion_date: data.completion_date?.toDate?.() || null, // if field exists
+      };
+    });
+  } catch (error) {
+    console.error("Error fetching completed workoutTimeline sessions:", error);
+    return [];
+  }
 };
 
+//old function for workouthistory
+/*
+export const getCompletedSessions = async () => {
+  const user = auth.currentUser;
 
-export const getExerciseCompletions = async (user_id, completion_date, sessionId) => {
-    try {
-        // Convert JS Date to Firestore Timestamp if needed
-        const dateTimestamp = Timestamp.fromDate(new Date(completion_date)); // assumes completion_date is a valid JS Date or ISO string
+  if (!user) {
+    console.warn("User not logged in.");
+    return [];
+  }
 
-        const sessionsRef = collection(db, 'ExerciseCompletion');
-        const q = query(
-            sessionsRef,
-            where('user_id', '==', user_id),
-            where('completion_date', '==', dateTimestamp),
-            where('workout_session_id', '==', sessionId)
-        );
+  try {
+    const sessionsRef = collection(db, "completed_sessions");
+    const q = query(sessionsRef, where("user_id", "==", user.uid));
+    const snapshot = await getDocs(q);
 
-        const snapshot = await getDocs(q);
-
-        if (snapshot.empty) {
-            console.log('No matching exercise completions found.');
-            return [];
-        }
-
-        // Return only the document IDs
-        return snapshot.docs.map((doc) => doc.id);
-
-    } catch (error) {
-        console.error('Firebase error fetching completed sessions:', error);
-        return [];
+    if (snapshot.empty) {
+      console.log("No completed sessions found for user:", user.uid);
+      return [];
     }
-};
 
-
-
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      completion_date: doc.data().completion_date?.toDate(), // Convert Firestore timestamp to Date
+    }));
+  } catch (error) {
+    console.error("Firebase error fetching completed sessions:", error);
+    return [];
+  }
+};*/

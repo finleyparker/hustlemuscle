@@ -1,20 +1,11 @@
 module.exports = {
-    preset: 'jest-expo',
-    setupFilesAfterEnv: [
-        '<rootDir>/jest.setup.js',
-        '@testing-library/jest-native/extend-expect',
-    ],
-    transform: {
-        '^.+\\.[jt]sx?$': 'babel-jest',
-    },
+    preset: 'react-native',
     transformIgnorePatterns: [
-        'node_modules/(?!(jest-)?@?react-native|@react-navigation|expo|firebase|@firebase)',
+        'node_modules/(?!(@react-native|react-native|@expo|expo|@react-navigation|react-native-calendars)/)',
     ],
+    setupFiles: ['./jest.setup.js'],
     moduleNameMapper: {
-        // Only mock if you created these files
-        '^@react-native-firebase/app$': '<rootDir>/__mocks__/@react-native-firebase/app.js',
-        '^@react-native-firebase/auth$': '<rootDir>/__mocks__/@react-native-firebase/auth.js',
+        '\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|m4a|aac|oga)$':
+            '<rootDir>/__mocks__/fileMock.js',
     },
-    moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
-    testEnvironment: 'jsdom',
 };

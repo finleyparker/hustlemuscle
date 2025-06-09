@@ -8,10 +8,10 @@ import { ActivityIndicator, View } from 'react-native';
 
 //workout screens
 import WorkoutPlanScreen from './screens/WorkoutPlanScreen';
-import SessionListScreen from './screens/SessionListScreen';
 import WorkoutLogScreen from './screens/WorkoutLogScreen';
 import WorkoutHistoryScreen from './screens/WorkoutHistoryScreen';
 import WorkoutScreen from './screens/WorkoutScreen';
+import TestWorkoutTimeline from './screens/TestWorkoutTimeline';
 
 //main app screens
 import AuthScreen from './screens/AuthScreen';
@@ -67,7 +67,6 @@ export default function App() {
             <Stack.Navigator initialRouteName={'Login'} screenOptions={{ headerStyle: { backgroundColor: 'black' }, headerTintColor: 'white' }}>
                 <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
                 <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Sessions" component={SessionListScreen} />
                 <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen} />
                 <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
                 <Stack.Screen name="DietScreen" component={DietScreen} />
@@ -86,8 +85,7 @@ export default function App() {
                 <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
                 <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
                 <Stack.Screen name="Workout" component={WorkoutScreen} />
-
-
+                <Stack.Screen name="TestWorkoutTimeline" component={TestWorkoutTimeline} />
             </Stack.Navigator>
         </NavigationContainer>
     );

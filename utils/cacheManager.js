@@ -1,4 +1,5 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { getWorkoutTimeline } from '../database/WorkoutTimeline';
 
 // Cache duration constants
 export const CACHE_DURATIONS = {
@@ -49,6 +50,13 @@ export const clearCache = async (cacheKey, timestampKey) => {
     console.error('Error clearing cache:', error);
     return false;
   }
+};
+
+export const clearTodaysSessionCache = async () => {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const cacheKey = createCacheKey('todays_session', todayStr);
+  const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
+  await clearCache(cacheKey, timestampKey);
 };
 
 // Specific cache keys for different features
