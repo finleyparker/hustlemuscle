@@ -355,7 +355,7 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
         
 
         return {
-          day: `${dayKey.replace('_', ' ').toUpperCase()} (${dayOfWeek})`, // Add weekday in display string
+          day: `${dayKey.replace('_', ' ').toUpperCase()}`, // Add weekday in display string
           session_id: dayKey.toLowerCase().replace('day_', '').replace('_', ''),
           muscleFocus: muscleGroup.join(' & '),
           dayOfWeek, // add weekday property here too
