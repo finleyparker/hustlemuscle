@@ -10,22 +10,31 @@ import { signOut } from 'firebase/auth';
 import { useDate } from '../context/DateContext';
 import { requestNotificationPermissions, disableNotifications, enableNotifications } from '../utils/notifications';
 import * as Notifications from 'expo-notifications';
+import { getConsoleLoggingState, setConsoleLoggingState } from '../utils/consoleLogger';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
+  const [consoleLoggingEnabled, setConsoleLoggingEnabled] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const [showHiddenDatePicker, setShowHiddenDatePicker] = useState(false);
+  const [showDebugSwitch, setShowDebugSwitch] = useState(false);
   const navigation = useNavigation();
   const { updateDate, currentDate } = useDate();
 
-  // Check notification permission status on component mount
+  // Check notification permission status and console logging state on component mount
   useEffect(() => {
     checkNotificationStatus();
+    checkConsoleLoggingStatus();
   }, []);
 
   const checkNotificationStatus = async () => {
     const { status } = await Notifications.getPermissionsAsync();
     setNotificationsEnabled(status === 'granted');
+  };
+
+  const checkConsoleLoggingStatus = async () => {
+    const isEnabled = await getConsoleLoggingState();
+    setConsoleLoggingEnabled(isEnabled);
   };
 
   const handleNotificationToggle = async (value) => {
@@ -50,6 +59,25 @@ const SettingsScreen = () => {
       if (disabled) {
         setNotificationsEnabled(false);
       }
+    }
+  };
+
+  const handleConsoleLoggingToggle = async (value) => {
+    const success = await setConsoleLoggingState(value);
+    if (success) {
+      setConsoleLoggingEnabled(value);
+    } else {
+      Alert.alert('Error', 'Failed to update console logging settings');
+    }
+  };
+
+  const handleNotificationTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+    
+    if (newCount >= 3) {
+      setShowDebugSwitch(prev => !prev);
+      setTapCount(0);
     }
   };
 
@@ -121,7 +149,10 @@ const SettingsScreen = () => {
       {/* Preferences Section */}
       <Text style={styles.sectionHeader}>PREFERENCES</Text>
       <View style={styles.card}>
-        <View style={styles.row}>
+        <TouchableOpacity 
+          style={styles.row}
+          onPress={handleNotificationTap}
+        >
           <Ionicons name="notifications-outline" size={22} color="#fff" style={styles.icon} />
           <Text style={styles.label}>Notification settings</Text>
           <Switch
@@ -131,7 +162,20 @@ const SettingsScreen = () => {
             trackColor={{ true: '#E3FA05', false: '#444' }}
             style={styles.switch}
           />
-        </View>
+        </TouchableOpacity>
+        {showDebugSwitch && (
+          <View style={styles.row}>
+            <Ionicons name="code-working-outline" size={22} color="#fff" style={styles.icon} />
+            <Text style={styles.label}>Debug mode</Text>
+            <Switch
+              value={!consoleLoggingEnabled}
+              onValueChange={(value) => handleConsoleLoggingToggle(!value)}
+              thumbColor={!consoleLoggingEnabled ? '#E3FA05' : '#888'}
+              trackColor={{ true: '#E3FA05', false: '#444' }}
+              style={styles.switch}
+            />
+          </View>
+        )}
       </View>
 
       {/* Hidden Date Change Feature */}
