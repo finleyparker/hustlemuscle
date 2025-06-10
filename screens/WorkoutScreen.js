@@ -13,11 +13,16 @@ import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { getWorkoutTimeline } from "../database/WorkoutTimeline";
 import { registerSessionRefreshCallback } from "../utils/sessionManager";
+import { getAuth } from "firebase/auth";
+import { collection, query, where, getDocs } from "firebase/firestore";
+import { db } from "../database/firebase";
 
 const WorkoutScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const [workout, setWorkout] = useState(null);
+  const [planName, setPlanName] = useState('');
+  const [planCreatedAt, setPlanCreatedAt] = useState(null);
 
   const fetchWorkout = async () => {
     try {
@@ -52,6 +57,22 @@ const WorkoutScreen = () => {
         console.log('No timeline data or exercises found');
         setWorkout(null);
       }
+
+      // Fetch plan name and createdAt from workoutPlans
+      const auth = getAuth();
+      const userId = auth.currentUser?.uid;
+      if (userId) {
+        const workoutPlansRef = collection(db, 'workoutPlans');
+        const q = query(workoutPlansRef, where('userId', '==', userId));
+        const querySnapshot = await getDocs(q);
+        if (!querySnapshot.empty) {
+          const planData = querySnapshot.docs[0].data();
+          console.log('Plan data:', planData);
+          console.log('Created at:', planData.createdAt);
+          setPlanName(planData.planName || '');
+          setPlanCreatedAt(planData.createdAt);
+        }
+      }
     } catch (error) {
       console.error("Error fetching workout:", error);
       setWorkout(null);
@@ -72,6 +93,11 @@ const WorkoutScreen = () => {
       unregister();
     };
   }, []);
+
+  // Add refresh function
+  const handleRefresh = () => {
+    fetchWorkout();
+  };
 
   if (loading) {
     return (
@@ -113,19 +139,21 @@ const WorkoutScreen = () => {
           activeOpacity={0.85}
         >
           <Text style={styles.programName}>
-            3-Day a Week Muscle Gain Program
+            {planName || 'No Active Program'}
           </Text>
           <Text style={styles.programDate}>
-            Started on : {workout?.startDate || "N/A"}
+            Started on : {planCreatedAt ? new Date(planCreatedAt.toDate()).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            }) : "N/A"}
           </Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={styles.resetButton}
-          onPress={() => {
-            // Optional reset logic
-          }}
+          onPress={handleRefresh}
         >
-          <Text style={styles.resetText}>Reset</Text>
+          <Text style={styles.resetText}>Refresh</Text>
         </TouchableOpacity>
 
         {/* Today's Workout */}
@@ -266,12 +294,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   startButton: {
-    backgroundColor: '#E4FA00',
-    borderRadius: 30,
-    paddingVertical: 16,
-    alignItems: 'center',
+    backgroundColor: "#d3d3d3",
+    borderRadius: 20,
     marginHorizontal: 16,
-    marginBottom: 32,
+    marginBottom: 18,
+    paddingVertical: 14,
+    alignItems: "center",
   },
   startButtonText: {
     color: "#222",
