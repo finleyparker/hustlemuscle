@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Switch, Alert } from 'react-native';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
 import DateTimePickerModal from 'react-native-modal-datetime-picker';
@@ -7,26 +7,50 @@ import { logout } from '../database/UserDB';
 import AuthScreen from './AuthScreen';
 import { auth } from '../database/firebase';
 import { signOut } from 'firebase/auth';
-import { testRunDailyTask } from '../utils/syncWorkoutSchedule';
 import { useDate } from '../context/DateContext';
-import { scheduleMissedWorkoutNotification } from '../utils/notifications';
+import { requestNotificationPermissions, disableNotifications, enableNotifications } from '../utils/notifications';
+import * as Notifications from 'expo-notifications';
 
 const SettingsScreen = () => {
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
-  const [isCalendarVisible, setCalendarVisible] = useState(false);
-  const [selectedDate, setSelectedDate] = useState(null);
+  const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [tapCount, setTapCount] = useState(0);
   const [showHiddenDatePicker, setShowHiddenDatePicker] = useState(false);
   const navigation = useNavigation();
   const { updateDate, currentDate } = useDate();
 
-  console.log('Current date in context:', currentDate);
+  // Check notification permission status on component mount
+  useEffect(() => {
+    checkNotificationStatus();
+  }, []);
 
-  const showCalendar = () => setCalendarVisible(true);
-  const hideCalendar = () => setCalendarVisible(false);
-  const handleConfirm = (date) => {
-    setSelectedDate(date);
-    hideCalendar();
+  const checkNotificationStatus = async () => {
+    const { status } = await Notifications.getPermissionsAsync();
+    setNotificationsEnabled(status === 'granted');
+  };
+
+  const handleNotificationToggle = async (value) => {
+    if (value) {
+      // Request notification permissions
+      const granted = await requestNotificationPermissions();
+      if (granted) {
+        const enabled = await enableNotifications();
+        if (enabled) {
+          setNotificationsEnabled(true);
+        }
+      } else {
+        Alert.alert(
+          'Permission Required',
+          'Please enable notifications in your device settings to receive workout reminders.',
+          [{ text: 'OK' }]
+        );
+      }
+    } else {
+      // Disable notifications completely
+      const disabled = await disableNotifications();
+      if (disabled) {
+        setNotificationsEnabled(false);
+      }
+    }
   };
 
   const handleHiddenTap = () => {
@@ -75,7 +99,10 @@ const SettingsScreen = () => {
       {/* Account Section */}
       <Text style={styles.sectionHeader}>ACCOUNT</Text>
       <View style={styles.card}>
-        <TouchableOpacity style={styles.row}>
+        <TouchableOpacity 
+          style={styles.row}
+          onPress={() => navigation.navigate('UpdateDetails')}
+        >
           <Ionicons name="person-circle" size={24} color="#fff" style={styles.icon} />
           <Text style={styles.label}>Update details</Text>
           <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
@@ -85,20 +112,6 @@ const SettingsScreen = () => {
           <Text style={styles.label}>Update metrics</Text>
           <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.row} onPress={showCalendar}>
-          <Feather name="calendar" size={22} color="#fff" style={styles.icon} />
-          <Text style={styles.label}>
-            {selectedDate ? selectedDate.toLocaleDateString() : 'Calendar'}
-          </Text>
-          <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
-        </TouchableOpacity>
-        <DateTimePickerModal
-          isVisible={isCalendarVisible}
-          mode="date"
-          onConfirm={handleConfirm}
-          onCancel={hideCalendar}
-          display="inline"
-        />
         <TouchableOpacity style={[styles.row, styles.logoutRow]} onPress={askLogout}>
           <Feather name="log-out" size={22} color="#ff5e69" style={styles.icon} />
           <Text style={[styles.label, { color: '#ff5e69' }]}>Log Out</Text>
@@ -113,21 +126,12 @@ const SettingsScreen = () => {
           <Text style={styles.label}>Notification settings</Text>
           <Switch
             value={notificationsEnabled}
-            onValueChange={setNotificationsEnabled}
+            onValueChange={handleNotificationToggle}
             thumbColor={notificationsEnabled ? '#E3FA05' : '#888'}
             trackColor={{ true: '#E3FA05', false: '#444' }}
             style={styles.switch}
           />
         </View>
-        <TouchableOpacity style={styles.row}>
-          <Feather name="message-square" size={22} color="#fff" style={styles.icon} />
-          <Text style={styles.label}>Provide feedback</Text>
-          <Feather name="chevron-right" size={20} color="#888" style={styles.chevron} />
-        </TouchableOpacity>
-        <TouchableOpacity style={[styles.row, styles.deleteRow]}>
-          <Feather name="trash-2" size={22} color="#ff5e69" style={styles.icon} />
-          <Text style={[styles.label, { color: '#ff5e69' }]}>Delete account</Text>
-        </TouchableOpacity>
       </View>
 
       {/* Hidden Date Change Feature */}
@@ -197,10 +201,6 @@ const styles = StyleSheet.create({
     marginLeft: 8,
   },
   logoutRow: {
-    borderBottomWidth: 0,
-    marginTop: 8,
-  },
-  deleteRow: {
     borderBottomWidth: 0,
     marginTop: 8,
   },

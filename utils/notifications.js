@@ -28,6 +28,52 @@ export const requestNotificationPermissions = async () => {
   return true;
 };
 
+// Disable notifications completely
+export const disableNotifications = async () => {
+  try {
+    // Cancel all scheduled notifications
+    await Notifications.cancelAllScheduledNotificationsAsync();
+    
+    // Remove all notification handlers
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: false,
+        shouldPlaySound: false,
+        shouldSetBadge: false,
+      }),
+    });
+    
+    // Clear any pending notifications
+    await Notifications.dismissAllNotificationsAsync();
+    
+    console.log('Notifications disabled successfully');
+    return true;
+  } catch (error) {
+    console.error('Error disabling notifications:', error);
+    return false;
+  }
+};
+
+// Enable notifications
+export const enableNotifications = async () => {
+  try {
+    // Reset notification handler to default
+    Notifications.setNotificationHandler({
+      handleNotification: async () => ({
+        shouldShowAlert: true,
+        shouldPlaySound: true,
+        shouldSetBadge: true,
+      }),
+    });
+    
+    console.log('Notifications enabled successfully');
+    return true;
+  } catch (error) {
+    console.error('Error enabling notifications:', error);
+    return false;
+  }
+};
+
 // Schedule a notification for a missed workout
 export const scheduleMissedWorkoutNotification = async (workoutDate, missedCount) => {
   console.log('Attempting to schedule notification:', { workoutDate, missedCount });
@@ -67,4 +113,5 @@ export const scheduleMissedWorkoutNotification = async (workoutDate, missedCount
 // Cancel all scheduled notifications
 export const cancelAllNotifications = async () => {
   await Notifications.cancelAllScheduledNotificationsAsync();
+  await Notifications.dismissAllNotificationsAsync();
 }; 
