@@ -6,26 +6,27 @@ import {
   TouchableOpacity,
   SafeAreaView,
   ScrollView,
-  TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { db, auth } from '../database/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 
 const COMMON_EQUIPMENT = [
-  'Dumbbells',
-  'Resistance Bands',
-  'Yoga Mat',
-  'Pull-up Bar',
-  'Kettlebell',
-  'Bench',
+  'Dumbbell',
+  'Body Only',
+  'Bands',
+  'Kettlebells',
+  'Foam Roll',
+  'Cable',
+  'Machine',
+  'Barbell',
+  'Exercise Ball',
+  'E-Z Curl Bar',
   'None',
 ];
 
 const EquipmentScreen = ({ navigation }) => {
   const [selectedEquipment, setSelectedEquipment] = useState([]);
-  const [customEquipment, setCustomEquipment] = useState('');
-  const [customEquipmentList, setCustomEquipmentList] = useState([]);
 
   const toggleEquipment = (item) => {
     setSelectedEquipment(prev => {
@@ -37,15 +38,7 @@ const EquipmentScreen = ({ navigation }) => {
     });
   };
 
-  const addCustomEquipment = () => {
-    if (customEquipment.trim() && !customEquipmentList.includes(customEquipment.trim())) {
-      setCustomEquipmentList(prev => [...prev, customEquipment.trim()]);
-      setSelectedEquipment(prev => [...prev, customEquipment.trim()]);
-      setCustomEquipment('');
-    }
-  };
-
-  const handleSave = async () => {
+  const handleNext = async () => {
     try {
       const userId = auth.currentUser?.uid;
       if (!userId) {
@@ -57,10 +50,7 @@ const EquipmentScreen = ({ navigation }) => {
         Equipment: selectedEquipment
       }, { merge: true });
 
-      // Navigate to Home screen after a short delay
-      setTimeout(() => {
-        navigation.navigate('Home');
-      }, 300);
+      navigation.navigate('Home');
     } catch (error) {
       console.error('Error saving equipment:', error);
     }
@@ -100,53 +90,34 @@ const EquipmentScreen = ({ navigation }) => {
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <ScrollView style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #5</Text>
-        <Text style={styles.titleText}>Equipment</Text>
-        <Text style={styles.subtitleText}>What equipment do you have at home?</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <Text style={styles.metricText}>Starting Metric #8</Text>
+          <Text style={styles.titleText}>Equipment</Text>
+          <Text style={styles.subtitleText}>What equipment do you have access to?</Text>
 
-        <View style={styles.equipmentContainer}>
-          {COMMON_EQUIPMENT.map((item) => (
-            <EquipmentButton
-              key={item}
-              item={item}
-              isSelected={selectedEquipment.includes(item)}
-            />
-          ))}
-
-          {customEquipmentList.map((item) => (
-            <EquipmentButton
-              key={item}
-              item={item}
-              isSelected={selectedEquipment.includes(item)}
-            />
-          ))}
+          <View style={styles.equipmentContainer}>
+            {COMMON_EQUIPMENT.map((item) => (
+              <EquipmentButton
+                key={item}
+                item={item}
+                isSelected={selectedEquipment.includes(item)}
+              />
+            ))}
+          </View>
         </View>
-
-        <View style={styles.customEquipmentContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="Add other equipment..."
-            placeholderTextColor="#666666"
-            value={customEquipment}
-            onChangeText={setCustomEquipment}
-            onSubmitEditing={addCustomEquipment}
-          />
-          <TouchableOpacity 
-            style={styles.addButton}
-            onPress={addCustomEquipment}
-          >
-            <Ionicons name="add" size={24} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        <TouchableOpacity 
-          style={styles.continueButton}
-          onPress={handleSave}
-        >
-          <Text style={styles.continueButtonText}>Continue</Text>
-        </TouchableOpacity>
       </ScrollView>
+
+      <TouchableOpacity 
+        style={[
+          styles.nextButton,
+          selectedEquipment.length === 0 && styles.nextButtonDisabled
+        ]}
+        onPress={handleNext}
+        disabled={selectedEquipment.length === 0}
+      >
+        <Text style={styles.nextButtonText}>Next</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 };
@@ -163,32 +134,45 @@ const styles = StyleSheet.create({
     left: 10,
     zIndex: 1,
   },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 120,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  card: {
+    backgroundColor: '#000',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 30,
   },
   metricText: {
-    color: '#FFFFFF',
+    color: '#bbb',
     fontSize: 16,
     marginBottom: 8,
     opacity: 0.7,
   },
   titleText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   subtitleText: {
-    color: '#FFFFFF',
+    color: '#ccc',
     fontSize: 16,
     marginBottom: 40,
     opacity: 0.7,
   },
   equipmentContainer: {
     gap: 12,
-    marginBottom: 24,
+    marginBottom: 80,
   },
   equipmentButton: {
     backgroundColor: 'transparent',
@@ -216,36 +200,22 @@ const styles = StyleSheet.create({
   checkmark: {
     marginLeft: 8,
   },
-  customEquipmentContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 32,
-  },
-  input: {
-    flex: 1,
-    backgroundColor: '#111111',
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    color: '#FFFFFF',
-    fontSize: 16,
-  },
-  addButton: {
-    backgroundColor: '#333333',
-    borderRadius: 30,
-    width: 48,
-    height: 48,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  continueButton: {
+  nextButton: {
     backgroundColor: '#FFFFFF',
     borderRadius: 30,
     paddingVertical: 16,
+    paddingHorizontal: 20,
     alignItems: 'center',
-    marginBottom: 32,
+    position: 'absolute',
+    bottom: 30,
+    left: 20,
+    right: 20,
   },
-  continueButtonText: {
+  nextButtonDisabled: {
+    backgroundColor: '#333333',
+    opacity: 0.5,
+  },
+  nextButtonText: {
     color: '#000000',
     fontSize: 16,
     fontWeight: '600',

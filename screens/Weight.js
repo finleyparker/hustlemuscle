@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   SafeAreaView,
   TextInput,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { db, auth } from '../database/firebase';
-import { setDoc, doc } from 'firebase/firestore';
-
+import { updateWeight } from '../database/UserDB';
 
 const WeightScreen = ({ navigation }) => {
   const [weight, setWeight] = useState('0.0');
@@ -29,18 +29,8 @@ const WeightScreen = ({ navigation }) => {
     if (parseFloat(weight) <= 0) return;
 
     try {
-      const userId = auth.currentUser?.uid;
-      if (!userId) {
-        console.error('No user is signed in');
-        return;
-      }
-
-      await setDoc(doc(db, 'UserDetails', userId), {
-        Weight: parseFloat(weight),
-        WeightUnit: unit
-      }, { merge: true });
-
-      navigation.navigate('Physique');
+      await updateWeight(weight, unit);
+      navigation.navigate('FitnessGoal');
     } catch (error) {
       console.error('Error saving weight:', error);
     }
@@ -59,55 +49,57 @@ const WeightScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <TouchableOpacity 
-        style={styles.backButton}
-        onPress={() => navigation.goBack()}
-      >
-        <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
-      </TouchableOpacity>
-
-      <View style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #2</Text>
-        <Text style={styles.titleText}>Starting Weight</Text>
-        <View style={styles.subtitleContainer}>
-          <Text style={styles.subtitleText}>Enter your weight.</Text>
-          <TouchableOpacity onPress={toggleUnit}>
-            <Ionicons name="swap-horizontal" size={20} color="#FFFFFF" />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.inputContainer}>
-          <View style={styles.weightInputContainer}>
-            <TextInput
-              style={styles.weightInput}
-              value={weight}
-              onChangeText={handleWeightChange}
-              keyboardType="decimal-pad"
-              placeholderTextColor="#666666"
-              selectionColor="#FFFFFF"
-            />
-          </View>
-          <TouchableOpacity 
-            style={styles.unitButton}
-            onPress={toggleUnit}
-          >
-            <Text style={styles.unitButtonText}>{unit}</Text>
-          </TouchableOpacity>
-        </View>
-
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss} accessible={false}>
+      <SafeAreaView style={styles.container}>
         <TouchableOpacity 
-          style={[
-            styles.nextButton,
-            parseFloat(weight) <= 0 && styles.nextButtonDisabled
-          ]}
-          onPress={handleNext}
-          disabled={parseFloat(weight) <= 0}
+          style={styles.backButton}
+          onPress={() => navigation.goBack()}
         >
-          <Text style={styles.nextButtonText}>Next</Text>
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+
+        <View style={styles.contentContainer}>
+          <Text style={styles.metricText}>Starting Metric #2</Text>
+          <Text style={styles.titleText}>Starting Weight</Text>
+          <View style={styles.subtitleContainer}>
+            <Text style={styles.subtitleText}>Enter your weight.</Text>
+            <TouchableOpacity onPress={toggleUnit}>
+              <Ionicons name="swap-horizontal" size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <View style={styles.weightInputContainer}>
+              <TextInput
+                style={styles.weightInput}
+                value={weight}
+                onChangeText={handleWeightChange}
+                keyboardType="decimal-pad"
+                placeholderTextColor="#666666"
+                selectionColor="#FFFFFF"
+              />
+            </View>
+            <TouchableOpacity 
+              style={styles.unitButton}
+              onPress={toggleUnit}
+            >
+              <Text style={styles.unitButtonText}>{unit}</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={[
+              styles.nextButton,
+              parseFloat(weight) <= 0 && styles.nextButtonDisabled
+            ]}
+            onPress={handleNext}
+            disabled={parseFloat(weight) <= 0}
+          >
+            <Text style={styles.nextButtonText}>Next</Text>
+          </TouchableOpacity>
+        </View>
+      </SafeAreaView>
+    </TouchableWithoutFeedback>
   );
 };
 

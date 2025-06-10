@@ -1,35 +1,178 @@
-import React, { useMemo } from 'react';
-import { auth } from '../database/firebase';
-
-import { View, Text, Image, ScrollView, StyleSheet, TouchableOpacity } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { useNavigation, useRoute } from '@react-navigation/native';
-import { getUserName } from '../database/UserDB';
-
-// import LinearGradient from 'expo'
-import { useFonts } from 'expo-font';
-import { Ionicons } from '@expo/vector-icons';
+import React, { useEffect, useState, useMemo } from "react";
+import {
+  View,
+  Alert,
+  Text,
+  Image,
+  ScrollView,
+  StyleSheet,
+  TouchableOpacity,
+} from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
+import { Ionicons } from "@expo/vector-icons";
+import { db, auth } from "../database/firebase";
+import { getUserName } from "../database/UserDB";
+import DateTimePickerModal from "react-native-modal-datetime-picker";
+import { doc, getDoc } from "firebase/firestore";
+import { runDailyTask, testRunDailyTask, resetStreakCounter } from "../utils/syncWorkoutSchedule";
+import ProgressBar from "../components/ProgressBar";
+import { getTodaysWorkout } from "./WorkoutCalendarScreen";
+import { getWorkoutTimeline } from "../database/WorkoutTimeline";
+import {
+  loadFromCache,
+  saveToCache,
+  createCacheKey,
+  CACHE_DURATIONS,
+  clearCache,
+} from "../utils/cacheManager";
+import { useDate } from '../context/DateContext';
 
 const HomeScreen = () => {
-  //get current user name
-  if (!auth.currentUser) return;
-  const user = auth.currentUser;
-  const user_name = getUserName(user.uid);
-
-  // Get current date and calculate the week
-  const today = useMemo(() => new Date(), []);
+  const [userName, setUserName] = useState("");
   const navigation = useNavigation();
+  const [isCalendarVisible, setCalendarVisible] = useState(false);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [totalCalories, setTotalCalories] = useState(0);
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState(0);
+  const { currentDate } = useDate();
+  const [todaysSession, setTodaysSession] = useState("");
+  const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
+  const [exercises, setExercises] = useState([]);
+
+  // Fetch user name when the component mounts
+  useEffect(() => {
+    const fetchUserName = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const name = await getUserName(user.uid);
+        setUserName(name);
+      }
+    };
+
+    fetchUserName();
+  }, []);
+
+  // Fetch workout timeline data and today's session whenever currentDate changes
+  useEffect(() => {
+    const fetchTimeline = async () => {
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          setExercises(timelineData.exercises);
+        } else {
+          setExercises([]);
+        }
+      } catch (error) {
+        console.error('Error fetching timeline:', error);
+        setExercises([]);
+        // Optionally set an error state to display in the UI
+      }
+    };
+    fetchTimeline();
+    // Also update today's session
+    const fetchTodaysSession = async () => {
+      const cacheKey = createCacheKey("todays_session", currentDate);
+      const timestampKey = createCacheKey("todays_session_timestamp", currentDate);
+      await clearCache(cacheKey);
+      await clearCache(timestampKey);
+      let sessionTitle = "";
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          const incompleteWorkouts = timelineData.exercises
+            .filter(ex => ex.completionStatus === "incomplete")
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          if (incompleteWorkouts.length > 0) {
+            sessionTitle = incompleteWorkouts[0].workoutTitle || "";
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching timeline:", error);
+      }
+      await saveToCache(cacheKey, timestampKey, sessionTitle);
+      setTodaysSession(sessionTitle);
+    };
+    fetchTodaysSession();
+  }, [currentDate]);
+
+  // Add useFocusEffect to refresh stats when returning to screen
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchUserStats = async () => {
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, "UserDetails", user.uid);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTotalCalories(data.totalCalories || 0);
+            setWeeklyWorkouts(data.streak || 0);
+            setBestStreak(data.bestStreak || 0);
+          }
+        }
+      };
+
+      fetchUserStats();
+    }, [])
+  );
+
+  // Run daily task when date changes
+  useEffect(() => {
+    const checkDate = async () => {
+      console.log("Checking date...");
+      const newDate = new Date().toISOString().slice(0, 10);
+      console.log("Current date in state:", currentDate);
+      console.log("New date:", newDate);
+
+      if (newDate !== currentDate) {
+        console.log("Date changed, updating state...");
+        setCurrentDate(newDate);
+        // Refresh user stats when date changes
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, "UserDetails", user.uid);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTotalCalories(data.totalCalories || 0);
+            setWeeklyWorkouts(data.streak || 0);
+          }
+        }
+      } else {
+        console.log("Date hasn't changed");
+      }
+    };
+
+    console.log("Setting up daily task check...");
+    // Check immediately and then every minute
+    checkDate();
+    const interval = setInterval(checkDate, 60000);
+
+    return () => {
+      console.log("Cleaning up interval");
+      clearInterval(interval);
+    };
+  }, [currentDate]);
+
+  const today = useMemo(() => {
+    // Create a new date object from the currentDate string
+    const [year, month, day] = currentDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    // Set to midnight in local timezone
+    date.setHours(0, 0, 0, 0);
+    console.log('HomeScreen - Current date from context:', currentDate);
+    console.log('HomeScreen - Parsed date:', date.toISOString());
+    return date;
+  }, [currentDate]);
 
   const weekDays = useMemo(() => {
     const days = [];
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-
-    // Get Sunday of current week
+    const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
     const sunday = new Date(today);
     sunday.setDate(today.getDate() - today.getDay());
 
-    // Generate array of dates for the week
     for (let i = 0; i < 7; i++) {
       const date = new Date(sunday);
       date.setDate(sunday.getDate() + i);
@@ -39,82 +182,155 @@ const HomeScreen = () => {
         fullDate: date,
       });
     }
+    console.log('HomeScreen - Week days:', days.map(d => `${d.day} ${d.date}`));
     return days;
   }, [today]);
 
   const isToday = (date) => {
-    return date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear();
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    const todayDate = new Date(today);
+    todayDate.setHours(0, 0, 0, 0);
+    
+    console.log('HomeScreen - Comparing dates:', {
+      compareDate: compareDate.toISOString(),
+      todayDate: todayDate.toISOString(),
+      isMatch: compareDate.getTime() === todayDate.getTime()
+    });
+    
+    return compareDate.getTime() === todayDate.getTime();
   };
+
+  const isSelectedDay = (date) => {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(currentDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    return compareDate.getTime() === selectedDate.getTime();
+  };
+
+  const showCalendar = () => setCalendarVisible(true);
+  const hideCalendar = () => setCalendarVisible(false);
+  const handleConfirm = (date) => {
+    setSelectedDate(date);
+    hideCalendar();
+    console.log("Selected date:", date);
+  };
+
+  // Expose a function to trigger a session refetch after plan shift
+  const triggerSessionRefetch = () => setSessionCacheBuster((b) => b + 1);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Re-fetch or re-set state here
+      setSelectedDate(currentDate);
+      // Optionally trigger any other refresh logic
+    }, [currentDate])
+  );
 
   return (
     <ScrollView style={styles.container}>
       {/* Header Section */}
       <View style={styles.header}>
         <View style={styles.headerContent}>
-          <Text style={styles.welcomeText}>Welcome back, {user_name}</Text>
-          <Image
-            source={require('../assets/profile-placeholder.png')}
-            style={styles.profileImage}
-          />
+          <View style={styles.welcomeContainer}>
+            <Text style={styles.welcomeText}>Welcome back, {userName}</Text>
+          </View>
+          <TouchableOpacity
+            style={styles.profileButton}
+            onPress={() => navigation.navigate("Settings")}
+          >
+            <Ionicons name="settings" size={24} color="#FFFFFF" />
+          </TouchableOpacity>
         </View>
       </View>
 
       {/* Calendar Strip */}
       <View style={styles.calendarStrip}>
         {weekDays.map((item, index) => (
-          <View
+          <TouchableOpacity
             key={index}
             style={[
               styles.dayContainer,
-              isToday(item.fullDate) && styles.selectedDayContainer
+              isSelectedDay(item.fullDate) && styles.selectedDayContainer,
             ]}
+            onPress={() => navigation.navigate("WorkoutCalendar")}
+            activeOpacity={0.7}
           >
-            <Text style={[
-              styles.dayText,
-              isToday(item.fullDate) && styles.selectedDayText
-            ]}>
+            <Text
+              style={[
+                styles.dayText,
+                isSelectedDay(item.fullDate) && styles.selectedDayText,
+              ]}
+            >
               {item.date}
             </Text>
-            <Text style={[
-              styles.dayLabel,
-              isToday(item.fullDate) && styles.selectedDayText
-            ]}>
+            <Text
+              style={[
+                styles.dayLabel,
+                isSelectedDay(item.fullDate) && styles.selectedDayText,
+              ]}
+            >
               {item.day}
             </Text>
-          </View>
+          </TouchableOpacity>
         ))}
+        <DateTimePickerModal
+          isVisible={isCalendarVisible}
+          mode="date"
+          onConfirm={handleConfirm}
+          onCancel={hideCalendar}
+          display="inline"
+        />
       </View>
 
       {/* Main Cards */}
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('Sessions')}>
+        onPress={() => navigation.navigate("Workout")}
+      >
         <Image
-          source={require('../assets/workout-bg.png')}
+          source={require("../assets/weights3.jpg")}
           style={styles.cardBackground}
+          resizeMode="cover"
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
+          colors={["rgba(0,0,0,0.3)", "rgba(0,0,0,0.5)"]}
           style={styles.cardGradient}
         >
-          <View style={styles.cardContent}>
-            <Text style={styles.cardTitle}>Workout</Text>
-            <Ionicons name="chevron-forward" size={24} color="white" />
+          <View style={styles.cardContentRow}>
+            <View style={styles.cardContentColumn}>
+              <View style={styles.titleRow}>
+                <Text style={styles.cardTitle}>Workout</Text>
+                <Ionicons
+                  name="chevron-forward"
+                  size={25}
+                  color="white"
+                  style={styles.chevronIcon}
+                />
+              </View>
+              {todaysSession ? (
+                <View style={styles.sessionRow}>
+                  <Text style={styles.sessionLabel}>Upcoming Workout:</Text>
+                  <Text style={styles.sessionValue}> {todaysSession}</Text>
+                </View>
+              ) : null}
+            </View>
           </View>
         </LinearGradient>
       </TouchableOpacity>
 
       <TouchableOpacity
         style={styles.card}
-        onPress={() => navigation.navigate('DietScreen')}>
+        onPress={() => navigation.navigate("DietScreen")}
+      >
         <Image
-          source={require('../assets/meal-bg.png')}
+          source={require("../assets/food.jpg")}
           style={styles.cardBackground}
+          resizeMode="cover"
         />
         <LinearGradient
-          colors={['rgba(0,0,0,0.3)', 'rgba(0,0,0,0.5)']}
+          colors={["rgba(0,0,0,0.3)", "rgba(0,0,0,0.5)"]}
           style={styles.cardGradient}
         >
           <View style={styles.cardContent}>
@@ -124,29 +340,106 @@ const HomeScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Statistics Section */}
-      <View style={styles.statisticsHeader}>
-        <Text style={styles.sectionTitle}>Statistics</Text>
-        <Ionicons name="chevron-forward" size={24} color="white" />
-      </View>
+      {/* Statistics Stat Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>3</Text>
-          <Text style={styles.statLabel}>Workouts Completed{'\n'}this week</Text>
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Ionicons name="trending-up" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={[styles.statLabel, { color: '#fff', fontWeight: '600', fontSize: 15 }]}>Streak Counter</Text>
+          </View>
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 28, marginBottom: 2, letterSpacing: 0.5 }}>
+            {weeklyWorkouts} <Text style={{ fontSize: 18, fontWeight: '400', color: '#bbb' }}>days</Text>
+          </Text>
+          <Text style={{ color: '#bbb', fontSize: 15, fontWeight: '500', marginTop: 2 }}>
+            Best Streak: <Text style={{ color: '#bbb', fontWeight: '600' }}>{bestStreak}</Text> days
+          </Text>
         </View>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>0</Text>
+          <Text style={styles.statNumber}>{totalCalories}</Text>
           <Text style={styles.statLabel}>Calorie Tracker</Text>
         </View>
       </View>
-    </ScrollView >
+
+      {/* My Progress Panel */}
+      <ProgressBar onPress={() => navigation.navigate("WorkoutHistory")} />
+
+      {/* Test Buttons */}
+      {/**
+      <View style={styles.testButtonsContainer}>
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={async () => {
+            await resetStreakCounter();
+            navigation.navigate("TestWorkoutTimeline");
+            // Refresh stats after reset
+            const user = auth.currentUser;
+            if (user) {
+              const userRef = doc(db, "UserDetails", user.uid);
+              const docSnap = await getDoc(userRef);
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setWeeklyWorkouts(data.streak || 0);
+              }
+            }
+          }}
+        >
+          <Text style={styles.testButtonText}>Test Workout Timeline</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={async () => {
+            await testRunDailyTask();
+            triggerSessionRefetch();
+          }}
+        >
+          <Text style={styles.testButtonText}>Test Date Shift</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={async () => {
+            await resetStreakCounter();
+            // Refresh stats after reset
+            const user = auth.currentUser;
+            if (user) {
+              const userRef = doc(db, "UserDetails", user.uid);
+              const docSnap = await getDoc(userRef);
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setWeeklyWorkouts(data.streak || 0);
+              }
+            }
+          }}
+        >
+          <Text style={styles.testButtonText}>Reset Streak Counter</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
+          onPress={() => {
+            const userId = auth.currentUser?.uid;
+            console.log("Current User ID:", userId);
+          }}
+        >
+          <Text style={styles.testButtonText}>Print User ID</Text>
+        </TouchableOpacity>
+      </View>
+      **/}
+    </ScrollView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#000000',
+    backgroundColor: "#000000",
+  },
+  backButton: {
+    position: "absolute",
+    top: 40,
+    left: 20,
+    zIndex: 10,
   },
   header: {
     paddingTop: 60,
@@ -154,108 +447,153 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   headerContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    position: "relative",
+  },
+  welcomeContainer: {
+    alignItems: "center",
   },
   welcomeText: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: '600',
+    color: "#FFFFFF",
+    fontSize: 15.6,
+    fontWeight: "600",
+    textAlign: "center",
+    paddingVertical: 20,
   },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  profileButton: {
+    position: "absolute",
+    right: 0,
   },
   calendarStrip: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: 50,
     marginBottom: 20,
   },
   dayContainer: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 10,
     borderRadius: 12,
   },
   selectedDayContainer: {
-    backgroundColor: '#E4FA00',
+    backgroundColor: "#E4FA00",
   },
   dayText: {
-    color: '#FFFFFF',
+    color: "#89868A",
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   dayLabel: {
-    color: '#FFFFFF',
+    color: "#89868A",
     fontSize: 12,
     marginTop: 4,
   },
   selectedDayText: {
-    color: '#000000',
+    color: "#000000",
   },
   card: {
     height: 160,
     marginHorizontal: 20,
     marginBottom: 20,
     borderRadius: 15,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   cardBackground: {
-    width: '100%',
-    height: '100%',
-    position: 'absolute',
+    width: "100%",
+    height: "100%",
+    position: "absolute",
   },
   cardGradient: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     padding: 20,
   },
-  cardContent: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  cardContentRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    flex: 1,
+    paddingRight: 8,
+  },
+  cardContentColumn: {
+    flex: 1,
+    flexDirection: "column",
+    justifyContent: "center",
+    paddingVertical: 4,
+  },
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   cardTitle: {
-    color: '#FFFFFF',
-    fontSize: 24,
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "bold",
   },
-  statisticsHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    marginBottom: 15,
+  sessionRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginTop: 4,
+    marginBottom: 12,
+    flexWrap: "nowrap",
   },
-  sectionTitle: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '600',
+  sessionLabel: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+    letterSpacing: 1,
+  },
+  sessionValue: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "400",
+    marginLeft: 4,
+    letterSpacing: 1,
+    minWidth: 0,
+  },
+  chevronIcon: {
+    marginLeft: 12,
   },
   statsContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     paddingHorizontal: 20,
-    marginBottom: 20,
+    marginBottom: 8,
+    gap: 12,
   },
   statCard: {
     flex: 1,
-    backgroundColor: '#1C1C1E',
+    backgroundColor: "#1C1C1E",
     borderRadius: 12,
-    padding: 15,
-    marginRight: 10,
+    padding: 20,
   },
   statNumber: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 32,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 5,
   },
   statLabel: {
-    color: '#8E8E93',
+    color: "#8E8E93",
     fontSize: 14,
+  },
+  testButtonsContainer: {
+    gap: 12,
+    marginHorizontal: 20,
+    marginBottom: 20,
+  },
+  testButton: {
+    backgroundColor: "#2C2C2E",
+    borderRadius: 12,
+    padding: 16,
+    alignItems: "center",
+  },
+  testButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
 
-export default HomeScreen; 
+export default HomeScreen;

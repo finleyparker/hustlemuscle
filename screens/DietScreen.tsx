@@ -1,4 +1,4 @@
-// HomeScreen.tsx
+
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
@@ -14,24 +14,36 @@ import {
 } from 'react-native';
 import { Colors } from 'react-native/Libraries/NewAppScreen';
 import { AnimatedCircularProgress } from 'react-native-circular-progress';
+import * as Progress from 'react-native-progress';
 import { collection, getDoc, doc, updateDoc } from 'firebase/firestore';
-import { db } from '../firebaseConfig';
+import { db, auth } from '../database/firebase';
 import { useFocusEffect } from '@react-navigation/native';
+import { setDoc, serverTimestamp } from 'firebase/firestore';
 
-const HomeScreen = ({ navigation }: any) => {
+const DietScreen = ({ navigation }: any) => {
   const isDarkMode = useColorScheme() === 'dark';
   const backgroundStyle = {
     backgroundColor: isDarkMode ? Colors.darker : Colors.lighter,
     flex: 1,
   };
 
-  const userId = '1212'; // Replace with real user ID from Firebase Auth
+
+  const userId = auth.currentUser?.uid;
   const [modalVisible, setModalVisible] = useState(false);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [totalFat, setTotalFat] = useState(0);
+  const [totalProtein, setTotalProtein] = useState(0);
+  const [totalCarbs, setTotalCarbs] = useState(0);
   const [selectedMeals, setSelectedMeals] = useState<{ name: string; calories: number }[]>([]);
   const [manualMealName, setManualMealName] = useState('');
   const [manualCalories, setManualCalories] = useState('');
-  const [dailyTarget, setDailyTarget] = useState(2000); // Default target
+  const [manualFat, setManualFat] = useState('');
+  const [manualProtein, setManualProtein] = useState('');
+  const [manualCarbs, setManualCarbs] = useState('');
+  const [dailyTarget, setDailyTarget] = useState(2000); // default target
+  const [carbTarget, setCarbTarget] = useState(0.3); // default target
+  const [fatTarget, setFatTarget] = useState(0.3);  // default target
+  const [proteinTarget, setProteinTarget] = useState(0.4); // default target
   const [dietGoal, setDietGoal] = useState('');
   const [activityLevel, setActivityLevel] = useState('');
 
@@ -39,40 +51,87 @@ const HomeScreen = ({ navigation }: any) => {
     useCallback(() => {
       const fetchData = async () => {
         try {
-          const userRef = doc(db, 'dietPlans', userId);
+          if (!userId) {
+            console.error('User ID is undefined');
+            return;
+          }
+          const userRef = doc(db, 'UserDetails', userId);
           const docSnap = await getDoc(userRef);
 
           if (docSnap.exists()) {
             const data = docSnap.data();
             setTotalCalories(data.totalCalories || 0);
             setSelectedMeals(data.selectedMeals || []);
+            setTotalFat(data.totalFat || 0);
+            setTotalProtein(data.totalProtein || 0);
+            setTotalCarbs(data.totalCarbs || 0);
 
-            // Set daily target based on diet goal
-            const weightGoal = data.weightGoal || 'MaintainWeight';
-            setDietGoal(weightGoal);
+            
+            const PhysiqueGoal = data.weightGoal || 'MaintainWeight';
+            setDietGoal(PhysiqueGoal);
 
             const activityLevel = data.activityLevel || 'MildlyActive';
             setActivityLevel(activityLevel);
 
+            // set daily target based on diet goal
             let target = 2000;
-            if (weightGoal === 'LoseWeight' && activityLevel === 'NotActive') target = 1500;
-            else if (weightGoal === 'LoseWeight' && activityLevel === 'MildlyActive') target = 1700;
-            else if (weightGoal === 'LoseWeight' && activityLevel === 'Moderate') target = 1900;
-            else if (weightGoal === 'LoseWeight' && activityLevel === 'Active') target = 2100;
-            else if (weightGoal === 'LoseWeight' && activityLevel === 'ExtremelyActive') target = 2300;
-            else if (weightGoal === 'MaintainWeight' && activityLevel === 'NotActive') target = 1800;
-            else if (weightGoal === 'MaintainWeight' && activityLevel === 'MildlyActive') target = 2000;
-            else if (weightGoal === 'MaintainWeight' && activityLevel === 'Moderate') target = 2200;
-            else if (weightGoal === 'MaintainWeight' && activityLevel === 'Active') target = 2400;
-            else if (weightGoal === 'MaintainWeight' && activityLevel === 'ExtremelyActive') target = 2600;
-            else if (weightGoal === 'GainWeight' && activityLevel === 'NotActive') target = 2500;
-            else if (weightGoal === 'GainWeight' && activityLevel === 'MildlyActive') target = 2700;
-            else if (weightGoal === 'GainWeight' && activityLevel === 'Moderate') target = 2900;
-            else if (weightGoal === 'GainWeight' && activityLevel === 'Active') target = 3100;
-            else if (weightGoal === 'GainWeight' && activityLevel === 'ExtremelyActive') target = 3300;
+            if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Not Active') target = 1500;
+            else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Mildly Active') target = 1700;
+            else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Moderate') target = 1900;
+            else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Active') target = 2100;
+            else if (PhysiqueGoal === 'Weight Loss' && activityLevel === 'Extremely Active') target = 2300;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Not Active') target = 2050;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Mildly Active') target = 2200;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Moderate') target = 2350;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Active') target = 2500;
+            else if (PhysiqueGoal === 'Endurance' && activityLevel === 'Extremely Active') target = 2650;
+            else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Not Active') target = 2500;
+            else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Mildly Active') target = 2700;
+            else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Moderate') target = 2900;
+            else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Active') target = 3100;
+            else if (PhysiqueGoal === 'Muscle Gain' && activityLevel === 'Extremely Active') target = 3300;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Not Active') target = 1800;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Mildly Active') target = 1900;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Moderate') target = 2000;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Active') target = 2200;
+            else if (PhysiqueGoal === 'Flexibility' && activityLevel === 'Extremely Active') target = 2400;
+            else if (PhysiqueGoal === 'Strength' && activityLevel === 'Not Active') target = 2500;
+            else if (PhysiqueGoal === 'Strength' && activityLevel === 'Mildly Active') target = 2700;
+            else if (PhysiqueGoal === 'Strength' && activityLevel === 'Moderate') target = 2900;
+            else if (PhysiqueGoal === 'Strength' && activityLevel === 'Active') target = 3100;
+            else if (PhysiqueGoal === 'Strength' && activityLevel === 'Extremely Active') target = 3300;
             else target = 2000;
+            
+            let proteinRatio = 0.3; 
+            let fatRatio = 0.3; 
+            let carbRatio = 0.4;
+
+            if (PhysiqueGoal === 'Weight Loss') {
+              proteinRatio = 0.4; 
+              fatRatio = 0.3;
+              carbRatio = 0.3;
+            } else if (PhysiqueGoal === 'Flexibility') {
+              proteinRatio = 0.3;
+              fatRatio = 0.3;
+              carbRatio = 0.4;
+            } else if (PhysiqueGoal === 'Muscle Gain') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; 
+            } else if (PhysiqueGoal === 'Strength') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; 
+            } else if (PhysiqueGoal === 'Endurance') {
+              proteinRatio = 0.25;
+              fatRatio = 0.25;
+              carbRatio = 0.5; 
+            }
 
             setDailyTarget(target);
+            setCarbTarget(carbRatio);
+            setFatTarget(fatRatio);
+            setProteinTarget(proteinRatio);
           } else {
             console.log('No such document!');
           }
@@ -85,12 +144,45 @@ const HomeScreen = ({ navigation }: any) => {
     }, [])
   );
 
+  const submitDailySummary = async () => {
+    const today = new Date();
+const yyyy = today.getFullYear();
+const mm = String(today.getMonth() + 1).padStart(2, '0');
+const dd = String(today.getDate()).padStart(2, '0');
+const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
+  
+    if (!userId) {
+      console.error('User ID is undefined');
+      return;
+    }
+    const dailySummaryRef = doc(db, 'UserDetails', userId, 'days', localDateString);
+  
+    try {
+      await setDoc(dailySummaryRef, {
+        totalCalories,
+        totalProtein,
+        totalCarbs,
+        totalFat,
+        timestamp: serverTimestamp(),
+      });
+  
+      console.log('Daily summary saved.');
+      handleReset();
+    } catch (error) {
+      console.error('Error saving daily summary:', error);
+    }
+  };
+  
+
   const toggleModal = (visible: boolean) => {
     setModalVisible(visible);
   };
 
   const handleManualSubmit = async () => {
     const cal = parseInt(manualCalories);
+    const fat = parseInt(manualFat);
+    const protein = parseInt(manualProtein);
+    const carbs = parseInt(manualCarbs);
     if (!manualMealName || isNaN(cal) || cal <= 0) {
       Alert.alert('Error', 'Please enter a valid meal name and calorie number.');
       return;
@@ -98,14 +190,28 @@ const HomeScreen = ({ navigation }: any) => {
 
     const newMeal = { name: manualMealName, calories: cal };
     const updatedTotal = totalCalories + cal;
+    const updatedFat = totalFat + fat; 
+    const updatedProtein = totalProtein + protein;
+    const updatedCarbs = totalCarbs + carbs; 
     const updatedMeals = [...selectedMeals, newMeal];
 
     try {
-      const userRef = doc(db, 'dietPlans', userId);
-      await updateDoc(userRef, {
-        totalCalories: updatedTotal,
-        selectedMeals: updatedMeals,
-      });
+      if (!userId) {
+        console.error('User ID is undefined');
+        return;
+      }
+      const userRef = doc(db, 'UserDetails', userId);
+      await setDoc(
+        userRef,
+        {
+          totalCalories: updatedTotal,
+          totalFat: updatedFat,
+          totalProtein: updatedProtein,
+          totalCarbs: updatedCarbs,
+          selectedMeals: updatedMeals,
+        },
+        { merge: true }
+      );
 
       setSelectedMeals(updatedMeals);
       setTotalCalories(updatedTotal);
@@ -122,32 +228,51 @@ const HomeScreen = ({ navigation }: any) => {
     try {
       setTotalCalories(0);
       setSelectedMeals([]);
+      setTotalFat(0);
+      setTotalProtein(0);
+      setTotalCarbs(0);
 
-      const dietPlanRef = doc(db, 'dietPlans', userId);
-      await updateDoc(dietPlanRef, {
+      if (!userId) {
+        console.error('User ID is undefined');
+        return;
+      }
+      const dietPlanRef = doc(db, 'UserDetails', userId);
+      await setDoc(dietPlanRef, {
         totalCalories: 0,
+        totalFat: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
         selectedMeals: [],
-      });
+      }, { merge: true }
+    );
     } catch (error) {
       console.error('Error resetting data:', error);
     }
   };
 
+  const proteinTarget1 = ((dailyTarget * proteinTarget) / 4)
+  const fatTarget1 = ((dailyTarget * fatTarget) / 9)
+  const carbTarget1 = ((dailyTarget * carbTarget) / 4)
+
+
   const fill = (totalCalories / dailyTarget) * 100;
   const tintColor = fill <= 100 ? '#00e0ff' : 'red';
+
+  const fillCarbs = (totalCarbs / carbTarget1);
+  const fillFat = (totalFat / fatTarget1);
+  const fillProtein = (totalProtein / proteinTarget1);
 
   return (
     <View style={backgroundStyle}>
       <StatusBar
-        barStyle={isDarkMode ? 'light-content' : 'dark-content'}
-        backgroundColor={backgroundStyle.backgroundColor}
+        
       />
       <ScrollView contentInsetAdjustmentBehavior="automatic">
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>This is the Home Screen</Text>
 
           <Button
-            title="Create a new personalised diet"
+            title="View past calorie consumption"
             onPress={() => navigation.navigate('NewDiet')}
           />
           <View style={{ marginTop: 5 }}>
@@ -170,14 +295,24 @@ const HomeScreen = ({ navigation }: any) => {
             <Text style={styles.goalText}>Daily Target: {dailyTarget}</Text>
             {fill > 100}
           </View>
-
           <View style={styles.button3}>
             <Button
-              title="Add Calories Manually"
+              title="Add Data Manually"
               onPress={() => toggleModal(true)}
             />
           </View>
-
+          <View style={styles.carbs}>
+            <Text style={styles.text1}>Carbs: {Math.round(fillCarbs * 100)}%   </Text>
+            <Progress.Bar progress={fillCarbs} width={200} height={15} color="#ff0000" animationType="spring" />
+          </View>
+          <View style={styles.fat}>
+          <Text style={styles.text1}>Fats: {Math.round(fillFat * 100)}%   </Text>
+            <Progress.Bar progress={fillFat} width={200} height={15} color="#00ff00"/>
+          </View>
+          <View style={styles.protein}>
+          <Text style={styles.text1}>Protein: {Math.round(fillProtein * 100)}%   </Text>
+            <Progress.Bar progress={fillProtein} width={200} height={15} color="#0000ff"/>
+          </View>
           <View style={styles.log}>
             <Text style={{ fontWeight: 'bold', fontSize: 16, marginBottom: 10 }}>
               Meal Log:
@@ -195,7 +330,8 @@ const HomeScreen = ({ navigation }: any) => {
         </View>
       </ScrollView>
 
-      <Modal
+     
+      <Modal  // modal for manual data entry
         visible={modalVisible}
         animationType="slide"
         transparent={true}
@@ -206,7 +342,7 @@ const HomeScreen = ({ navigation }: any) => {
             <View style={styles.closeButton}>
               <Button title="X" onPress={() => toggleModal(false)} />
             </View>
-            <Text style={styles.text}>Add Calories Manually</Text>
+            <Text style={styles.text}>Add Data Manually</Text>
 
             <TextInput
               placeholder="Meal name"
@@ -223,6 +359,30 @@ const HomeScreen = ({ navigation }: any) => {
               onChangeText={setManualCalories}
             />
 
+            <TextInput
+              placeholder="Carbs (grams)"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualCarbs}
+              onChangeText={setManualCarbs}
+            />
+
+            <TextInput
+              placeholder="Protein (grams)"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualProtein}
+              onChangeText={setManualProtein}
+            />
+
+            <TextInput
+              placeholder="Fat (grams)"
+              style={styles.input}
+              keyboardType="numeric"
+              value={manualFat}
+              onChangeText={setManualFat}
+            />
+
             <Button title="Add" onPress={handleManualSubmit} />
           </View>
         </View>
@@ -236,20 +396,29 @@ const HomeScreen = ({ navigation }: any) => {
           accessibilityLabel="Reset calorie count and meal log"
         />
       </View>
+      <Button title="Submit Daily Summary" onPress={submitDailySummary} />
     </View>
+    
   );
 };
 
 const styles = StyleSheet.create({
+
   sectionContainer: {
-    marginTop: 40,
     paddingHorizontal: 24,
+    backgroundColor: 'black',
+    paddingTop: 40,
+    paddingBottom: 20,
+  },
+  text1: {
+    color: 'white',
   },
   sectionTitle: {
     fontSize: 24,
     fontWeight: '600',
     textAlign: 'center',
     marginBottom: 20,
+    color: 'white',
   },
   progress: {
     alignItems: 'center',
@@ -258,14 +427,16 @@ const styles = StyleSheet.create({
   calorie: {
     marginTop: -170,
     fontSize: 35,
+    color: 'white',
   },
   calorie1: {
     fontSize: 30,
+    color: 'white',
   },
   goalText: {
     fontSize: 16,
     marginTop: 10,
-    color: '#333',
+    color: 'white',
   },
   warningText: {
     marginTop: 70,
@@ -321,6 +492,25 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     fontSize: 16,
   },
+  carbs: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  fat: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  protein: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  backgroundStyle: {
+    backgroundColor: '#000',
+
+  },
 });
 
-export default HomeScreen;
+export default DietScreen;
