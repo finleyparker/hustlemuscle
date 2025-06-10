@@ -6,6 +6,8 @@ import { collection, addDoc, getDocs, getDoc, query, where, doc} from 'firebase/
 import { updateDoc } from 'firebase/firestore';
 import { getAllExercises } from '../api/exercises';
 import { getAuth } from 'firebase/auth';
+import { resetStreakCounter } from '../utils/syncWorkoutSchedule';
+import { createWorkoutTimeline } from '../database/WorkoutTimeline';
 
 
 
@@ -70,11 +72,10 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
   useEffect(() => {
     if (!userInputReady || !userInput) return;
-    const loadPlan = async () => {
+    const fetchExistingPlan = async () => {
       try {
         const workoutPlansCollection = collection(db, 'workoutPlans');
         const userInputKey = createUserInputKey(userInput);
-        
         // Query for existing document
         const q = query(
           workoutPlansCollection, 
@@ -82,50 +83,26 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           where('userInputKey', '==', userInputKey)
         );
         const querySnapshot = await getDocs(q);
-
-        const startDate = new Date();
-        const generated = await generateWorkoutPlan(userInput, userId, startDate);
-
         if (!querySnapshot.empty) {
-          // Update existing document
           const existingDoc = querySnapshot.docs[0];
-          await updateDoc(existingDoc.ref, {
-            plan: generated.plan,
-            warnings: generated.warnings || [],
-            durationWeeks: generated.durationWeeks,
-            planName: generated.planName,
-            updatedAt: startDate,
-            userInput, // Update the userInput in case it changed
-          });
+          const data = existingDoc.data();
+          setPlan(data.plan || []);
+          setWarnings(data.warnings || []);
+          setDurationWeeks(data.durationWeeks || null);
+          setPlanName(data.planName || '');
         } else {
-          // Create new document if none exists
-          await addDoc(workoutPlansCollection, {
-            userId: userId,
-            userInput,
-            userInputKey,
-            plan: generated.plan,
-            warnings: generated.warnings || [],
-            durationWeeks: generated.durationWeeks,
-            planName: generated.planName,
-            createdAt: startDate,
-            updatedAt: startDate,
-          });
+          setPlan([]);
+          setWarnings([]);
+          setDurationWeeks(null);
+          setPlanName('');
         }
-
-        // Update the state with the new plan
-        setPlan(generated.plan);
-        setWarnings(generated.warnings || []);
-        setDurationWeeks(generated.durationWeeks || null);
-        setPlanName(generated.planName || '');
-
       } catch (error) {
-        console.error('Failed to retrieve or generate plan:', error);
+        console.error('Failed to fetch existing plan:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadPlan();
+    fetchExistingPlan();
   }, [userInput, userInputReady, userId]);
   
 
@@ -309,7 +286,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       }
 
       // Recreate the timeline with the new plan
-      const { createWorkoutTimeline } = require('../database/WorkoutTimeline');
+      await resetStreakCounter();
       await createWorkoutTimeline();
       console.log('Timeline recreated successfully');
 

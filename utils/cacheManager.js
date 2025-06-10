@@ -41,22 +41,20 @@ export const saveToCache = async (cacheKey, timestampKey, data) => {
   }
 };
 
-export const clearCache = async (cacheKey, timestampKey) => {
-  try {
-    await AsyncStorage.removeItem(cacheKey);
-    await AsyncStorage.removeItem(timestampKey);
-    return true;
-  } catch (error) {
-    console.error('Error clearing cache:', error);
-    return false;
+export const clearCache = async (key) => {
+  if (typeof key !== 'string' || !key) {
+    console.warn('clearCache called with invalid key:', key);
+    return;
   }
+  await AsyncStorage.removeItem(key);
 };
 
 export const clearTodaysSessionCache = async () => {
   const todayStr = new Date().toISOString().split('T')[0];
   const cacheKey = createCacheKey('todays_session', todayStr);
   const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
-  await clearCache(cacheKey, timestampKey);
+  await clearCache(cacheKey);
+  await clearCache(timestampKey);
 };
 
 // Specific cache keys for different features

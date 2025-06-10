@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { Ionicons } from '@expo/vector-icons';
-import { doc, getDoc } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db, auth } from '../database/firebase';
 
 const ProgressBar = ({ onPress }) => {
@@ -10,29 +10,28 @@ const ProgressBar = ({ onPress }) => {
   const [totalSessions, setTotalSessions] = useState(0);
 
   useEffect(() => {
-    const fetchTotalSessions = async () => {
+    const fetchWorkoutProgress = async () => {
       try {
         const userId = auth.currentUser?.uid;
         if (userId) {
-          const userRef = doc(db, 'UserDetails', userId);
-          const userDoc = await getDoc(userRef);
-          if (userDoc.exists()) {
-            setTotalSessions(userDoc.data().totalSessions || 0);
-          }
+          const datedExercisesRef = collection(db, 'workoutTimeline', userId, 'datedExercises');
+          const snapshot = await getDocs(datedExercisesRef);
+          let complete = 0;
+          let total = 0;
+          snapshot.forEach(doc => {
+            total++;
+            const data = doc.data();
+            if (data.completionStatus === 'complete') complete++;
+          });
+          setCompletedSessions(complete);
+          setTotalSessions(total);
         }
       } catch (error) {
-        console.error('Error fetching total sessions:', error);
+        console.error('Error fetching workout progress:', error);
       }
     };
-
-    fetchTotalSessions();
+    fetchWorkoutProgress();
   }, []);
-
-  const handleIncrement = () => {
-    if (completedSessions < totalSessions) {
-      setCompletedSessions(prev => prev + 1);
-    }
-  };
 
   const progressPercentage = totalSessions > 0 ? (completedSessions / totalSessions) * 100 : 0;
 
@@ -46,8 +45,8 @@ const ProgressBar = ({ onPress }) => {
         <View>
           <Text style={styles.progressPanelLabel}>My Progress</Text>
           <Text style={styles.sessionCount}>
-            {Math.round(progressPercentage)}% Complete{'\n'}
-            Out of {totalSessions} Sessions
+            {Math.round(progressPercentage)}% Complete{"\n"}
+            {completedSessions} of {totalSessions} Sessions
           </Text>
         </View>
         <Ionicons name="chevron-forward" size={22} color="#fff" />
@@ -60,12 +59,6 @@ const ProgressBar = ({ onPress }) => {
           style={[styles.progressBar, { width: `${progressPercentage}%` }]}
         />
       </View>
-      <TouchableOpacity 
-        style={styles.incrementButton}
-        onPress={handleIncrement}
-      >
-        <Text style={styles.incrementButtonText}>Test: Increment Session</Text>
-      </TouchableOpacity>
     </TouchableOpacity>
   );
 };
@@ -111,16 +104,6 @@ const styles = StyleSheet.create({
   progressBar: {
     height: '100%',
     borderRadius: 7,
-  },
-  incrementButton: {
-    backgroundColor: '#2a2a2d',
-    padding: 8,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  incrementButtonText: {
-    color: '#fff',
-    fontSize: 12,
   },
 });
 

@@ -5,6 +5,8 @@ import { onAuthStateChanged, User } from 'firebase/auth';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, View } from 'react-native';
 //import { StyleSheet, View } from 'react-native';
+import { DateProvider } from './context/DateContext';
+import { requestNotificationPermissions } from './utils/notifications';
 
 //workout screens
 import WorkoutPlanScreen from './screens/WorkoutPlanScreen';
@@ -62,32 +64,39 @@ export default function App() {
             </View>
         );
     }*/
+    useEffect(() => {
+        // Request notification permissions when app starts
+        requestNotificationPermissions();
+    }, []);
+
     return (
-        <NavigationContainer>
-            <Stack.Navigator initialRouteName={'Login'} screenOptions={{ headerStyle: { backgroundColor: 'black' }, headerTintColor: 'white' }}>
-                <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen} />
-                <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
-                <Stack.Screen name="DietScreen" component={DietScreen} />
-                <Stack.Screen name="FreeDays" component={FreeDaysPerWeekScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="NewDiet" component={NewDiet} />
-                <Stack.Screen name="ExperienceLevel" component={ExperienceLevelScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Current" component={CurrentPlan} />
-                <Stack.Screen name="Gender" component={GenderScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="ActivityLevel" component={ActivityLevelScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="DietaryRestrictions" component={DietaryRestrictionsScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="FitnessGoal" component={FitnessGoal} options={{ headerShown: false }} />
-                <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} />
-                <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
-                <Stack.Screen name="Settings" component={SettingsScreen} />
-                <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
-                <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
-                <Stack.Screen name="Workout" component={WorkoutScreen} />
-                <Stack.Screen name="TestWorkoutTimeline" component={TestWorkoutTimeline} />
-            </Stack.Navigator>
-        </NavigationContainer>
+        <DateProvider>
+            <NavigationContainer>
+                <Stack.Navigator initialRouteName={'Login'} screenOptions={{ headerStyle: { backgroundColor: 'black' }, headerTintColor: 'white' }}>
+                    <Stack.Screen name="Login" component={AuthScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="Home" component={HomeScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="WorkoutPlan" component={WorkoutPlanScreen} />
+                    <Stack.Screen name="WorkoutLog" component={WorkoutLogScreen} />
+                    <Stack.Screen name="DietScreen" component={DietScreen} />
+                    <Stack.Screen name="FreeDays" component={FreeDaysPerWeekScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="NewDiet" component={NewDiet} />
+                    <Stack.Screen name="ExperienceLevel" component={ExperienceLevelScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="Current" component={CurrentPlan} />
+                    <Stack.Screen name="Gender" component={GenderScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="ActivityLevel" component={ActivityLevelScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="DietaryRestrictions" component={DietaryRestrictionsScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="Equipment" component={EquipmentScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="FitnessGoal" component={FitnessGoal} options={{ headerShown: false }} />
+                    <Stack.Screen name="WorkoutHistory" component={WorkoutHistoryScreen} />
+                    <Stack.Screen name="Weight" component={WeightScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="Settings" component={SettingsScreen} />
+                    <Stack.Screen name="WorkoutCalendar" component={WorkoutCalendarScreen} />
+                    <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
+                    <Stack.Screen name="Workout" component={WorkoutScreen} />
+                    <Stack.Screen name="TestWorkoutTimeline" component={TestWorkoutTimeline} />
+                </Stack.Navigator>
+            </NavigationContainer>
+        </DateProvider>
     );
 }
 /*

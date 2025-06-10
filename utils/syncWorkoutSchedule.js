@@ -1,9 +1,37 @@
 import { db, auth } from '../database/firebase';
-import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearCache, createCacheKey, clearTodaysSessionCache } from '../utils/cacheManager';
+import { scheduleMissedWorkoutNotification } from './notifications';
 
-const runDailyTask = async (testDate = null) => {
+// Function to reset the streak counter
+const resetStreakCounter = async () => {
+    try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            console.log("No user found");
+            return { success: false, message: "No user found" };
+        }
+
+        const userDetailsRef = doc(db, 'UserDetails', userId);
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        await updateDoc(userDetailsRef, {
+            streak: 0,
+            streakResetDate: startOfWeek.toISOString().split('T')[0]
+        });
+        console.log('Streak counter reset in UserDetails');
+        return { success: true, message: "Streak counter reset successfully" };
+    } catch (error) {
+        console.error('Error resetting streak counter:', error);
+        return { success: false, message: error.message };
+    }
+};
+
+const runDailyTask = async (newDate = null, oldDate = null) => {
     try {
         const userId = auth.currentUser?.uid;
         console.log("Current user ID:", userId);
@@ -13,18 +41,13 @@ const runDailyTask = async (testDate = null) => {
             return { success: false, message: "No user found" };
         }
 
-        const handlePlanShift = async () => {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const cacheKey = createCacheKey('todays_session', todayStr);
-            const timestampKey = createCacheKey('todays_session_timestamp', todayStr);
-            await clearCache(cacheKey, timestampKey);
-            // Optionally, trigger a refetch or update state to force UI refresh
-        };
-
-
-        // Use testDate if provided, otherwise use current date
-        const today = testDate ? new Date(testDate).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10);
-        console.log("Checking for late exercises on:", today);
+        // Use provided oldDate if available, otherwise use current date
+        const originalDate = oldDate || new Date().toISOString().slice(0, 10);
+        // Use newDate if provided, otherwise use original date
+        const targetDate = newDate || originalDate;
+        
+        console.log("Original date (from context):", originalDate);
+        console.log("Target date (new date):", targetDate);
 
         // Get the timeline document
         const workoutTimelineRef = doc(db, "workoutTimeline", userId);
@@ -40,55 +63,92 @@ const runDailyTask = async (testDate = null) => {
         const allExercisesSnapshot = await getDocs(datedExercisesRef);
         console.log("Total exercises found:", allExercisesSnapshot.docs.length);
         
-        // Find incomplete exercises
-        const incompleteExercises = allExercisesSnapshot.docs
+        // First, find all incomplete exercises to check for missed workouts
+        const allIncompleteExercises = allExercisesSnapshot.docs
             .map(doc => ({
                 id: doc.id,
                 ...doc.data()
             }))
             .filter(exercise => exercise.completionStatus === "incomplete")
-            .sort((a, b) => new Date(a.date) - new Date(b.date));
-        
-        console.log("Incomplete exercises found:", incompleteExercises.length);
-        
-        if (incompleteExercises.length > 0) {
-            const earliestExercise = incompleteExercises[0];
-            const daysLate = Math.floor((new Date(today) - new Date(earliestExercise.date)) / (1000 * 60 * 60 * 24));
-            
-            console.log(`Earliest incomplete exercise is ${daysLate} days late`);
-            console.log("Earliest exercise date:", earliestExercise.date);
-            console.log("Today's date:", today);
+            .sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA - dateB; // Sort ascending (earliest first)
+            });
 
-            if (daysLate > 0) {
-                // Update dates for all incomplete exercises
-                for (const exercise of incompleteExercises) {
-                    const newDate = new Date(exercise.date);
-                    newDate.setDate(newDate.getDate() + daysLate);
-                    const newDateStr = newDate.toISOString().slice(0, 10);
+        // Check for missed workouts before any shifting
+        // (notification logic removed from here; handled inside shift block)
 
-                    console.log(`Updating exercise from ${exercise.date} to ${newDateStr}`);
+        // Get all exercises that need to be shifted
+        const allExercises = allExercisesSnapshot.docs
+            .map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }))
+            .sort((a, b) => {
+                const dateA = new Date(a.date);
+                const dateB = new Date(b.date);
+                return dateA - dateB; // Sort ascending (earliest first)
+            });
 
+        // Find the earliest incomplete exercise to determine shift amount
+        const earliestIncomplete = allExercises.find(ex => ex.completionStatus === "incomplete");
+        if (earliestIncomplete) {
+            // Calculate days to shift so that earliest incomplete workout lands on target date
+            const earliestDate = new Date(earliestIncomplete.date);
+            const targetDateObj = new Date(targetDate);
+            earliestDate.setHours(0, 0, 0, 0);
+            targetDateObj.setHours(0, 0, 0, 0);
+            const daysToShift = Math.floor((targetDateObj - earliestDate) / (1000 * 60 * 60 * 24));
+
+            if (daysToShift > 0) {
+                // Only shift if the new date is ahead
+                // Check for missed workouts before shifting
+                const missedWorkouts = allIncompleteExercises.filter(exercise => {
+                    const exerciseDate = new Date(exercise.date);
+                    exerciseDate.setHours(0, 0, 0, 0);
+                    return exerciseDate < targetDateObj;
+                });
+                if (missedWorkouts.length > 0) {
                     try {
-                        await setDoc(doc(datedExercisesRef, exercise.id), {
-                            ...exercise,
-                            date: newDateStr
-                        });
-                        console.log(`Successfully updated document ${exercise.id}`);
+                        await scheduleMissedWorkoutNotification(
+                            missedWorkouts[0].date,
+                            missedWorkouts.length
+                        );
+                        // Reset streak counter using the new function
+                        await resetStreakCounter();
                     } catch (error) {
-                        console.error(`Error updating document ${exercise.id}:`, error);
-                        return { success: false, message: "Error updating exercises" };
+                        console.error('Error sending notification or updating streak:', error);
                     }
                 }
-
-                console.log(`Successfully shifted all incomplete exercises forward by ${daysLate} days`);
+                // Shift all incomplete workouts forward by daysToShift
+                for (const exercise of allExercises) {
+                    if (exercise.completionStatus !== 'complete') {
+                        const newDate = new Date(exercise.date);
+                        newDate.setDate(newDate.getDate() + daysToShift);
+                        const newDateStr = newDate.toISOString().slice(0, 10);
+                        try {
+                            await setDoc(doc(datedExercisesRef, exercise.id), {
+                                ...exercise,
+                                date: newDateStr
+                            });
+                            console.log(`Successfully updated document ${exercise.id}`);
+                        } catch (error) {
+                            console.error(`Error updating document ${exercise.id}:`, error);
+                            return { success: false, message: "Error updating exercises" };
+                        }
+                    }
+                }
                 // Clear today's session cache
                 await clearTodaysSessionCache();
-
-                return { success: true, message: `Shifted exercises forward by ${daysLate} days` };
+                return { success: true, message: `Shifted incomplete exercises by ${daysToShift} days`, dateShifted: true, newDate: targetDate };
+            } else {
+                // No shift needed, new date is not ahead
+                return { success: true, message: "No shift needed", dateShifted: false, newDate: targetDate };
             }
         } else {
             console.log("No incomplete exercises found");
-            return { success: true, message: "No incomplete exercises found" };
+            return { success: true, message: "No incomplete exercises found", dateShifted: false, newDate: targetDate };
         }
     } catch (error) {
         console.error("Error in runDailyTask:", error);
@@ -118,4 +178,4 @@ const testRunDailyTask = async () => {
     }
 };
 
-export { runDailyTask, testRunDailyTask };
+export { runDailyTask, testRunDailyTask, resetStreakCounter };

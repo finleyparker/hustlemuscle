@@ -21,6 +21,7 @@ import {
 import { useNavigation, useRoute } from "@react-navigation/native";
 import { getExerciseInstructions } from "../api/exercises";
 import { getUserID } from "../database/UserDB";
+import { clearCache, clearTodaysSessionCache } from "../utils/cacheManager";
 
 export default function WorkoutLogScreen() {
   const [exercises, setExercises] = useState([]);
@@ -128,6 +129,10 @@ export default function WorkoutLogScreen() {
 
       // Save exercises on timeline
       await saveUpdatedTimeline(user_id, workoutDate, exercises);
+
+      // Clear any cached data to force a refresh
+      await clearCache('workoutTimeline');
+      await clearTodaysSessionCache();
 
       alert("Workout saved successfully!");
       navigation.navigate("Home");

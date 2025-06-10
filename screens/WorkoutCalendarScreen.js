@@ -7,15 +7,15 @@ import { collection, query, where, getDocs } from 'firebase/firestore';
 import { formatPlanName, formatDurationWeeks, formatCreatedAt, formatPlan, extractDaysFromPlan, formatPlanDaysWithExercises, formatDayOfWeek } from '../utils/planFormatters';
 import { getWorkoutTimeline } from '../database/WorkoutTimeline';
 import { useFocusEffect } from '@react-navigation/native';
+import { useDate } from '../context/DateContext';
 
-export const getTodaysWorkout = (exercises) => {
-  const today = new Date().toISOString().split('T')[0];
-  console.log('Looking for workout on date:', today);
+export const getTodaysWorkout = (exercises, currentDate) => {
+  console.log('Looking for workout on date:', currentDate);
   console.log('Available exercises:', JSON.stringify(exercises, null, 2));
   console.log('Exercise dates:', exercises.map(e => e.date));
   const dayExercises = exercises.find(e => {
-    console.log('Comparing:', { exerciseDate: e.date, today });
-    return e.date === today;
+    console.log('Comparing:', { exerciseDate: e.date, currentDate });
+    return e.date === currentDate;
   });
   console.log('Found day exercises:', dayExercises);
   return dayExercises ? {
@@ -35,6 +35,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
   const [markedDates, setMarkedDates] = useState({});
   const [exercises, setExercises] = useState([]);
   const [selectedDayExercises, setSelectedDayExercises] = useState([]);
+  const { currentDate } = useDate();
   
   const hasFetchedData = useRef(false);
 
@@ -45,82 +46,94 @@ const WorkoutCalendarScreen = ({ navigation }) => {
       const timelineData = await getWorkoutTimeline();
       console.log("Timeline data received:", timelineData);
       
-      if (timelineData && timelineData.exercises) {
-        // Log the structure of the first exercise to see all available fields
-        if (timelineData.exercises.length > 0) {
-          console.log("First exercise document structure:", {
-            id: timelineData.exercises[0].id,
-            allFields: timelineData.exercises[0],
-            exercisesArray: timelineData.exercises[0].exercises
-          });
-        }
+      if (timelineData) {
+        setExercises(timelineData.exercises);
         
-        setMarkedDates(timelineData.markedDates || {});
-        setExercises(timelineData.exercises || []);
-        
-        // Format the exercises for display
-        const formattedDays = timelineData.exercises.map(exercise => {
-          const date = new Date(exercise.id);
-          const dayName = date.toLocaleDateString('en-US', { weekday: 'long' });
-          return `${dayName} (${exercise.id}): ${exercise.exercises.length} exercises`;
+        // Create marked dates with only selected for the selected day
+        const updatedMarkedDates = {};
+        timelineData.exercises.forEach(exercise => {
+          updatedMarkedDates[exercise.date] = {
+            completionStatus: exercise.completionStatus
+          };
         });
+        // Only set selected for the selected day
+        if (selected) {
+          updatedMarkedDates[selected] = {
+            ...updatedMarkedDates[selected],
+            
+            selected: true
+          };
+        }
+        setMarkedDates(updatedMarkedDates);
         
-        setDays(formattedDays);
-        setPlanName('Workout Calendar');
+        // Set initial selected date to current date from context
+        setSelected(currentDate);
         
-        // Set start and end dates from the exercises array
+        // Find exercises for the current date
+        const currentDayExercises = timelineData.exercises.find(
+          ex => ex.date === currentDate
+        );
+        if (currentDayExercises) {
+          setSelectedDayExercises(currentDayExercises.exercises);
+        }
+
+        // Set start and end dates
         if (timelineData.exercises.length > 0) {
-          const dates = timelineData.exercises.map(e => new Date(e.id));
+          const dates = timelineData.exercises.map(e => new Date(e.date));
           const start = new Date(Math.min(...dates));
           const end = new Date(Math.max(...dates));
-          setStartDate(start.toLocaleDateString());
-          setEndDate(end.toLocaleDateString());
+          setStartDate(start.toISOString().split('T')[0]);
+          setEndDate(end.toISOString().split('T')[0]);
         }
-      } else {
-        console.log("No timeline data or exercises found");
-        setDays([]);
-        setMarkedDates({});
-        setExercises([]);
-        setPlanName('No Timeline Found');
-        setStartDate('No start date');
-        setEndDate('No end date');
+
+        // Set plan name
+        setPlanName('Workout Calendar');
       }
     } catch (error) {
-      console.error('Error fetching timeline:', error);
-      setDays([]);
-      setMarkedDates({});
-      setExercises([]);
-      setPlanName('Error Loading Timeline');
-      setStartDate('Error');
-      setEndDate('Error');
+      console.error("Error fetching timeline:", error);
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [currentDate, selected]);
 
-  // Use useFocusEffect to refresh data when screen comes into focus
+  // Add useFocusEffect to refresh data when screen comes into focus
   useFocusEffect(
     React.useCallback(() => {
-      console.log("Screen focused, refreshing timeline data...");
+      console.log('Screen focused, current date:', currentDate);
       fetchTimeline();
-    }, [fetchTimeline])
+    }, [currentDate])
   );
 
-  const handleDayPress = (day) => {
-    console.log("Day pressed:", day.dateString);
+  // Memoize markedDates to ensure calendar updates
+  const computedMarkedDates = useMemo(() => {
+    const newMarked = { ...markedDates };
+    if (selected) {
+      newMarked[selected] = {
+        ...(markedDates[selected] || {}),
+        selected: true,
+        selectedColor: '#ff5e69',
+        selectedTextColor: '#fff',
+      };
+    }
+    if (currentDate) {
+      newMarked[currentDate] = {
+        ...(markedDates[currentDate] || {}),
+        today: true,
+        selected: true, // Make sure current date is always selected
+        selectedColor: '#ff5e69',
+        selectedTextColor: '#fff',
+      };
+    }
+    console.log('Calendar Render - selected:', selected, 'currentDate:', currentDate, 'computedMarkedDates:', newMarked);
+    return newMarked;
+  }, [markedDates, selected, currentDate]);
+
+  const onDayPress = (day) => {
+    console.log('Day pressed:', day.dateString);
     setSelected(day.dateString);
-    // Find the exercises for this day
-    const dayExercises = exercises.find(e => e.date === day.dateString); //here we find the exercises for the day by date field
-    console.log("Found exercises for day:", {
-      searchedDate: day.dateString,
-      foundExercise: dayExercises ? {
-        id: dayExercises.id,
-        date: dayExercises.date,
-        exercisesCount: dayExercises.exercises.length
-      } : null
-    });
-    if (dayExercises) {
-      setSelectedDayExercises(dayExercises.exercises);
+    const selectedExercises = exercises.find(ex => ex.date === day.dateString);
+    if (selectedExercises) {
+      setSelectedDayExercises(selectedExercises.exercises);
       setShowWorkoutDetails(true);
     }
   };
@@ -143,6 +156,12 @@ const WorkoutCalendarScreen = ({ navigation }) => {
         </View>
       </View>
     </View>
+  );
+
+  useFocusEffect(
+    React.useCallback(() => {
+      setSelected(currentDate);
+    }, [currentDate])
   );
 
   return (
@@ -174,7 +193,6 @@ const WorkoutCalendarScreen = ({ navigation }) => {
             textSectionTitleColor: '#aaa',
             selectedDayBackgroundColor: '#ff5e69',
             selectedDayTextColor: '#fff',
-            todayTextColor: '#E3FA05',
             dayTextColor: '#fff',
             textDisabledColor: '#444',
             monthTextColor: '#fff',
@@ -186,9 +204,109 @@ const WorkoutCalendarScreen = ({ navigation }) => {
             textMonthFontSize: 18,
             textDayHeaderFontSize: 14,
           }}
-          onDayPress={handleDayPress}
+          current={currentDate}
+          onDayPress={onDayPress}
           hideExtraDays={true}
+          markingType="custom"
           markedDates={markedDates}
+          dayComponent={({ date, state }) => {
+            const dateString = date.dateString;
+            const isCompleted = markedDates[dateString]?.completionStatus === 'complete';
+            const isSelected = dateString === currentDate;
+            const isWorkoutDay = dateString in markedDates;
+            const todayStr = new Date().toISOString().split('T')[0];
+            const isToday = dateString === todayStr;
+
+            let dayContent = (
+              <Text
+                style={{
+                  color: isSelected ? '#fff' : isCompleted ? '#4CAF50' : isWorkoutDay ? '#fff' : '#888',
+                  fontWeight: isSelected ? 'bold' : 'normal',
+                  fontSize: 16,
+                  opacity: isWorkoutDay ? 1 : 0.5,
+                }}
+              >
+                {date.day}
+              </Text>
+            );
+
+            // Red circle for incomplete workout days
+            if (isWorkoutDay && !isCompleted) {
+              dayContent = (
+                <View
+                  style={{
+                    backgroundColor: '#ff5e69',
+                    borderRadius: 16,
+                    width: 32,
+                    height: 32,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Text
+                    style={{
+                      color: '#fff',
+                      fontWeight: isSelected ? 'bold' : 'normal',
+                      fontSize: 16,
+                    }}
+                  >
+                    {date.day}
+                  </Text>
+                </View>
+              );
+            }
+
+            // Green checkmark for completed workout days
+            if (isCompleted) {
+              dayContent = (
+                <View style={{ alignItems: 'center', justifyContent: 'center', height: 32, width: 32 }}>
+                  <Text
+                    style={{
+                      color: '#4CAF50',
+                      fontWeight: isSelected ? 'bold' : 'normal',
+                      fontSize: 16,
+                    }}
+                  >
+                    {date.day}
+                  </Text>
+                  <View style={{ position: 'absolute', bottom: -2, right: -2 }}>
+                    <Ionicons name="checkmark-circle" size={12} color="#4CAF50" />
+                  </View>
+                </View>
+              );
+            }
+
+            // Highlight selected date (from context) with a yellow border
+            let content = dayContent;
+            if (isSelected) {
+              content = (
+                <View
+                  style={{
+                    borderColor: '#E3FA05',
+                    borderWidth: 2,
+                    borderRadius: 16,
+                    padding: 2,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  {dayContent}
+                </View>
+              );
+            }
+
+            if (isWorkoutDay) {
+              return (
+                <TouchableOpacity onPress={() => onDayPress({ dateString })} activeOpacity={0.7}>
+                  {content}
+                </TouchableOpacity>
+              );
+            }
+            return content;
+          }}
+          enableSwipeMonths={true}
+          minDate={startDate}
+          maxDate={endDate}
         />
       </View>
 
@@ -210,6 +328,7 @@ const WorkoutCalendarScreen = ({ navigation }) => {
         onRequestClose={() => setShowWorkoutDetails(false)}
       >
         <View style={styles.modalContainer}>
+        
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>

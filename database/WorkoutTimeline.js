@@ -122,16 +122,23 @@ const getWorkoutTimeline = async () => {
 
     // Get the timeline metadata (duration, creation date, etc.)
     const timelineData = timelineDoc.data();
+    console.log('Timeline metadata:', timelineData);
     
     // Get reference to the datedExercises subcollection
     const datedExercisesRef = collection(workoutTimelineRef, "datedExercises");
     const exercisesSnapshot = await getDocs(datedExercisesRef);
     
+    console.log('Number of dated exercises found:', exercisesSnapshot.docs.length);
+    
     // Transform the exercises data into a more usable format
-    const exercises = exercisesSnapshot.docs.map(doc => ({
-      id: doc.id,  // The date of the exercise (YYYY-MM-DD format)
-      ...doc.data()  // Spread the exercise data (programId, exercises array, etc.)
-    }));
+    const exercises = exercisesSnapshot.docs.map(doc => {
+      const data = doc.data();
+      console.log('Exercise data for date', doc.id, ':', data);
+      return {
+        id: doc.id,  // The date of the exercise (YYYY-MM-DD format)
+        ...data  // Spread the exercise data (programId, exercises array, etc.)
+      };
+    });
 
     // Create marked dates object for the calendar
     const markedDates = {};
@@ -146,11 +153,14 @@ const getWorkoutTimeline = async () => {
     });
 
     // Return the complete timeline data
-    return {
+    const result = {
       durationWeeks: timelineData.durationWeeks,
       exercises: exercises,
       markedDates: markedDates
     };
+    
+    console.log('Final timeline result:', result);
+    return result;
   } catch (error) {
     console.error('Error in getWorkoutTimeline:', error);
     return null;

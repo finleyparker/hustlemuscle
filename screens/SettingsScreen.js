@@ -7,12 +7,20 @@ import { logout } from '../database/UserDB';
 import AuthScreen from './AuthScreen';
 import { auth } from '../database/firebase';
 import { signOut } from 'firebase/auth';
+import { testRunDailyTask } from '../utils/syncWorkoutSchedule';
+import { useDate } from '../context/DateContext';
+import { scheduleMissedWorkoutNotification } from '../utils/notifications';
 
 const SettingsScreen = () => {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
+  const [tapCount, setTapCount] = useState(0);
+  const [showHiddenDatePicker, setShowHiddenDatePicker] = useState(false);
   const navigation = useNavigation();
+  const { updateDate, currentDate } = useDate();
+
+  console.log('Current date in context:', currentDate);
 
   const showCalendar = () => setCalendarVisible(true);
   const hideCalendar = () => setCalendarVisible(false);
@@ -20,6 +28,29 @@ const SettingsScreen = () => {
     setSelectedDate(date);
     hideCalendar();
   };
+
+  const handleHiddenTap = () => {
+    const newCount = tapCount + 1;
+    setTapCount(newCount);
+    
+    if (newCount >= 3) {
+      setShowHiddenDatePicker(true);
+      setTapCount(0);
+    }
+  };
+
+  const handleHiddenDateConfirm = async (date) => {
+    // Set to midnight local time
+    const adjustedDate = new Date(date);
+    adjustedDate.setHours(0, 0, 0, 0);
+    const year = adjustedDate.getFullYear();
+    const month = String(adjustedDate.getMonth() + 1).padStart(2, '0');
+    const day = String(adjustedDate.getDate()).padStart(2, '0');
+    const localDateString = `${year}-${month}-${day}`;
+    await updateDate(localDateString);
+    setShowHiddenDatePicker(false);
+  };
+
   const askLogout = () =>
     Alert.alert('Sign Out', 'Are you sure you want to sign out?', [
       {
@@ -98,6 +129,22 @@ const SettingsScreen = () => {
           <Text style={[styles.label, { color: '#ff5e69' }]}>Delete account</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Hidden Date Change Feature */}
+      <TouchableOpacity 
+        style={styles.hiddenButton} 
+        onPress={handleHiddenTap}
+      >
+        <Text style={styles.hiddenButtonText}>Version 1.0.0</Text>
+      </TouchableOpacity>
+
+      <DateTimePickerModal
+        isVisible={showHiddenDatePicker}
+        mode="date"
+        onConfirm={handleHiddenDateConfirm}
+        onCancel={() => setShowHiddenDatePicker(false)}
+        display="inline"
+      />
     </View>
   );
 };
@@ -156,6 +203,16 @@ const styles = StyleSheet.create({
   deleteRow: {
     borderBottomWidth: 0,
     marginTop: 8,
+  },
+  hiddenButton: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    padding: 10,
+  },
+  hiddenButtonText: {
+    color: '#888',
+    fontSize: 12,
   },
 });
 
