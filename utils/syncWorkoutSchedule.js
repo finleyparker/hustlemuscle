@@ -1,8 +1,35 @@
 import { db, auth } from '../database/firebase';
-import { collection, query, where, getDocs, doc, setDoc, getDoc } from 'firebase/firestore';
+import { collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { clearCache, createCacheKey, clearTodaysSessionCache } from '../utils/cacheManager';
 import { scheduleMissedWorkoutNotification } from './notifications';
+
+// Function to reset the streak counter
+const resetStreakCounter = async () => {
+    try {
+        const userId = auth.currentUser?.uid;
+        if (!userId) {
+            console.log("No user found");
+            return { success: false, message: "No user found" };
+        }
+
+        const userDetailsRef = doc(db, 'UserDetails', userId);
+        const today = new Date();
+        const startOfWeek = new Date(today);
+        startOfWeek.setDate(today.getDate() - today.getDay());
+        startOfWeek.setHours(0, 0, 0, 0);
+        
+        await updateDoc(userDetailsRef, {
+            streak: 0,
+            streakResetDate: startOfWeek.toISOString().split('T')[0]
+        });
+        console.log('Streak counter reset in UserDetails');
+        return { success: true, message: "Streak counter reset successfully" };
+    } catch (error) {
+        console.error('Error resetting streak counter:', error);
+        return { success: false, message: error.message };
+    }
+};
 
 const runDailyTask = async (newDate = null, oldDate = null) => {
     try {
@@ -88,9 +115,10 @@ const runDailyTask = async (newDate = null, oldDate = null) => {
                             missedWorkouts[0].date,
                             missedWorkouts.length
                         );
-                        console.log('Notification sent for missed workouts:', missedWorkouts.length);
+                        // Reset streak counter using the new function
+                        await resetStreakCounter();
                     } catch (error) {
-                        console.error('Error sending notification:', error);
+                        console.error('Error sending notification or updating streak:', error);
                     }
                 }
                 // Shift all incomplete workouts forward by daysToShift
@@ -150,4 +178,4 @@ const testRunDailyTask = async () => {
     }
 };
 
-export { runDailyTask, testRunDailyTask };
+export { runDailyTask, testRunDailyTask, resetStreakCounter };

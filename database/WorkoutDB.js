@@ -91,6 +91,48 @@ export const saveUpdatedTimeline = async (
       completionStatus: "complete",
     });
     console.log("Workout log updated.");
+
+    // --- Weekly Workouts Count Logic ---
+    const userDetailsRef = doc(db, 'UserDetails', user_id);
+    const userDetailsSnap = await getDoc(userDetailsRef);
+    
+    // Get the start of the current week (Sunday)
+    const today = new Date();
+    const startOfWeek = new Date(today);
+    startOfWeek.setDate(today.getDate() - today.getDay());
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    // Get all completed workouts for this week
+    const datedExercisesRef = collection(db, "workoutTimeline", user_id, "datedExercises");
+    const q = query(
+      datedExercisesRef,
+      where("completionStatus", "==", "complete")
+    );
+    const snapshot = await getDocs(q);
+    
+    // Count workouts completed this week
+    let weeklyWorkouts = 0;
+    snapshot.forEach(doc => {
+      const workoutDate = new Date(doc.data().date);
+      if (workoutDate >= startOfWeek) {
+        weeklyWorkouts++;
+      }
+    });
+    
+    // Update the streak field with weekly count
+    let bestStreak = 0;
+    if (userDetailsSnap.exists()) {
+      bestStreak = userDetailsSnap.data().bestStreak || 0;
+    }
+    const updateData = {
+      streak: weeklyWorkouts,
+      streakResetDate: startOfWeek.toISOString().split('T')[0], // Store week start date
+    };
+    if (weeklyWorkouts > bestStreak) {
+      updateData.bestStreak = weeklyWorkouts;
+    }
+    await updateDoc(userDetailsRef, updateData);
+    // --- End Weekly Workouts Count Logic ---
   } catch (error) {
     console.error("Failed to update workoutTimeline:", error);
   }

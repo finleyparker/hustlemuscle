@@ -15,7 +15,7 @@ import { db, auth } from "../database/firebase";
 import { getUserName } from "../database/UserDB";
 import DateTimePickerModal from "react-native-modal-datetime-picker";
 import { doc, getDoc } from "firebase/firestore";
-import { runDailyTask, testRunDailyTask } from "../utils/syncWorkoutSchedule";
+import { runDailyTask, testRunDailyTask, resetStreakCounter } from "../utils/syncWorkoutSchedule";
 import ProgressBar from "../components/ProgressBar";
 import { getTodaysWorkout } from "./WorkoutCalendarScreen";
 import { getWorkoutTimeline } from "../database/WorkoutTimeline";
@@ -34,9 +34,11 @@ const HomeScreen = () => {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [totalCalories, setTotalCalories] = useState(0);
+  const [weeklyWorkouts, setWeeklyWorkouts] = useState(0);
   const { currentDate } = useDate();
   const [todaysSession, setTodaysSession] = useState("");
   const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
+  const [bestStreak, setBestStreak] = useState(0);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -90,21 +92,26 @@ const HomeScreen = () => {
     fetchTodaysSession();
   }, [currentDate]);
 
-  useEffect(() => {
-    const fetchCalories = async () => {
-      const user = auth.currentUser;
-      if (user) {
-        const userRef = doc(db, "UserDetails", user.uid);
-        const docSnap = await getDoc(userRef);
-        if (docSnap.exists()) {
-          const data = docSnap.data();
-          setTotalCalories(data.totalCalories || 0);
+  // Add useFocusEffect to refresh stats when returning to screen
+  useFocusEffect(
+    React.useCallback(() => {
+      const fetchUserStats = async () => {
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, "UserDetails", user.uid);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTotalCalories(data.totalCalories || 0);
+            setWeeklyWorkouts(data.streak || 0);
+            setBestStreak(data.bestStreak || 0);
+          }
         }
-      }
-    };
+      };
 
-    fetchCalories();
-  }, []);
+      fetchUserStats();
+    }, [])
+  );
 
   // Run daily task when date changes
   useEffect(() => {
@@ -117,6 +124,17 @@ const HomeScreen = () => {
       if (newDate !== currentDate) {
         console.log("Date changed, updating state...");
         setCurrentDate(newDate);
+        // Refresh user stats when date changes
+        const user = auth.currentUser;
+        if (user) {
+          const userRef = doc(db, "UserDetails", user.uid);
+          const docSnap = await getDoc(userRef);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setTotalCalories(data.totalCalories || 0);
+            setWeeklyWorkouts(data.streak || 0);
+          }
+        }
       } else {
         console.log("Date hasn't changed");
       }
@@ -320,12 +338,18 @@ const HomeScreen = () => {
         </LinearGradient>
       </TouchableOpacity>
 
-      {/* Statistics Stat Cards (restored) */}
+      {/* Statistics Stat Cards */}
       <View style={styles.statsContainer}>
         <View style={styles.statCard}>
-          <Text style={styles.statNumber}>3</Text>
-          <Text style={styles.statLabel}>
-            Workouts Completed{"\n"}this week
+          <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
+            <Ionicons name="trending-up" size={22} color="#fff" style={{ marginRight: 8 }} />
+            <Text style={[styles.statLabel, { color: '#fff', fontWeight: '600', fontSize: 15 }]}>Streak Counter</Text>
+          </View>
+          <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 28, marginBottom: 2, letterSpacing: 0.5 }}>
+            {weeklyWorkouts} <Text style={{ fontSize: 18, fontWeight: '400', color: '#bbb' }}>days</Text>
+          </Text>
+          <Text style={{ color: '#bbb', fontSize: 15, fontWeight: '500', marginTop: 2 }}>
+            Best Streak: <Text style={{ color: '#bbb', fontWeight: '600' }}>{bestStreak}</Text> days
           </Text>
         </View>
         <View style={styles.statCard}>
@@ -334,11 +358,27 @@ const HomeScreen = () => {
         </View>
       </View>
 
+      {/* My Progress Panel */}
+      <ProgressBar onPress={() => navigation.navigate("WorkoutHistory")} />
+
       {/* Test Buttons */}
       <View style={styles.testButtonsContainer}>
         <TouchableOpacity
           style={styles.testButton}
-          onPress={() => navigation.navigate("TestWorkoutTimeline")}
+          onPress={async () => {
+            await resetStreakCounter();
+            navigation.navigate("TestWorkoutTimeline");
+            // Refresh stats after reset
+            const user = auth.currentUser;
+            if (user) {
+              const userRef = doc(db, "UserDetails", user.uid);
+              const docSnap = await getDoc(userRef);
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setWeeklyWorkouts(data.streak || 0);
+              }
+            }
+          }}
         >
           <Text style={styles.testButtonText}>Test Workout Timeline</Text>
         </TouchableOpacity>
@@ -355,6 +395,25 @@ const HomeScreen = () => {
 
         <TouchableOpacity
           style={styles.testButton}
+          onPress={async () => {
+            await resetStreakCounter();
+            // Refresh stats after reset
+            const user = auth.currentUser;
+            if (user) {
+              const userRef = doc(db, "UserDetails", user.uid);
+              const docSnap = await getDoc(userRef);
+              if (docSnap.exists()) {
+                const data = docSnap.data();
+                setWeeklyWorkouts(data.streak || 0);
+              }
+            }
+          }}
+        >
+          <Text style={styles.testButtonText}>Reset Streak Counter</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={styles.testButton}
           onPress={() => {
             const userId = auth.currentUser?.uid;
             console.log("Current User ID:", userId);
@@ -363,9 +422,6 @@ const HomeScreen = () => {
           <Text style={styles.testButtonText}>Print User ID</Text>
         </TouchableOpacity>
       </View>
-
-      {/* My Progress Panel */}
-      <ProgressBar onPress={() => navigation.navigate("WorkoutHistory")} />
     </ScrollView>
   );
 };

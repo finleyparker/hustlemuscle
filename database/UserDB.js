@@ -33,6 +33,8 @@ export const getUserDetailsFromUserDetailsCollection = async (userId) => {
         level: data.ExperienceLevel,
         daysPerWeek: data.WorkoutDaysPerWeek,
         equipment: data.Equipment,
+        streak: data.streak || 0,
+        streakResetDate: data.streakResetDate || null,
         // Add any other fields you need
       };
     } else {
