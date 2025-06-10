@@ -205,10 +205,9 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   hiddenButton: {
-    position: 'absolute',
-    bottom: 20,
-    alignSelf: 'center',
-    padding: 10,
+    alignItems: 'center',
+    marginTop: 32,
+    marginBottom: 32,
   },
   hiddenButtonText: {
     color: '#888',
