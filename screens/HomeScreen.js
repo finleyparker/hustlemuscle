@@ -9,7 +9,7 @@ import {
   TouchableOpacity,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation, useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { db, auth } from "../database/firebase";
 import { getUserName } from "../database/UserDB";
@@ -24,7 +24,9 @@ import {
   saveToCache,
   createCacheKey,
   CACHE_DURATIONS,
+  clearCache,
 } from "../utils/cacheManager";
+import { useDate } from '../context/DateContext';
 
 const HomeScreen = () => {
   const [userName, setUserName] = useState("");
@@ -32,9 +34,7 @@ const HomeScreen = () => {
   const [isCalendarVisible, setCalendarVisible] = useState(false);
   const [selectedDate, setSelectedDate] = useState(null);
   const [totalCalories, setTotalCalories] = useState(0);
-  const [currentDate, setCurrentDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
+  const { currentDate } = useDate();
   const [todaysSession, setTodaysSession] = useState("");
   const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
 
@@ -51,7 +51,7 @@ const HomeScreen = () => {
     fetchUserName();
   }, []);
 
-  // Fetch workout timeline data
+  // Fetch workout timeline data and today's session whenever currentDate changes
   useEffect(() => {
     const fetchTimeline = async () => {
       try {
@@ -63,9 +63,32 @@ const HomeScreen = () => {
         console.error("Error fetching timeline:", error);
       }
     };
-
     fetchTimeline();
-  }, []);
+    // Also update today's session
+    const fetchTodaysSession = async () => {
+      const cacheKey = createCacheKey("todays_session", currentDate);
+      const timestampKey = createCacheKey("todays_session_timestamp", currentDate);
+      await clearCache(cacheKey);
+      await clearCache(timestampKey);
+      let sessionTitle = "";
+      try {
+        const timelineData = await getWorkoutTimeline();
+        if (timelineData && timelineData.exercises) {
+          const incompleteWorkouts = timelineData.exercises
+            .filter(ex => ex.completionStatus === "incomplete")
+            .sort((a, b) => new Date(a.date) - new Date(b.date));
+          if (incompleteWorkouts.length > 0) {
+            sessionTitle = incompleteWorkouts[0].workoutTitle || "";
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching timeline:", error);
+      }
+      await saveToCache(cacheKey, timestampKey, sessionTitle);
+      setTodaysSession(sessionTitle);
+    };
+    fetchTodaysSession();
+  }, [currentDate]);
 
   useEffect(() => {
     const fetchCalories = async () => {
@@ -110,7 +133,16 @@ const HomeScreen = () => {
     };
   }, [currentDate]);
 
-  const today = useMemo(() => new Date(), [currentDate]); // Update today when date changes
+  const today = useMemo(() => {
+    // Create a new date object from the currentDate string
+    const [year, month, day] = currentDate.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    // Set to midnight in local timezone
+    date.setHours(0, 0, 0, 0);
+    console.log('HomeScreen - Current date from context:', currentDate);
+    console.log('HomeScreen - Parsed date:', date.toISOString());
+    return date;
+  }, [currentDate]);
 
   const weekDays = useMemo(() => {
     const days = [];
@@ -127,15 +159,31 @@ const HomeScreen = () => {
         fullDate: date,
       });
     }
+    console.log('HomeScreen - Week days:', days.map(d => `${d.day} ${d.date}`));
     return days;
   }, [today]);
 
   const isToday = (date) => {
-    return (
-      date.getDate() === today.getDate() &&
-      date.getMonth() === today.getMonth() &&
-      date.getFullYear() === today.getFullYear()
-    );
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    const todayDate = new Date(today);
+    todayDate.setHours(0, 0, 0, 0);
+    
+    console.log('HomeScreen - Comparing dates:', {
+      compareDate: compareDate.toISOString(),
+      todayDate: todayDate.toISOString(),
+      isMatch: compareDate.getTime() === todayDate.getTime()
+    });
+    
+    return compareDate.getTime() === todayDate.getTime();
+  };
+
+  const isSelectedDay = (date) => {
+    const compareDate = new Date(date);
+    compareDate.setHours(0, 0, 0, 0);
+    const selectedDate = new Date(currentDate);
+    selectedDate.setHours(0, 0, 0, 0);
+    return compareDate.getTime() === selectedDate.getTime();
   };
 
   const showCalendar = () => setCalendarVisible(true);
@@ -146,47 +194,16 @@ const HomeScreen = () => {
     console.log("Selected date:", date);
   };
 
-  // Cache today's session title
-  useEffect(() => {
-    const fetchTodaysSession = async () => {
-      const todayStr = new Date().toISOString().split("T")[0];
-      console.log("Fetching today's session for date:", todayStr);
-      const cacheKey = createCacheKey("todays_session", todayStr);
-      const timestampKey = createCacheKey("todays_session_timestamp", todayStr);
-      // Try to load from cache (1 day duration)
-      const cached = await loadFromCache(
-        cacheKey,
-        timestampKey,
-        CACHE_DURATIONS.LONG
-      );
-      console.log("Cached session data:", cached);
-      if (cached) {
-        setTodaysSession(cached);
-      } else {
-        // Fallback: get exercises and session title
-        let sessionTitle = "";
-        try {
-          const timelineData = await getWorkoutTimeline();
-          console.log("Timeline data:", timelineData);
-          if (timelineData && timelineData.exercises) {
-            const { day } = getTodaysWorkout(timelineData.exercises);
-            console.log("Today's workout day:", day);
-            sessionTitle = day || "";
-          }
-        } catch (e) {
-          console.error("Error fetching timeline data:", e);
-          sessionTitle = "";
-        }
-        console.log("Setting session title:", sessionTitle);
-        setTodaysSession(sessionTitle);
-        await saveToCache(cacheKey, timestampKey, sessionTitle);
-      }
-    };
-    fetchTodaysSession();
-  }, [currentDate, sessionCacheBuster]);
-
   // Expose a function to trigger a session refetch after plan shift
   const triggerSessionRefetch = () => setSessionCacheBuster((b) => b + 1);
+
+  useFocusEffect(
+    React.useCallback(() => {
+      // Re-fetch or re-set state here
+      setSelectedDate(currentDate);
+      // Optionally trigger any other refresh logic
+    }, [currentDate])
+  );
 
   return (
     <ScrollView style={styles.container}>
@@ -215,7 +232,7 @@ const HomeScreen = () => {
             key={index}
             style={[
               styles.dayContainer,
-              isToday(item.fullDate) && styles.selectedDayContainer,
+              isSelectedDay(item.fullDate) && styles.selectedDayContainer,
             ]}
             onPress={() => navigation.navigate("WorkoutCalendar")}
             activeOpacity={0.7}
@@ -223,7 +240,7 @@ const HomeScreen = () => {
             <Text
               style={[
                 styles.dayText,
-                isToday(item.fullDate) && styles.selectedDayText,
+                isSelectedDay(item.fullDate) && styles.selectedDayText,
               ]}
             >
               {item.date}
@@ -231,7 +248,7 @@ const HomeScreen = () => {
             <Text
               style={[
                 styles.dayLabel,
-                isToday(item.fullDate) && styles.selectedDayText,
+                isSelectedDay(item.fullDate) && styles.selectedDayText,
               ]}
             >
               {item.day}
@@ -274,7 +291,7 @@ const HomeScreen = () => {
               </View>
               {todaysSession ? (
                 <View style={styles.sessionRow}>
-                  <Text style={styles.sessionLabel}>TODAY'S SESSION:</Text>
+                  <Text style={styles.sessionLabel}>Upcoming Workout:</Text>
                   <Text style={styles.sessionValue}> {todaysSession}</Text>
                 </View>
               ) : null}

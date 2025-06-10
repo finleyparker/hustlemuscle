@@ -12,35 +12,65 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useNavigation } from "@react-navigation/native";
 import { getWorkoutTimeline } from "../database/WorkoutTimeline";
+import { registerSessionRefreshCallback } from "../utils/sessionManager";
 
 const WorkoutScreen = () => {
   const [loading, setLoading] = useState(true);
   const navigation = useNavigation();
   const [workout, setWorkout] = useState(null);
 
-  useEffect(() => {
-    const fetchWorkout = async () => {
-      try {
-        const timelineData = await getWorkoutTimeline();
-        if (timelineData && timelineData.exercises) {
-          // Find the most recent incomplete workout
-          const incompleteWorkouts = timelineData.exercises
-            .filter((ex) => ex.completionStatus === "incomplete")
-            .sort((a, b) => new Date(b.date) - new Date(a.date));
+  const fetchWorkout = async () => {
+    try {
+      setLoading(true);
+      const timelineData = await getWorkoutTimeline();
+      console.log('Raw timeline data:', JSON.stringify(timelineData, null, 2));
+      
+      if (timelineData && timelineData.exercises) {
+        console.log('Number of exercises found:', timelineData.exercises.length);
+        
+        // Find incomplete workouts and sort by date (earliest first)
+        const incompleteWorkouts = timelineData.exercises
+          .filter((ex) => {
+            console.log('Exercise date:', ex.date, 'completion status:', ex.completionStatus);
+            return ex.completionStatus === "incomplete";
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.date);
+            const dateB = new Date(b.date);
+            return dateA - dateB; // Sort ascending (earliest first)
+          });
 
-          if (incompleteWorkouts.length > 0) {
-            setWorkout(incompleteWorkouts[0]);
-          }
+        console.log('Number of incomplete workouts:', incompleteWorkouts.length);
+        if (incompleteWorkouts.length > 0) {
+          console.log('Earliest incomplete workout:', JSON.stringify(incompleteWorkouts[0], null, 2));
+          setWorkout(incompleteWorkouts[0]);
+        } else {
+          console.log('No incomplete workouts found');
+          setWorkout(null);
         }
-      } catch (error) {
-        console.error("Error fetching workout:", error);
-      } finally {
-        setLoading(false);
+      } else {
+        console.log('No timeline data or exercises found');
+        setWorkout(null);
       }
-    };
-    console.log("workout: ", workout);
-    //console.log("workout.id: ", workout.id);
+    } catch (error) {
+      console.error("Error fetching workout:", error);
+      setWorkout(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    // Initial fetch
     fetchWorkout();
+
+    // Register for session refreshes
+    const unregister = registerSessionRefreshCallback(fetchWorkout);
+
+    // Cleanup on unmount
+    return () => {
+      unregister();
+    };
   }, []);
 
   if (loading) {
