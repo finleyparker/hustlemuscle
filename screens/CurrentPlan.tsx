@@ -16,7 +16,7 @@ interface FoodItem {
 }
 
 interface DietPlan {
-  dietRestriction: string;
+  DietaryRestrictions: string;
   totalCalories?: number;
   selectedMeals?: {
     name: string;
@@ -59,7 +59,7 @@ export default function App() {
 
         if (dietPlanDoc.exists()) {
           const dietPlanData = dietPlanDoc.data() as DietPlan;
-          setUserDietRestriction(dietPlanData.dietRestriction);
+          setUserDietRestriction(dietPlanData.DietaryRestrictions);
           setTotalCalories(dietPlanData.totalCalories || 0);
         } else {
           console.log('No diet plan found for this user');
@@ -90,6 +90,7 @@ export default function App() {
     fetchUserDiet();
     fetchMeals();
   }, [userId]);
+
 
   const filteredDiet = userDietRestriction === 'None' // If no dietary restrictions, show all meals
     ? meal

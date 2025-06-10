@@ -31,13 +31,13 @@ const DietScreen = ({ navigation }: any) => {
   const userId = auth.currentUser?.uid;
   const [modalVisible, setModalVisible] = useState(false);
   const [totalCalories, setTotalCalories] = useState(0);
-  const [totalFats, setTotalFats] = useState(0);
+  const [totalFat, setTotalFat] = useState(0);
   const [totalProtein, setTotalProtein] = useState(0);
   const [totalCarbs, setTotalCarbs] = useState(0);
   const [selectedMeals, setSelectedMeals] = useState<{ name: string; calories: number }[]>([]);
   const [manualMealName, setManualMealName] = useState('');
   const [manualCalories, setManualCalories] = useState('');
-  const [manualFats, setManualFats] = useState('');
+  const [manualFat, setManualFat] = useState('');
   const [manualProtein, setManualProtein] = useState('');
   const [manualCarbs, setManualCarbs] = useState('');
   const [dailyTarget, setDailyTarget] = useState(2000); // default target
@@ -62,7 +62,7 @@ const DietScreen = ({ navigation }: any) => {
             const data = docSnap.data();
             setTotalCalories(data.totalCalories || 0);
             setSelectedMeals(data.selectedMeals || []);
-            setTotalFats(data.totalFats || 0);
+            setTotalFat(data.totalFat || 0);
             setTotalProtein(data.totalProtein || 0);
             setTotalCarbs(data.totalCarbs || 0);
 
@@ -162,7 +162,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
         totalCalories,
         totalProtein,
         totalCarbs,
-        totalFats,
+        totalFat,
         timestamp: serverTimestamp(),
       });
   
@@ -180,7 +180,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
 
   const handleManualSubmit = async () => {
     const cal = parseInt(manualCalories);
-    const fat = parseInt(manualFats);
+    const fat = parseInt(manualFat);
     const protein = parseInt(manualProtein);
     const carbs = parseInt(manualCarbs);
     if (!manualMealName || isNaN(cal) || cal <= 0) {
@@ -190,7 +190,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
 
     const newMeal = { name: manualMealName, calories: cal };
     const updatedTotal = totalCalories + cal;
-    const updatedFats = totalFats + fat; 
+    const updatedFat = totalFat + fat; 
     const updatedProtein = totalProtein + protein;
     const updatedCarbs = totalCarbs + carbs; 
     const updatedMeals = [...selectedMeals, newMeal];
@@ -205,7 +205,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
         userRef,
         {
           totalCalories: updatedTotal,
-          totalFats: updatedFats,
+          totalFat: updatedFat,
           totalProtein: updatedProtein,
           totalCarbs: updatedCarbs,
           selectedMeals: updatedMeals,
@@ -228,7 +228,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
     try {
       setTotalCalories(0);
       setSelectedMeals([]);
-      setTotalFats(0);
+      setTotalFat(0);
       setTotalProtein(0);
       setTotalCarbs(0);
 
@@ -239,7 +239,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
       const dietPlanRef = doc(db, 'UserDetails', userId);
       await setDoc(dietPlanRef, {
         totalCalories: 0,
-        totalFats: 0,
+        totalFat: 0,
         totalProtein: 0,
         totalCarbs: 0,
         selectedMeals: [],
@@ -259,7 +259,7 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
   const tintColor = fill <= 100 ? '#00e0ff' : 'red';
 
   const fillCarbs = (totalCarbs / carbTarget1);
-  const fillFats = (totalFats / fatTarget1);
+  const fillFat = (totalFat / fatTarget1);
   const fillProtein = (totalProtein / proteinTarget1);
 
   return (
@@ -305,9 +305,9 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
             <Text style={styles.text1}>Carbs: {Math.round(fillCarbs * 100)}%   </Text>
             <Progress.Bar progress={fillCarbs} width={200} height={15} color="#ff0000" animationType="spring" />
           </View>
-          <View style={styles.fats}>
-          <Text style={styles.text1}>Fats: {Math.round(fillFats * 100)}%   </Text>
-            <Progress.Bar progress={fillFats} width={200} height={15} color="#00ff00"/>
+          <View style={styles.fat}>
+          <Text style={styles.text1}>Fats: {Math.round(fillFat * 100)}%   </Text>
+            <Progress.Bar progress={fillFat} width={200} height={15} color="#00ff00"/>
           </View>
           <View style={styles.protein}>
           <Text style={styles.text1}>Protein: {Math.round(fillProtein * 100)}%   </Text>
@@ -376,11 +376,11 @@ const localDateString = `${yyyy}-${mm}-${dd}`; // YYYY-MM-DD format
             />
 
             <TextInput
-              placeholder="Fats (grams)"
+              placeholder="Fat (grams)"
               style={styles.input}
               keyboardType="numeric"
-              value={manualFats}
-              onChangeText={setManualFats}
+              value={manualFat}
+              onChangeText={setManualFat}
             />
 
             <Button title="Add" onPress={handleManualSubmit} />
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
-  fats: {
+  fat: {
     marginTop: 20,
     flexDirection: 'row',
     alignItems: 'center',
