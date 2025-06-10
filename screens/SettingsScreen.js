@@ -49,10 +49,6 @@ const SettingsScreen = () => {
     const localDateString = `${year}-${month}-${day}`;
     await updateDate(localDateString);
     setShowHiddenDatePicker(false);
-    // Schedule a test notification for 2 minutes from now
-    const now = new Date();
-    const trigger = new Date(now.getTime() + 2 * 60 * 1000); // 2 minutes from now
-    await scheduleMissedWorkoutNotification(adjustedDate, trigger);
   };
 
   const askLogout = () =>

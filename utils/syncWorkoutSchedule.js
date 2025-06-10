@@ -50,31 +50,7 @@ const runDailyTask = async (newDate = null, oldDate = null) => {
             });
 
         // Check for missed workouts before any shifting
-        const missedWorkouts = allIncompleteExercises.filter(exercise => {
-            const exerciseDate = new Date(exercise.date);
-            const originalDateObj = new Date(originalDate);
-            exerciseDate.setHours(0, 0, 0, 0);
-            originalDateObj.setHours(0, 0, 0, 0);
-            // Only count as missed if more than 1 day ahead
-            const daysDiff = Math.floor((originalDateObj - exerciseDate) / (1000 * 60 * 60 * 24));
-            return daysDiff > 1;
-        });
-
-        // If there are missed workouts, send notification immediately
-        if (missedWorkouts.length > 0) {
-            console.log("Found missed workouts:", missedWorkouts.length);
-            
-            try {
-                // Send notification immediately with the count of missed workouts
-                await scheduleMissedWorkoutNotification(
-                    originalDate,
-                    missedWorkouts.length
-                );
-                console.log('Notification sent for missed workouts:', missedWorkouts.length);
-            } catch (error) {
-                console.error('Error sending notification:', error);
-            }
-        }
+        // (notification logic removed from here; handled inside shift block)
 
         // Get all exercises that need to be shifted
         const allExercises = allExercisesSnapshot.docs
@@ -100,17 +76,23 @@ const runDailyTask = async (newDate = null, oldDate = null) => {
 
             if (daysToShift > 0) {
                 // Only shift if the new date is ahead
-                // Send notification for missed workout
-                try {
-                    await scheduleMissedWorkoutNotification(
-                        earliestIncomplete.date,
-                        1 // Always 1, since this is the missed workout
-                    );
-                    console.log('Notification sent for missed workout:', earliestIncomplete.date);
-                } catch (error) {
-                    console.error('Error sending notification:', error);
+                // Check for missed workouts before shifting
+                const missedWorkouts = allIncompleteExercises.filter(exercise => {
+                    const exerciseDate = new Date(exercise.date);
+                    exerciseDate.setHours(0, 0, 0, 0);
+                    return exerciseDate < targetDateObj;
+                });
+                if (missedWorkouts.length > 0) {
+                    try {
+                        await scheduleMissedWorkoutNotification(
+                            missedWorkouts[0].date,
+                            missedWorkouts.length
+                        );
+                        console.log('Notification sent for missed workouts:', missedWorkouts.length);
+                    } catch (error) {
+                        console.error('Error sending notification:', error);
+                    }
                 }
-
                 // Shift all incomplete workouts forward by daysToShift
                 for (const exercise of allExercises) {
                     if (exercise.completionStatus !== 'complete') {
