@@ -62,12 +62,13 @@ const SettingsScreen = () => {
     }
   };
 
-  const handleConsoleLoggingToggle = async (value) => {
-    const success = await setConsoleLoggingState(value);
-    if (success) {
-      setConsoleLoggingEnabled(value);
-    } else {
-      Alert.alert('Error', 'Failed to update console logging settings');
+  const handleConsoleLoggingToggle = async () => {
+    try {
+      const newState = !consoleLoggingEnabled;
+      await setConsoleLoggingState(!newState); // Reverse the state
+      setConsoleLoggingEnabled(newState);
+    } catch (error) {
+      console.error('Error toggling console logging:', error);
     }
   };
 
@@ -169,7 +170,7 @@ const SettingsScreen = () => {
             <Text style={styles.label}>Debug mode</Text>
             <Switch
               value={!consoleLoggingEnabled}
-              onValueChange={(value) => handleConsoleLoggingToggle(!value)}
+              onValueChange={handleConsoleLoggingToggle}
               thumbColor={!consoleLoggingEnabled ? '#E3FA05' : '#888'}
               trackColor={{ true: '#E3FA05', false: '#444' }}
               style={styles.switch}

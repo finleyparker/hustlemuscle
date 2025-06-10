@@ -12,6 +12,26 @@ const originalConsole = {
 
 let isConsoleEnabled = false;
 
+// Initialize console methods immediately
+const updateConsoleMethods = () => {
+  if (isConsoleEnabled) {
+    // Restore original console methods
+    console.log = originalConsole.log;
+    console.error = originalConsole.error;
+    console.warn = originalConsole.warn;
+    console.info = originalConsole.info;
+  } else {
+    // Override console methods with no-ops
+    console.log = () => {};
+    console.error = () => {};
+    console.warn = () => {};
+    console.info = () => {};
+  }
+};
+
+// Initialize with console logging disabled by default
+updateConsoleMethods();
+
 export const getConsoleLoggingState = async () => {
   try {
     const value = await AsyncStorage.getItem(CONSOLE_LOGGING_KEY);
@@ -33,22 +53,6 @@ export const setConsoleLoggingState = async (enabled) => {
   } catch (error) {
     originalConsole.error('Error saving console logging state:', error);
     return false;
-  }
-};
-
-const updateConsoleMethods = () => {
-  if (isConsoleEnabled) {
-    // Restore original console methods
-    console.log = originalConsole.log;
-    console.error = originalConsole.error;
-    console.warn = originalConsole.warn;
-    console.info = originalConsole.info;
-  } else {
-    // Override console methods with no-ops
-    console.log = () => {};
-    console.error = () => {};
-    console.warn = () => {};
-    console.info = () => {};
   }
 };
 
