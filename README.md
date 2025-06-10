@@ -24,8 +24,8 @@ Steps to deploy this project
 ```bash
   npm start
 ```
-3. Open emulator of choice (e.g. Xcode for iOS, Android Studio for Android)
-4. In the terminal, press 'i' for iOS, 'a' for Android, or scan the QR code on your device.*
+3. please use ios (xcode) instead of android.
+4. In the terminal, press 'i' for iOS or scan the QR code on your device.*
    
 > **Note:** this project uses **Expo SDK 53**.
 
