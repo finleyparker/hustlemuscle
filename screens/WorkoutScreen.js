@@ -266,12 +266,12 @@ const styles = StyleSheet.create({
     marginBottom: 2,
   },
   startButton: {
-    backgroundColor: "#d3d3d3",
-    borderRadius: 20,
+    backgroundColor: '#E4FA00',
+    borderRadius: 30,
+    paddingVertical: 16,
+    alignItems: 'center',
     marginHorizontal: 16,
-    marginBottom: 18,
-    paddingVertical: 14,
-    alignItems: "center",
+    marginBottom: 32,
   },
   startButtonText: {
     color: "#222",

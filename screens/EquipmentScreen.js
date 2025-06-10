@@ -90,19 +90,21 @@ const EquipmentScreen = ({ navigation }) => {
         <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
       </TouchableOpacity>
 
-      <ScrollView style={styles.contentContainer}>
-        <Text style={styles.metricText}>Starting Metric #8</Text>
-        <Text style={styles.titleText}>Equipment</Text>
-        <Text style={styles.subtitleText}>What equipment do you have access to?</Text>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.card}>
+          <Text style={styles.metricText}>Starting Metric #8</Text>
+          <Text style={styles.titleText}>Equipment</Text>
+          <Text style={styles.subtitleText}>What equipment do you have access to?</Text>
 
-        <View style={styles.equipmentContainer}>
-          {COMMON_EQUIPMENT.map((item) => (
-            <EquipmentButton
-              key={item}
-              item={item}
-              isSelected={selectedEquipment.includes(item)}
-            />
-          ))}
+          <View style={styles.equipmentContainer}>
+            {COMMON_EQUIPMENT.map((item) => (
+              <EquipmentButton
+                key={item}
+                item={item}
+                isSelected={selectedEquipment.includes(item)}
+              />
+            ))}
+          </View>
         </View>
       </ScrollView>
 
@@ -132,26 +134,38 @@ const styles = StyleSheet.create({
     left: 10,
     zIndex: 1,
   },
-  contentContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    paddingTop: 120,
-    paddingBottom: 80,
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  card: {
+    backgroundColor: '#000',
+    borderRadius: 20,
+    padding: 24,
+    width: '100%',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 4,
+    marginBottom: 30,
   },
   metricText: {
-    color: '#FFFFFF',
+    color: '#bbb',
     fontSize: 16,
     marginBottom: 8,
     opacity: 0.7,
   },
   titleText: {
-    color: '#FFFFFF',
+    color: '#fff',
     fontSize: 32,
     fontWeight: 'bold',
     marginBottom: 8,
   },
   subtitleText: {
-    color: '#FFFFFF',
+    color: '#ccc',
     fontSize: 16,
     marginBottom: 40,
     opacity: 0.7,
