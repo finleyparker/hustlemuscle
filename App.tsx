@@ -95,7 +95,12 @@ export default function App() {
                     <Stack.Screen name="UpdateMetrics" component={UpdateMetricsScreen} />
                     <Stack.Screen name="Workout" component={WorkoutScreen} />
                     <Stack.Screen name="TestWorkoutTimeline" component={TestWorkoutTimeline} />
-                    <Stack.Screen name="UpdateDetails" component={UpdateDetailsScreen} options={{ headerShown: false }} />
+                    <Stack.Screen name="UpdateDetails" component={UpdateDetailsScreen} options={{ 
+                      headerShown: true,
+                      headerStyle: { backgroundColor: 'black' },
+                      headerTintColor: 'white',
+                      title: 'Update Details'
+                    }} />
                 </Stack.Navigator>
             </NavigationContainer>
         </DateProvider>

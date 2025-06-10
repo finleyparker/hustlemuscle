@@ -83,18 +83,6 @@ const UpdateDetailsScreen = ({ navigation }) => {
 
   return (
     <ScrollView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Ionicons name="arrow-back" size={24} color="#fff" />
-        </TouchableOpacity>
-        <View style={styles.headerTitleContainer}>
-          <Text style={styles.headerTitle}>Update Details</Text>
-        </View>
-      </View>
-
       <View style={styles.form}>
         <View style={styles.inputContainer}>
           <Text style={styles.label}>Username</Text>

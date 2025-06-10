@@ -240,10 +240,7 @@ const HomeScreen = () => {
             style={styles.profileButton}
             onPress={() => navigation.navigate("Settings")}
           >
-            <Image
-              source={require("../assets/profile-placeholder.png")}
-              style={styles.profileImage}
-            />
+            <Ionicons name="settings" size={24} color="#FFFFFF" />
           </TouchableOpacity>
         </View>
       </View>
@@ -468,11 +465,6 @@ const styles = StyleSheet.create({
   profileButton: {
     position: "absolute",
     right: 0,
-  },
-  profileImage: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
   },
   calendarStrip: {
     flexDirection: "row",
