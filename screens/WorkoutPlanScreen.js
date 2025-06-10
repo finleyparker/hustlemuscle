@@ -8,7 +8,8 @@ import { getAllExercises } from '../api/exercises';
 import { getAuth } from 'firebase/auth';
 
 
-
+// Creates a cache key from user preferences
+// Returns 'default-key' if no input provided (fallback)
 const createUserInputKey = (userInput) => {
   if (!userInput) return 'default-key';
   const { goal = '', level = '', daysPerWeek = 0, equipment = [] } = userInput;
@@ -16,6 +17,12 @@ const createUserInputKey = (userInput) => {
   return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
 };
 
+// Main screen that displays and manages the generated workout plan
+// Handles:
+// - Plan display
+// - Exercise replacement
+// - Plan regeneration
+// - Warning display
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [planName, setPlanName] = useState('');
@@ -30,6 +37,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid;
+  
+  // Fetches user preferences from Firestore when component mounts
+  // Constructs userInput object from stored data
   useEffect(() => {
     const fetchUserInput = async () => {
       const auth = getAuth();
@@ -44,13 +54,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         const userDetailsDoc = await getDoc(doc(db, 'UserDetails', userId));
         if (userDetailsDoc.exists()) {
           const data = userDetailsDoc.data();
-          // Construct userInput to match your expected structure
           const constructedInput = {
             goal: data.PhysiqueGoal || '',
             level: data.ExperienceLevel || '',
             daysPerWeek: data.WorkoutDaysPerWeek || 0,
             equipment: data.Equipment || [],
-            // add more fields if needed
           };
           setUserInput(constructedInput);
           setUserInputReady(true);
@@ -67,7 +75,8 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     fetchUserInput();
   }, []);
 
-
+  // Checks for existing workout plan when userInput becomes available
+  // Uses userInputKey to find matching cached plan
   useEffect(() => {
     if (!userInputReady || !userInput) return;
     const loadPlan = async () => {
@@ -141,7 +150,12 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     );
   }
 
-
+  // Allows user to replace an exercise with a random alternative
+  // Finds exercises that:
+  // - Match current muscle groups
+  // - Fit user's equipment/level
+  // - Aren't already in the day's plan
+  // Updates both local state and Firestore documents
   const handleReplaceExercise = async (dayIndex, exerciseIndex) => {
     const currentDay = plan[dayIndex];
     const currentExercise = currentDay.exercises[exerciseIndex];
@@ -204,7 +218,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       setPlan(updatedPlan);
 
-      // Rest of your update logic remains the same...
+
       const workoutPlansRef = collection(db, 'workoutPlans');
       const planQuery = query(
         workoutPlansRef,
@@ -252,7 +266,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   };
 
 
-
+  // Completely regenerates the workout plan with new exercises
+  // Preserves user preferences but creates fresh workout split
+  // Updates Firestore and recreates workout timeline
   const regeneratePlan = async () => {
     try {
       setLoading(true);
@@ -325,7 +341,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   };
 
 
-
+  // Main render method showing:
+  // - Plan duration and name
+  // - Any warnings/suggestions
+  // - Daily workout cards with exercises
+  // - Regeneration controls
   return (
     <ScrollView style={styles.container}
     contentContainerStyle={{ paddingBottom: 80 }}>
@@ -400,6 +420,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
 };
 
+// StyleSheet for the component
+// Uses dark theme to match the apps colours
+// Consistent spacing and card styling
 const styles = StyleSheet.create({
   planNameText: {
     fontSize: 18,

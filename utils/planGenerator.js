@@ -5,13 +5,10 @@ import { getUserDetailsFromUserDetailsCollection } from '../database/UserDB';
 import { getAuth } from 'firebase/auth';
 
 
-const createUserInputKey = (userInput) => {
-  const { goal, level, daysPerWeek, equipment } = userInput;
-  const sortedEquipment = [...equipment].sort(); // Ensure consistent order
-  return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
-};
 
-// Function to create workout session in Firestore
+
+// Creates or updates a workout session document in Firestore
+// Handles session data formatting and ensures no duplicate sessions
 const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, dates) => {
   try {
     const workoutSessionsCollection = collection(db, 'workout_sessions');
@@ -89,6 +86,10 @@ const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, d
  */
 
 
+// Generates an array of dates for workout sessions based on:
+// - startDate: When the program begins
+// - targetWeekday: Which day of week sessions occur (e.g. 'Monday')
+// - numberOfWeeks: Duration of the program in weeks
 const getWeeklyDates = (startDate, targetWeekday, numberOfWeeks) => {
   const daysOfWeek = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const targetDayIndex = daysOfWeek.indexOf(targetWeekday);
@@ -120,12 +121,22 @@ const getWeeklyDates = (startDate, targetWeekday, numberOfWeeks) => {
   }
   return dates;
 };
+// Creates a user-friendly name for the workout plan based on:
+// - Goal (capitalized)
+// - Duration converted to months (rounded)
 const generatePlanName = (goal, level, durationWeeks) => {
   const months = Math.round(durationWeeks / 4);
   const goalCapitalized = goal.charAt(0).toUpperCase() + goal.slice(1);
   return `${months} Month ${goalCapitalized} Program`;
 };
 
+// Main function that generates complete workout plan based on user preferences
+// Handles:
+// - User authentication
+// - Exercise filtering based on goal/level/equipment
+// - Workout split creation
+// - Session scheduling
+// - Firestore document creation
 export const generateWorkoutPlan = async (startDate = new Date()) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
@@ -148,6 +159,7 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
 
   const { goal, level, daysPerWeek, equipment } = userInput;
 
+  // Maps fitness goals to exercise categories that support those goals
   const goalCategoryMap = {
     'weight loss': ['cardio', 'plyometrics'],
     'muscle gain': ['strength', 'powerlifting', 'strongman'],
@@ -156,6 +168,7 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     'strength': ['strength', 'olympic weightlifting', 'powerlifting'],
   };
 
+  // Training parameters (sets/reps/rest) for each fitness goal
   const goalParameters = {
     'muscle gain': { sets: 3, reps: [8, 12], rest: '60-90s' },
     'strength': { sets: 4, reps: [4, 6], rest: '2-3 min' },
@@ -164,12 +177,15 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     'endurance': { sets: 3, reps: [15, 20], rest: '30s' },
   };
 
-  // New: Weekday mappings for each daysPerWeek option
+  // Maps number of workout days to specific weekdays
+  // Ensures consistent scheduling (e.g. 3 days = Mon/Wed/Fri)
   const weekdayMapping = {
     3: ['Monday', 'Wednesday', 'Friday'],
     4: ['Monday', 'Tuesday', 'Thursday', 'Friday'],
     5: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'],
   };
+
+  // Recommended program durations (in weeks) based on goal and experience level
   const durationMap = {
       'muscle gain': { beginner: 8, intermediate: 12, expert: 16 },
       'weight loss': { beginner: 4, intermediate: 8, expert: 12 },
@@ -190,6 +206,8 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
       expert: ['expert', 'intermediate', 'beginner']
     };
 
+    // Sort exercises to prioritize user's selected level first
+    // This ensures best matching exercises appear first in results
     const filteredExercises = allExercises.filter(ex =>
       levelPriority[level.toLowerCase()]?.includes(ex.level?.toLowerCase()) &&
       (
