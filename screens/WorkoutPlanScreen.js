@@ -6,9 +6,13 @@ import { collection, addDoc, getDocs, getDoc, query, where, doc} from 'firebase/
 import { updateDoc } from 'firebase/firestore';
 import { getAllExercises } from '../api/exercises';
 import { getAuth } from 'firebase/auth';
+import { resetStreakCounter } from '../utils/syncWorkoutSchedule';
+import { createWorkoutTimeline } from '../database/WorkoutTimeline';
 
 
 
+// Creates a cache key from user preferences
+// Returns 'default-key' if no input provided (fallback)
 const createUserInputKey = (userInput) => {
   if (!userInput) return 'default-key';
   const { goal = '', level = '', daysPerWeek = 0, equipment = [] } = userInput;
@@ -16,6 +20,13 @@ const createUserInputKey = (userInput) => {
   return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
 };
 
+
+// Main screen that displays and manages the generated workout plan
+// Handles:
+// - Plan display
+// - Exercise replacement
+// - Plan regeneration
+// - Warning display
 const WorkoutPlanScreen = ({ route, navigation }) => {
   const [plan, setPlan] = useState([]);
   const [planName, setPlanName] = useState('');
@@ -30,6 +41,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid;
+
+  // Fetches user preferences from Firestore when component mounts
+  // Constructs userInput object from stored data
   useEffect(() => {
     const fetchUserInput = async () => {
       const auth = getAuth();
@@ -44,13 +58,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         const userDetailsDoc = await getDoc(doc(db, 'UserDetails', userId));
         if (userDetailsDoc.exists()) {
           const data = userDetailsDoc.data();
-          // Construct userInput to match your expected structure
           const constructedInput = {
             goal: data.PhysiqueGoal || '',
             level: data.ExperienceLevel || '',
             daysPerWeek: data.WorkoutDaysPerWeek || 0,
             equipment: data.Equipment || [],
-            // add more fields if needed
           };
           setUserInput(constructedInput);
           setUserInputReady(true);
@@ -67,14 +79,14 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     fetchUserInput();
   }, []);
 
-
+  // Checks for existing workout plan when userInput becomes available
+  // Uses userInputKey to find matching cached plan
   useEffect(() => {
     if (!userInputReady || !userInput) return;
-    const loadPlan = async () => {
+    const fetchExistingPlan = async () => {
       try {
         const workoutPlansCollection = collection(db, 'workoutPlans');
         const userInputKey = createUserInputKey(userInput);
-        
         // Query for existing document
         const q = query(
           workoutPlansCollection, 
@@ -82,9 +94,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           where('userInputKey', '==', userInputKey)
         );
         const querySnapshot = await getDocs(q);
-
         if (!querySnapshot.empty) {
-          // Use existing plan
           const existingDoc = querySnapshot.docs[0];
           const data = existingDoc.data();
           setPlan(data.plan || []);
@@ -92,43 +102,18 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           setDurationWeeks(data.durationWeeks || null);
           setPlanName(data.planName || '');
         } else {
-          // Generate new plan only if none exists
-          const startDate = new Date();
-          const generated = await generateWorkoutPlan(userInput, userId, startDate);
-          
-          // Create new document
-          await addDoc(workoutPlansCollection, {
-            userId: userId,
-            userInput,
-            userInputKey,
-            plan: generated.plan,
-            warnings: generated.warnings || [],
-            durationWeeks: generated.durationWeeks,
-            planName: generated.planName,
-            createdAt: startDate,
-            updatedAt: startDate,
-          });
-
-          // Update state with new plan
-          setPlan(generated.plan);
-          setWarnings(generated.warnings || []);
-          setDurationWeeks(generated.durationWeeks || null);
-          setPlanName(generated.planName || '');
-
-          // Create the workout timeline for new plan
-          const { createWorkoutTimeline } = require('../database/WorkoutTimeline');
-          await createWorkoutTimeline();
-          console.log('Timeline created successfully');
+          setPlan([]);
+          setWarnings([]);
+          setDurationWeeks(null);
+          setPlanName('');
         }
-
       } catch (error) {
-        console.error('Failed to retrieve or generate plan:', error);
+        console.error('Failed to fetch existing plan:', error);
       } finally {
         setLoading(false);
       }
     };
-
-    loadPlan();
+    fetchExistingPlan();
   }, [userInput, userInputReady, userId]);
   
 
@@ -142,6 +127,12 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   }
 
 
+  // Allows user to replace an exercise with a random alternative
+  // Finds exercises that:
+  // - Match current muscle groups
+  // - Fit user's equipment/level
+  // - Aren't already in the day's plan
+  // Updates both local state and Firestore documents
   const handleReplaceExercise = async (dayIndex, exerciseIndex) => {
     const currentDay = plan[dayIndex];
     const currentExercise = currentDay.exercises[exerciseIndex];
@@ -204,7 +195,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       setPlan(updatedPlan);
 
-      // Rest of your update logic remains the same...
+      
       const workoutPlansRef = collection(db, 'workoutPlans');
       const planQuery = query(
         workoutPlansRef,
@@ -252,7 +243,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   };
 
 
-
+  // Completely regenerates the workout plan with new exercises
+  // Preserves user preferences but creates fresh workout split
+  // Updates Firestore and recreates workout timeline
   const regeneratePlan = async () => {
     try {
       setLoading(true);
@@ -312,7 +305,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       }
 
       // Recreate the timeline with the new plan
-      const { createWorkoutTimeline } = require('../database/WorkoutTimeline');
+      await resetStreakCounter();
       await createWorkoutTimeline();
       console.log('Timeline recreated successfully');
 
@@ -325,7 +318,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   };
 
 
-
+  // Main render method showing:
+  // - Plan duration and name
+  // - Any warnings/suggestions
+  // - Daily workout cards with exercises
+  // - Regeneration controls
   return (
     <ScrollView style={styles.container}
     contentContainerStyle={{ paddingBottom: 80 }}>
@@ -400,6 +397,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
 };
 
+// StyleSheet for the component
+// Uses dark theme colors for better night viewing
+// Consistent spacing and card styling
 const styles = StyleSheet.create({
   planNameText: {
     fontSize: 18,
