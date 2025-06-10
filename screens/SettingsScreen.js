@@ -61,12 +61,7 @@ const SettingsScreen = () => {
         text: 'Sign Out',
         onPress: async () => {
           try {
-            await logout();
-            await signOut(auth);
-            navigation.reset({
-              index: 0,
-              routes: [{ name: 'AuthScreen' }],
-            });
+            logout(navigation);
           } catch (error) {
             console.error('Error signing out:', error);
             Alert.alert('Error', 'Failed to sign out. Please try again.');

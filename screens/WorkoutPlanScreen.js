@@ -305,16 +305,21 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     contentContainerStyle={{ paddingBottom: 80 }}>
       {/* Plan Duration */}
       <View style={styles.durationBox}>
-        <Text style={styles.durationText}>📅 Plan Duration: {durationWeeks || 'N/A'} weeks</Text>
+        <Text style={styles.durationText}>
+          <Text>📅</Text> Plan Duration: {durationWeeks || 'N/A'} weeks
+        </Text>
         {planName ? (
-          <Text style={styles.planNameText}>🏋️‍♂️ Plan Name: {planName}</Text>
-          ) : null}
-
+          <Text style={styles.planNameText}>
+            <Text>🏋️‍♂️</Text> Plan Name: {planName}
+          </Text>
+        ) : null}
       </View>
 
       {warnings.length > 0 && (
         <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>⚠️ Suggestions to Improve Your Plan:</Text>
+          <Text style={styles.warningTitle}>
+            <Text>⚠️</Text> Suggestions to Improve Your Plan:
+          </Text>
           {warnings.map((warning, index) => (
             <Text key={index} style={styles.warningText}>• {warning}</Text>
           ))}
@@ -328,16 +333,19 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           {day.exercises.map((exercise, exIndex) => (
             <View key={`${exercise.name}-${exIndex}`} style={styles.exerciseCard}>
               <Text style={styles.exerciseName}>{exercise.name}</Text>
-              <Text>Sets: {exercise.sets}</Text>
-              <Text>Reps: {exercise.reps}</Text>
-              <Text>Rest: {exercise.restTime}</Text>
-              <Text>Muscles: {exercise.muscles.join(', ')}</Text>
+              <Text style={styles.exerciseDetail}>Sets: {exercise.sets}</Text>
+              <Text style={styles.exerciseDetail}>Reps: {exercise.reps}</Text>
+              <Text style={styles.exerciseDetail}>Rest: {exercise.restTime}</Text>
+              <Text style={styles.exerciseDetail}>Muscles: {exercise.muscles.join(', ')}</Text>
+
               <Text style={styles.instructions}>{exercise.instructions}</Text>
               <TouchableOpacity
                 onPress={() => handleReplaceExercise(index, exIndex)}
                 style={styles.replaceButton}
               >
-                <Text style={{ color: 'blue' }}>🔁 Replace Exercise</Text>
+                <Text style={{ color: '#4d9de0' }}>
+                  <Text>🔁</Text> Replace Exercise
+                </Text>
               </TouchableOpacity>
 
             </View>
@@ -350,7 +358,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         style={styles.regenerateButton}
         onPress={regeneratePlan}
       >
-        <Text style={styles.regenerateButtonText}>🔄 Regenerate Workout Plan</Text>
+        <Text style={styles.regenerateButtonText}>
+          <Text>🔄</Text> Regenerate Workout Plan
+        </Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -368,16 +378,15 @@ const styles = StyleSheet.create({
   planNameText: {
     fontSize: 18,
     fontWeight: '600',
-    color: '#444',
+    color: '#a0a0a0', // Lighter gray for better readability on dark
     marginTop: 8,
   },
-
   container: {
     padding: 16,
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#121212', // Dark background
   },
   warningBox: {
-    backgroundColor: '#fff3cd',
+    backgroundColor: '#2d2d00', // Dark yellow background
     borderLeftWidth: 6,
     borderLeftColor: '#ffcc00',
     padding: 16,
@@ -387,65 +396,65 @@ const styles = StyleSheet.create({
   warningTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#856404',
+    color: '#ffcc00', // Yellow warning text
     marginBottom: 8,
   },
   warningText: {
-    color: '#856404',
+    color: '#ffcc00', // Yellow warning text
     marginBottom: 4,
     fontSize: 15,
   },
   dayContainer: {
     marginBottom: 24,
     padding: 16,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#1e1e1e', // Dark gray cards
     borderRadius: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.3,
     shadowRadius: 4,
     elevation: 4,
   },
   dayTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#007AFF',
+    color: '#4d9de0', // Softer blue for headings
   },
   muscleFocus: {
     marginBottom: 10,
     fontStyle: 'italic',
-    color: '#007AFF',
+    color: '#4d9de0', // Softer blue
   },
   exerciseCard: {
     marginTop: 10,
     padding: 12,
-    backgroundColor: '#f9f9f9',
+    backgroundColor: '#2a2a2a', // Slightly lighter gray for cards
     borderRadius: 8,
     elevation: 3,
   },
   exerciseName: {
     fontWeight: 'bold',
     fontSize: 18,
-    color: '#333',
+    color: '#e0e0e0', // Light gray for text
   },
   instructions: {
     marginTop: 6,
     fontStyle: 'italic',
-    color: '#666',
+    color: '#a0a0a0', // Lighter gray for secondary text
   },
   center: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#f2f2f2',
+    backgroundColor: '#121212', // Dark background
   },
   loadingText: {
     marginTop: 10,
     fontSize: 16,
-    color: '#007AFF',
+    color: '#4d9de0', // Softer blue
   },
   backButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#1a4b8c', // Darker blue for buttons
     paddingVertical: 10,
     paddingHorizontal: 20,
     borderRadius: 8,
@@ -454,26 +463,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 18,
   },
   durationBox: {
     padding: 16,
-    backgroundColor: '#e6f2ff',
+    backgroundColor: '#1a1a2e', // Dark blue-gray
     borderRadius: 8,
     marginBottom: 20,
   },
   durationText: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#005bb5',
+    color: '#4d9de0', // Softer blue
   },
   replaceButton: {
     marginTop: 8,
     alignSelf: 'flex-start',
   },
   regenerateButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#1a4b8c', // Darker blue for buttons
     padding: 16,
     borderRadius: 8,
     marginTop: 20,
@@ -485,8 +494,13 @@ const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '600',
   },
-
+  exerciseDetail: {
+    color: '#e0e0e0', // Light gray text
+    fontSize: 15,
+  },
 
 });
+
+
 
 export default WorkoutPlanScreen;
