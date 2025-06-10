@@ -85,8 +85,6 @@ const createWorkoutSession = async (userId, sessionName, exercises, dayOfWeek, d
  */
 
 
-
-
 // Generates an array of dates for workout sessions based on:
 // - startDate: When the program begins
 // - targetWeekday: Which day of week sessions occur (e.g. 'Monday')
@@ -122,7 +120,6 @@ const getWeeklyDates = (startDate, targetWeekday, numberOfWeeks) => {
   }
   return dates;
 };
-
 // Creates a user-friendly name for the workout plan based on:
 // - Goal (capitalized)
 // - Duration converted to months (rounded)
@@ -131,9 +128,6 @@ const generatePlanName = (goal, level, durationWeeks) => {
   const goalCapitalized = goal.charAt(0).toUpperCase() + goal.slice(1);
   return `${months} Month ${goalCapitalized} Program`;
 };
-
-
-
 
 // Main function that generates complete workout plan based on user preferences
 // Handles:
@@ -192,13 +186,13 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
 
   // Recommended program durations (in weeks) based on goal and experience level
   const durationMap = {
-      'muscle gain': { beginner: 8, intermediate: 12, expert: 16 },
-      'weight loss': { beginner: 4, intermediate: 8, expert: 12 },
-      'strength': { beginner: 8, intermediate: 12, expert: 16 },
-      'flexibility': { beginner: 4, intermediate: 6, expert: 8 },
-      'endurance': { beginner: 4, intermediate: 8, expert: 12 },
-    };
-    const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
+    'muscle gain': { beginner: 8, intermediate: 12, expert: 16 },
+    'weight loss': { beginner: 4, intermediate: 8, expert: 12 },
+    'strength': { beginner: 8, intermediate: 12, expert: 16 },
+    'flexibility': { beginner: 4, intermediate: 6, expert: 8 },
+    'endurance': { beginner: 4, intermediate: 8, expert: 12 },
+  };
+  const planDurationWeeks = durationMap[goal.toLowerCase()]?.[level.toLowerCase()] || 4; // Default to 4 weeks if no match
   try {
     const allExercises = await getAllExercises();
     const targetCategories = goalCategoryMap[goal.toLowerCase()] || [];
@@ -279,13 +273,13 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
           const primaryExercises = filteredExercises.filter(ex =>
             ex.primaryMuscles?.includes(muscle)
           );
-          
+
           // Then get exercises that have this as secondary muscle
           const secondaryExercises = filteredExercises.filter(ex =>
-            ex.secondaryMuscles?.includes(muscle) && 
+            ex.secondaryMuscles?.includes(muscle) &&
             !primaryExercises.some(pe => pe.id === ex.id) // Don't include duplicates
           );
-          
+
           // Combine with primary exercises first
           muscleToExercisesMap[muscle] = [...primaryExercises, ...secondaryExercises];
         });
@@ -299,50 +293,50 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
         const usedExerciseIds = new Set();
 
         muscleGroup.forEach(muscle => {
-        const allMuscleExercises = muscleToExercisesMap[muscle] || [];
-        
-        const availableExercises = allMuscleExercises.filter(
-          ex => !usedExerciseIds.has(ex.id)
-        );
-        if (availableExercises.length === 0) return; // Skip if no available exercises
+          const allMuscleExercises = muscleToExercisesMap[muscle] || [];
 
-        
-        
-        // Separate primary and secondary exercises
-        const primaryExercises = availableExercises.filter(ex => 
-          ex.primaryMuscles?.includes(muscle)
-        );
-        const secondaryExercises = availableExercises.filter(ex => 
-          ex.secondaryMuscles?.includes(muscle) && 
-          !primaryExercises.some(pe => pe.id === ex.id)
-        );
-
-        const exercisesToTake = Math.min(
-          perMuscleTarget,
-          primaryExercises.length + secondaryExercises.length
-        );
-
-        if (exercisesToTake <= 0) return;
-
-        const shuffledPrimary = [...primaryExercises].sort(() => 0.5 - Math.random());
-        const takenPrimary = shuffledPrimary.slice(0, exercisesToTake);
-
-        const remaining = exercisesToTake - takenPrimary.length;
-        const takenSecondary = remaining > 0 
-        ? [...secondaryExercises]
-          .sort(() => 0.5 - Math.random())
-          .slice(0, remaining)
-        : [];
-        
-        // Combine and add to selected exercises
-        const newExercises = [...takenPrimary, ...takenSecondary];
-        selectedExercises.push(...newExercises);
-
-        // Mark these exercises as used
-        newExercises.forEach(ex => usedExerciseIds.add(ex.id));
+          const availableExercises = allMuscleExercises.filter(
+            ex => !usedExerciseIds.has(ex.id)
+          );
+          if (availableExercises.length === 0) return; // Skip if no available exercises
 
 
-      });
+
+          // Separate primary and secondary exercises
+          const primaryExercises = availableExercises.filter(ex =>
+            ex.primaryMuscles?.includes(muscle)
+          );
+          const secondaryExercises = availableExercises.filter(ex =>
+            ex.secondaryMuscles?.includes(muscle) &&
+            !primaryExercises.some(pe => pe.id === ex.id)
+          );
+
+          const exercisesToTake = Math.min(
+            perMuscleTarget,
+            primaryExercises.length + secondaryExercises.length
+          );
+
+          if (exercisesToTake <= 0) return;
+
+          const shuffledPrimary = [...primaryExercises].sort(() => 0.5 - Math.random());
+          const takenPrimary = shuffledPrimary.slice(0, exercisesToTake);
+
+          const remaining = exercisesToTake - takenPrimary.length;
+          const takenSecondary = remaining > 0
+            ? [...secondaryExercises]
+              .sort(() => 0.5 - Math.random())
+              .slice(0, remaining)
+            : [];
+
+          // Combine and add to selected exercises
+          const newExercises = [...takenPrimary, ...takenSecondary];
+          selectedExercises.push(...newExercises);
+
+          // Mark these exercises as used
+          newExercises.forEach(ex => usedExerciseIds.add(ex.id));
+
+
+        });
 
 
 
@@ -361,7 +355,7 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
         // Get assigned weekday for this day index
         const dayOfWeek = assignedWeekdays[index] || 'Day';
 
-        
+
         // Calculate all session dates for this day
         const dates = getWeeklyDates(startDate, dayOfWeek, planDurationWeeks);
 
@@ -373,13 +367,13 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
           dates
         );
 
-        
+
 
         return {
-          day: `${dayKey.replace('_', ' ').toUpperCase()}`, 
+          day: `${dayKey.replace('_', ' ').toUpperCase()}`,
           session_id: dayKey.toLowerCase().replace('day_', '').replace('_', ''),
           muscleFocus: muscleGroup.join(' & '),
-          dayOfWeek, 
+          dayOfWeek,
           exercises: finalExercises.map(ex => ({
             id: ex.id,
             name: ex.name,
@@ -399,12 +393,12 @@ export const generateWorkoutPlan = async (startDate = new Date()) => {
     }
     // Determine duration in weeks
 
-    return { 
-    plan: workoutPlan, 
-    warnings, 
-    durationWeeks: planDurationWeeks,
-    planName,
-  };
+    return {
+      plan: workoutPlan,
+      warnings,
+      durationWeeks: planDurationWeeks,
+      planName,
+    };
 
   } catch (error) {
     console.error('Error generating workout plan:', error);

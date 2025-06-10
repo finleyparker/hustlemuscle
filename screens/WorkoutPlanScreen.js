@@ -2,13 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, ScrollView, ActivityIndicator, StyleSheet, TouchableOpacity } from 'react-native';
 import { generateWorkoutPlan } from '../utils/planGenerator';
 import { db } from '../database/firebase';
-import { collection, addDoc, getDocs, getDoc, query, where, doc} from 'firebase/firestore';
+import { collection, addDoc, getDocs, getDoc, query, where, doc } from 'firebase/firestore';
 import { updateDoc } from 'firebase/firestore';
 import { getAllExercises } from '../api/exercises';
 import { getAuth } from 'firebase/auth';
 import { resetStreakCounter } from '../utils/syncWorkoutSchedule';
 import { createWorkoutTimeline } from '../database/WorkoutTimeline';
-
 
 
 // Creates a cache key from user preferences
@@ -19,7 +18,6 @@ const createUserInputKey = (userInput) => {
   const sortedEquipment = [...equipment].sort();
   return `${goal}-${level}-${daysPerWeek}-${sortedEquipment.join(',')}`;
 };
-
 
 // Main screen that displays and manages the generated workout plan
 // Handles:
@@ -32,7 +30,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const [planName, setPlanName] = useState('');
 
   const [warnings, setWarnings] = useState([]);
-  const [durationWeeks, setDurationWeeks] = useState(null); 
+  const [durationWeeks, setDurationWeeks] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const [userInput, setUserInput] = useState(null);
@@ -41,7 +39,6 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   const auth = getAuth();
   const currentUser = auth.currentUser;
   const userId = currentUser?.uid;
-
   // Fetches user preferences from Firestore when component mounts
   // Constructs userInput object from stored data
   useEffect(() => {
@@ -68,7 +65,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
           setUserInputReady(true);
         } else {
           console.error('No user details found for user:', userId);
-          setUserInputReady(true); 
+          setUserInputReady(true);
         }
       } catch (err) {
         console.error('Failed to fetch user input:', err);
@@ -89,7 +86,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         const userInputKey = createUserInputKey(userInput);
         // Query for existing document
         const q = query(
-          workoutPlansCollection, 
+          workoutPlansCollection,
           where('userId', '==', userId),
           where('userInputKey', '==', userInputKey)
         );
@@ -115,7 +112,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
     };
     fetchExistingPlan();
   }, [userInput, userInputReady, userId]);
-  
+
 
   if (loading) {
     return (
@@ -125,7 +122,6 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       </View>
     );
   }
-
 
   // Allows user to replace an exercise with a random alternative
   // Finds exercises that:
@@ -157,7 +153,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         (
           ex.level?.toLowerCase() === userInput.level.toLowerCase() ||
           (userInput.level.toLowerCase() === 'intermediate' && ex.level?.toLowerCase() === 'beginner') ||
-          (userInput.level.toLowerCase() === 'expert' && 
+          (userInput.level.toLowerCase() === 'expert' &&
             (ex.level?.toLowerCase() === 'intermediate' || ex.level?.toLowerCase() === 'beginner'))
         ) &&
         (
@@ -171,7 +167,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         ) &&
         targetCategories.includes(ex.category?.toLowerCase())
       );
-      
+
 
       if (alternatives.length === 0) {
         alert('⚠️ No more alternative exercises available for this muscle group.');
@@ -195,16 +191,16 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       setPlan(updatedPlan);
 
-      
+
       const workoutPlansRef = collection(db, 'workoutPlans');
       const planQuery = query(
         workoutPlansRef,
         where('userId', '==', userId),
         where('userInputKey', '==', createUserInputKey(userInput))
       );
-      
+
       const planSnap = await getDocs(planQuery);
-      
+
       if (!planSnap.empty) {
         const planDoc = planSnap.docs[0];
         await updateDoc(planDoc.ref, {
@@ -221,9 +217,9 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
         where('user_id', '==', userId),
         where('session_id', '==', updatedDay.session_id)
       );
-      
+
       const sessionSnap = await getDocs(sessionQuery);
-      
+
       if (!sessionSnap.empty) {
         const sessionDoc = sessionSnap.docs[0];
         await updateDoc(sessionDoc.ref, {
@@ -253,11 +249,11 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
       console.log('Starting plan regeneration...');
       console.log('Current userInput:', userInput);
       console.log('Current userInputKey:', createUserInputKey(userInput));
-      
+
       const generated = await generateWorkoutPlan(userInput, userId, newStartDate);
       console.log('Generated plan:', generated.plan);
       console.log('Generated durationWeeks:', generated.durationWeeks);
-      
+
       setPlan(generated.plan);
       setWarnings(generated.warnings || []);
       setDurationWeeks(generated.durationWeeks || null);
@@ -325,7 +321,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
   // - Regeneration controls
   return (
     <ScrollView style={styles.container}
-    contentContainerStyle={{ paddingBottom: 80 }}>
+      contentContainerStyle={{ paddingBottom: 80 }}>
       {/* Plan Duration */}
       <View style={styles.durationBox}>
         <Text style={styles.durationText}>
@@ -351,7 +347,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 
       {plan.map((day, index) => (
         <View key={index} style={styles.dayContainer}>
-          <Text style={styles.dayTitle}>{day.day}</Text>  
+          <Text style={styles.dayTitle}>{day.day}</Text>
           <Text style={styles.muscleFocus}>Muscle Focus: {day.muscleFocus}</Text>
           {day.exercises.map((exercise, exIndex) => (
             <View key={`${exercise.name}-${exIndex}`} style={styles.exerciseCard}>
@@ -398,7 +394,7 @@ const WorkoutPlanScreen = ({ route, navigation }) => {
 };
 
 // StyleSheet for the component
-// Uses dark theme colors for better night viewing
+// Uses dark theme to match the apps colours
 // Consistent spacing and card styling
 const styles = StyleSheet.create({
   planNameText: {
