@@ -18,6 +18,9 @@ interface FoodItem {
 interface DietPlan {
   DietaryRestrictions: string;
   totalCalories?: number;
+  totalProtein?: number;
+  totalFat?: number;
+  totalCarbs?: number;
   selectedMeals?: {
     name: string;
     calories: number;
@@ -61,6 +64,11 @@ export default function App() {
           const dietPlanData = dietPlanDoc.data() as DietPlan;
           setUserDietRestriction(dietPlanData.DietaryRestrictions);
           setTotalCalories(dietPlanData.totalCalories || 0);
+
+          // Add these lines:
+        setTotalProtein(dietPlanData.totalProtein || 0);
+        setTotalFat(dietPlanData.totalFat || 0);
+        setTotalCarbs(dietPlanData.totalCarbs || 0);
         } else {
           console.log('No diet plan found for this user');
           Alert.alert("Alert Title","No diet plan found for this user",[{ text: "OK"}]);
