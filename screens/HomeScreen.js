@@ -39,6 +39,7 @@ const HomeScreen = () => {
   const [todaysSession, setTodaysSession] = useState("");
   const [sessionCacheBuster, setSessionCacheBuster] = useState(0);
   const [bestStreak, setBestStreak] = useState(0);
+  const [exercises, setExercises] = useState([]);
 
   // Fetch user name when the component mounts
   useEffect(() => {
@@ -60,9 +61,13 @@ const HomeScreen = () => {
         const timelineData = await getWorkoutTimeline();
         if (timelineData && timelineData.exercises) {
           setExercises(timelineData.exercises);
+        } else {
+          setExercises([]);
         }
       } catch (error) {
-        console.error("Error fetching timeline:", error);
+        console.error('Error fetching timeline:', error);
+        setExercises([]);
+        // Optionally set an error state to display in the UI
       }
     };
     fetchTimeline();
@@ -362,6 +367,7 @@ const HomeScreen = () => {
       <ProgressBar onPress={() => navigation.navigate("WorkoutHistory")} />
 
       {/* Test Buttons */}
+      {/**
       <View style={styles.testButtonsContainer}>
         <TouchableOpacity
           style={styles.testButton}
@@ -422,6 +428,7 @@ const HomeScreen = () => {
           <Text style={styles.testButtonText}>Print User ID</Text>
         </TouchableOpacity>
       </View>
+      **/}
     </ScrollView>
   );
 };
